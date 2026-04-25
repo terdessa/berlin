@@ -1,0 +1,26 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Audio files in submission (large binaries — share folder separately)
+submission/audio/raw/*.wav
+submission/audio/enhanced/*.wav
+
+# macOS
+.DS_Store
+
+# Node (for Person 1's frontend)
+node_modules/
+
+# IDE
+.vscode/settings.json
