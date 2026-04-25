@@ -12,8 +12,6 @@ export type Camera = {
 export const cameras: Camera[] = [
   { id: "CAM-01", zone: "Entrance", lastMotion: "2s ago", device: "cctv-mock" },
   { id: "CAM-02", zone: "Aisle 1", lastMotion: "14s ago", device: "cctv-mock" },
-  { id: "CAM-03", zone: "Aisle 2", lastMotion: "1m ago", device: "cctv-mock" },
-  { id: "CAM-04", zone: "Aisle 3", lastMotion: "8s ago", device: "cctv-mock" },
   {
     id: "CAM-05",
     zone: "Aisle 5",
@@ -22,10 +20,8 @@ export const cameras: Camera[] = [
     battery: 87,
     signal: "5g",
   },
-  { id: "CAM-06", zone: "Aisle 4", lastMotion: "22s ago", device: "cctv-mock" },
-  { id: "CAM-07", zone: "Checkout", lastMotion: "4s ago", device: "cctv-mock" },
-  { id: "CAM-08", zone: "Checkout", lastMotion: "11s ago", device: "cctv-mock" },
-  { id: "CAM-09", zone: "Storage", lastMotion: "3m ago", device: "cctv-mock" },
+  { id: "CAM-07", zone: "Checkout 1", lastMotion: "4s ago", device: "cctv-mock" },
+  { id: "CAM-08", zone: "Checkout 2", lastMotion: "11s ago", device: "cctv-mock" },
   { id: "CAM-10", zone: "Back exit", lastMotion: "47s ago", device: "cctv-mock" },
 ];
 
@@ -233,58 +229,6 @@ export const failureScenario: Scenario = {
 
 export const scenarios: Scenario[] = [successScenario, failureScenario];
 
-export type PastReview = {
-  id: string;
-  cameraId: string;
-  zone: string;
-  timestamp: string;
-  summary: string;
-  status: AlertStatus;
-};
-
-export const pastReviews: PastReview[] = [
-  {
-    id: "rev-2031",
-    cameraId: "CAM-02",
-    zone: "Aisle 1",
-    timestamp: "13:47",
-    summary: "Bag-in-bag check at shelf",
-    status: "Marked false alarm",
-  },
-  {
-    id: "rev-2030",
-    cameraId: "CAM-07",
-    zone: "Checkout 1",
-    timestamp: "13:18",
-    summary: "Skip-scan suspected at register",
-    status: "Floor associate dispatched",
-  },
-  {
-    id: "rev-2029",
-    cameraId: "CAM-10",
-    zone: "Back exit",
-    timestamp: "12:54",
-    summary: "Door propped open · 8s",
-    status: "Floor associate dispatched",
-  },
-  {
-    id: "rev-2028",
-    cameraId: "CAM-04",
-    zone: "Aisle 3",
-    timestamp: "12:11",
-    summary: "Spill detected — janitorial pinged",
-    status: "Floor associate dispatched",
-  },
-  {
-    id: "rev-2027",
-    cameraId: "CAM-05",
-    zone: "Aisle 5",
-    timestamp: "11:39",
-    summary: "Voice command unclear — needed repeat",
-    status: "Error report created",
-  },
-];
-
 /** Audio metric headline for the partner-track money shot. */
 export const audioMetric = {
   raw: 0.42,
@@ -292,23 +236,8 @@ export const audioMetric = {
   label: "Command recognition",
 };
 
-/** Schematic floor-plan dots for the mini-map. */
-export type FloorPlanDot = {
-  id: string;
-  x: number; // 0..100
-  y: number; // 0..100
-  label: string;
+/** Map a camera id to its scripted scenario, if any. Powers click-to-demo on the grid. */
+export const scenarioByCamera: Record<string, Scenario | undefined> = {
+  [successScenario.alert.cameraId]: successScenario,
+  [failureScenario.alert.cameraId]: failureScenario,
 };
-
-export const floorPlan: FloorPlanDot[] = [
-  { id: "CAM-01", x: 8, y: 50, label: "Entrance" },
-  { id: "CAM-02", x: 28, y: 22, label: "Aisle 1" },
-  { id: "CAM-03", x: 42, y: 22, label: "Aisle 2" },
-  { id: "CAM-04", x: 56, y: 22, label: "Aisle 3" },
-  { id: "CAM-06", x: 70, y: 22, label: "Aisle 4" },
-  { id: "CAM-05", x: 84, y: 22, label: "Aisle 5" },
-  { id: "CAM-07", x: 32, y: 78, label: "Checkout 1" },
-  { id: "CAM-08", x: 48, y: 78, label: "Checkout 2" },
-  { id: "CAM-09", x: 76, y: 78, label: "Storage" },
-  { id: "CAM-10", x: 92, y: 78, label: "Back exit" },
-];

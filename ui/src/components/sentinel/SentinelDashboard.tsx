@@ -2,17 +2,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   cameras,
   scenarios,
+  scenarioByCamera,
   successScenario,
   failureScenario,
   type AlertEvent,
   type AlertStatus,
+  type Camera,
   type Phase,
   type Scenario,
 } from "@/lib/sentinel-data";
 import { CameraTile } from "./CameraTile";
 import { AlertVideoPanel } from "./AlertVideoPanel";
 import { ReviewLogPanel } from "./ReviewLogPanel";
-import { IdleSidePanel } from "./IdleSidePanel";
 import { InferenceCounter } from "./InferenceCounter";
 import { AudioMetricPill } from "./AudioMetricBadge";
 import { PoweredByFooter } from "./PoweredByFooter";
@@ -37,6 +38,9 @@ export function SentinelDashboard() {
 
   const alert: AlertEvent | null = run ? run.scenario.alert : null;
   const isAlerting = phase !== "idle" && phase !== "resolved";
+  const selectedCamera: Camera | null = selected
+    ? cameras.find((c) => c.id === selected) ?? null
+    : null;
 
   const pushTicker = useCallback((text: string) => {
     const at = new Date().toLocaleTimeString([], {
@@ -76,6 +80,22 @@ export function SentinelDashboard() {
     setSelected(null);
     pushTicker("scenario · reset");
   }, [pushTicker]);
+
+  // Click on a camera tile: start its scenario if mapped, else just select it.
+  const handleCameraClick = (cameraId: string) => {
+    const scenario = scenarioByCamera[cameraId];
+    if (scenario) {
+      startScenario(scenario);
+    } else {
+      stopTimer();
+      setRun(null);
+      setPhase("idle");
+      setRevealUpTo(0);
+      setStatus("Awaiting human review");
+      setSelected(cameraId);
+      pushTicker(`feed · ${cameraId} · preview`);
+    }
+  };
 
   useEffect(() => {
     if (!run) return;
@@ -127,7 +147,7 @@ export function SentinelDashboard() {
 
   return (
     <main className="flex h-screen w-full flex-col overflow-hidden px-4 py-2">
-      {/* TOP — single row, fixed height, no wrap */}
+      {/* TOP — single row */}
       <header className="flex flex-shrink-0 items-center justify-between gap-2 py-1">
         <div className="flex min-w-0 items-center gap-2">
           <div
@@ -196,45 +216,50 @@ export function SentinelDashboard() {
         </div>
       </header>
 
-      {/* CAMERA GRID — flexible band */}
-      <section
-        aria-label="Camera grid"
-        className="mt-2 grid min-h-0 flex-[0_0_auto] grid-cols-5 gap-2"
-        style={{ height: "calc((100vh - 130px) * 0.42)" }}
-      >
-        {cameras.map((cam) => (
-          <CameraTile
-            key={cam.id}
-            camera={cam}
-            isAlert={alert?.cameraId === cam.id}
-            isAnalyzing={analyzingId !== cam.id}
-            isSelected={selected === cam.id}
-            onClick={() => setSelected(cam.id)}
+      {/* MAIN — left (cameras + alert video) | right (log) */}
+      <section className="mt-2 grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[3fr_2fr]">
+        {/* LEFT column */}
+        <div className="flex min-h-0 flex-col gap-3">
+          {/* Camera grid 3x2 */}
+          <div
+            aria-label="Camera grid"
+            className="grid min-h-0 flex-[3] grid-cols-3 gap-2"
+          >
+            {cameras.map((cam) => (
+              <CameraTile
+                key={cam.id}
+                camera={cam}
+                isAlert={alert?.cameraId === cam.id}
+                isAnalyzing={analyzingId !== cam.id}
+                isSelected={selected === cam.id}
+                hasDemo={Boolean(scenarioByCamera[cam.id])}
+                onClick={() => handleCameraClick(cam.id)}
+              />
+            ))}
+          </div>
+
+          {/* Active review — smaller */}
+          <div className="min-h-0 flex-[2]">
+            <AlertVideoPanel alert={alert} selectedCamera={selectedCamera} />
+          </div>
+        </div>
+
+        {/* RIGHT column — log full height */}
+        <div className="min-h-0">
+          <ReviewLogPanel
+            alert={alert}
+            phase={phase}
+            revealUpTo={revealUpTo}
+            status={status}
+            selectedCameraId={selected}
+            onAction={handleAction}
+            onStartSuccess={() => startScenario(successScenario)}
+            onStartFailure={() => startScenario(failureScenario)}
           />
-        ))}
-      </section>
-
-      {/* LOWER BAND — alert video + log/idle */}
-      <section className="mt-2 grid min-h-0 flex-1 grid-cols-2 gap-3">
-        <div className="min-h-0">
-          <AlertVideoPanel alert={alert} />
-        </div>
-        <div className="min-h-0">
-          {alert ? (
-            <ReviewLogPanel
-              alert={alert}
-              phase={phase}
-              revealUpTo={revealUpTo}
-              status={status}
-              onAction={handleAction}
-            />
-          ) : (
-            <IdleSidePanel />
-          )}
         </div>
       </section>
 
-      {/* FOOTER — fixed height */}
+      {/* FOOTER */}
       <footer className="mt-2 flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-2">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <InferenceCounter />

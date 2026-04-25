@@ -7,6 +7,7 @@ type Props = {
   isAlert?: boolean;
   isAnalyzing?: boolean;
   isSelected?: boolean;
+  hasDemo?: boolean;
   onClick?: () => void;
 };
 
@@ -15,6 +16,7 @@ export function CameraTile({
   isAlert,
   isAnalyzing,
   isSelected,
+  hasDemo,
   onClick,
 }: Props) {
   const [microConf, setMicroConf] = useState(() => 0.55 + Math.random() * 0.3);
@@ -76,6 +78,10 @@ export function CameraTile({
         {isAlert ? (
           <span className="mono shrink-0 rounded-sm bg-alert px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-alert-foreground">
             review
+          </span>
+        ) : hasDemo ? (
+          <span className="mono shrink-0 rounded-sm border border-primary/50 bg-primary/15 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-primary backdrop-blur-sm">
+            ▶ demo
           </span>
         ) : (
           <span className="flex shrink-0 items-center gap-1 rounded-sm bg-background/70 px-1.5 py-0.5 backdrop-blur-sm">
