@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LocalVideoTrack, RemoteTrack, RemoteVideoTrack, Room } from "livekit-client";
 import { issueLivekitToken } from "@/lib/livekit-token";
 import { LivePageSkeleton } from "@/lib/live-page-skeleton";
@@ -24,54 +24,33 @@ export const Route = createFileRoute("/video")({
 
 const DEFAULT_ROOM = "sentinel-live";
 
-// Open the main (1x wide-angle) rear camera.
-//
-// `facingMode: "environment"` alone is not enough on multi-lens phones: iOS and
-// Android may give the telephoto lens instead of the main wide lens. The strategy:
-//  1. Open any environment-facing camera to get the media permission.
-//  2. Read the track label. If it looks like a telephoto / zoom lens, enumerate
-//     all video inputs (labels are only populated after permission is granted) and
-//     swap to the wide camera by deviceId.
-async function openMainBackCamera(): Promise<MediaStream> {
-  const initial = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 } },
-    audio: false,
-  });
+const CAM_WIDTH = 1280;
+const CAM_HEIGHT = 720;
+const CAM_FPS = 30;
+// Target bitrate sent to LiveKit (bits per second).
+const CAM_MAX_BITRATE = 2_500_000; // 2.5 Mbps — standard for 720p30
 
-  const firstTrack = initial.getVideoTracks()[0];
-  const label = firstTrack?.label ?? "";
+async function openCamera(deviceId?: string): Promise<MediaStream> {
+  const base: MediaTrackConstraints = {
+    width: { ideal: CAM_WIDTH },
+    height: { ideal: CAM_HEIGHT },
+    frameRate: { ideal: CAM_FPS, max: CAM_FPS },
+  };
+  const video: MediaTrackConstraints = deviceId
+    ? { ...base, deviceId: { exact: deviceId } }
+    : { ...base, facingMode: { ideal: "environment" } };
+  return navigator.mediaDevices.getUserMedia({ video, audio: false });
+}
 
-  // Telephoto lens labels on iOS: "Back Telephoto Camera", "5x", "3x", etc.
-  // We also skip "Ultra Wide" (0.5x) and prefer the plain Wide (1x).
-  const isNotWide = /(telephoto|\bultra\s*wide\b|\b[2-9]x\b|\b\d+\.?\dx\b)/i.test(label);
-  if (!isNotWide) return initial; // already on the wide camera
+// After permission is granted, enumerate video inputs and return them with labels.
+async function listVideoDevices(): Promise<MediaDeviceInfo[]> {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  return devices.filter((d) => d.kind === "videoinput" && d.deviceId);
+}
 
-  try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoInputs = devices.filter((d) => d.kind === "videoinput" && d.deviceId);
-
-    // Prefer a device explicitly labelled "wide" without "ultra"
-    const wide =
-      videoInputs.find((d) => /wide/i.test(d.label) && !/ultra/i.test(d.label)) ??
-      // Fall back: any rear camera that isn't telephoto or ultra-wide
-      videoInputs.find(
-        (d) =>
-          /(back|rear)/i.test(d.label) &&
-          !/(telephoto|ultra\s*wide|ultra|\b[2-9]x\b)/i.test(d.label),
-      );
-
-    if (wide) {
-      initial.getTracks().forEach((t) => t.stop());
-      return navigator.mediaDevices.getUserMedia({
-        video: { deviceId: { exact: wide.deviceId }, width: { ideal: 1280 } },
-        audio: false,
-      });
-    }
-  } catch {
-    // Enumeration failed - the initial stream is as good as we can get.
-  }
-
-  return initial;
+function friendlyLabel(d: MediaDeviceInfo, idx: number): string {
+  const raw = d.label?.trim();
+  return raw || `Camera ${idx + 1}`;
 }
 
 type Status =
@@ -126,6 +105,10 @@ function VideoPageInner() {
   const [copyHint, setCopyHint] = useState<string | null>(null);
   // Mirrored as state so the stats hook re-runs when LiveKit connects/disconnects.
   const [lkRoom, setLkRoom] = useState<Room | null>(null);
+  // Camera picker state
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [activeDeviceId, setActiveDeviceId] = useState<string | undefined>(undefined);
+  const [switching, setSwitching] = useState(false);
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -135,6 +118,43 @@ function VideoPageInner() {
 
   const flows = useLivekitStats(lkRoom);
 
+  // Switch to a different camera while the page is running.
+  const onSwitchCamera = useCallback(
+    async (deviceId: string) => {
+      if (switching || deviceId === activeDeviceId) return;
+      setSwitching(true);
+      try {
+        const newStream = await openCamera(deviceId);
+        const newVideoTrack = newStream.getVideoTracks()[0];
+        if (!newVideoTrack) return;
+
+        // Swap in the local preview
+        const oldStream = localStreamRef.current;
+        oldStream?.getTracks().forEach((t) => t.stop());
+        localStreamRef.current = newStream;
+        if (localVideoRef.current) localVideoRef.current.srcObject = newStream;
+
+        // Replace the track in the LiveKit publication if connected
+        const lkTrack = localTrackRef.current;
+        if (lkTrack) {
+          try {
+            await lkTrack.replaceTrack(newVideoTrack);
+          } catch {
+            // replaceTrack not available in older SDK versions - no-op
+          }
+        }
+
+        setActiveDeviceId(deviceId);
+        setCameraOn(true);
+      } catch {
+        // Camera switch failed - leave the current stream running
+      } finally {
+        setSwitching(false);
+      }
+    },
+    [switching, activeDeviceId],
+  );
+
   useEffect(() => {
     let cancelled = false;
     let cleanup = () => {};
@@ -143,7 +163,7 @@ function VideoPageInner() {
       // 1. Local preview first - usable even if LiveKit isn't configured.
       let stream: MediaStream;
       try {
-        stream = await openMainBackCamera();
+        stream = await openCamera();
       } catch (err) {
         if (cancelled) return;
         const message = err instanceof Error ? err.message : String(err);
@@ -158,6 +178,16 @@ function VideoPageInner() {
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
       }
+
+      // Track which deviceId is active and enumerate all cameras now that
+      // permission was granted (labels are empty strings before permission).
+      const activeTrack = stream.getVideoTracks()[0];
+      const currentDeviceId = activeTrack?.getSettings().deviceId;
+      setActiveDeviceId(currentDeviceId);
+      listVideoDevices()
+        .then((devs) => setVideoDevices(devs))
+        .catch(() => {});
+
 
       // 2. Token + LiveKit connect (skip gracefully if not configured).
       const tokenResult = await issueLivekitToken({ data: { room, identity } });
@@ -226,6 +256,13 @@ function VideoPageInner() {
         await lkRoom.localParticipant.publishTrack(localTrack, {
           source: livekit.Track.Source.Camera,
           name: "camera",
+          // Single-layer encoding: no simulcast overhead on a constrained
+          // mobile-hotspot uplink. Cap matches CAM_MAX_BITRATE above.
+          simulcast: false,
+          videoEncoding: {
+            maxBitrate: CAM_MAX_BITRATE,
+            maxFramerate: CAM_FPS,
+          },
         });
 
         if (cancelled) {
@@ -366,7 +403,7 @@ function VideoPageInner() {
               </div>
             )}
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-panel-elevated px-4 py-3">
+          <div className="flex flex-col gap-2 border-t border-border bg-panel-elevated px-4 py-3">
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -393,9 +430,35 @@ function VideoPageInner() {
                 </span>
               )}
             </div>
-            <span className="mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              identity · {identity}
-            </span>
+
+            {/* Camera picker — shown only when the browser exposes multiple cameras */}
+            {videoDevices.length > 1 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
+                  camera:
+                </span>
+                {videoDevices.map((d, i) => {
+                  const isActive = d.deviceId === activeDeviceId;
+                  return (
+                    <button
+                      key={d.deviceId}
+                      type="button"
+                      disabled={switching || isActive}
+                      onClick={() => onSwitchCamera(d.deviceId)}
+                      className={[
+                        "mono rounded border px-2 py-0.5 text-[10px] transition",
+                        isActive
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-background/60 text-muted-foreground hover:border-primary/50 hover:text-foreground",
+                        switching ? "cursor-wait opacity-50" : "",
+                      ].join(" ")}
+                    >
+                      {friendlyLabel(d, i)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
