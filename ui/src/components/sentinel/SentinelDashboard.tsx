@@ -1,55 +1,61 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
-import {
-  cameras,
-  scenarios,
-  scenarioByCamera,
-  successScenario,
-  failureScenario,
-  type AlertEvent,
-  type AlertStatus,
-  type Camera,
-  type Phase,
-  type Scenario,
-} from "@/lib/sentinel-data";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { AlertEvent, AlertStatus, Camera, Phase } from "@/lib/sentinel-data";
 import { useLivekitFeeds } from "@/lib/use-livekit-feeds";
-import { CameraTile } from "./CameraTile";
-import { AlertVideoPanel } from "./AlertVideoPanel";
-import { ReviewLogPanel } from "./ReviewLogPanel";
-import { InferenceCounter } from "./InferenceCounter";
-import { AudioMetricPill } from "./AudioMetricBadge";
-import { PoweredByFooter } from "./PoweredByFooter";
 import { useSentinelVoiceEvents } from "@/lib/use-sentinel-voice-events";
-
-type RunState = {
-  scenario: Scenario;
-  stepIndex: number;
-};
+import { AlertVideoPanel } from "./AlertVideoPanel";
+import { AudioMetricPill } from "./AudioMetricBadge";
+import { CameraTile } from "./CameraTile";
+import { DashboardEvidencePanel } from "./DashboardEvidencePanel";
+import { PoweredByFooter } from "./PoweredByFooter";
+import { ReviewLogPanel } from "./ReviewLogPanel";
 
 type TickerEntry = { id: number; at: string; text: string };
 
 export function SentinelDashboard() {
-  const [run, setRun] = useState<RunState | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
-  const [revealUpTo, setRevealUpTo] = useState(0);
   const [status, setStatus] = useState<AlertStatus>("Awaiting human review");
   const [selected, setSelected] = useState<string | null>(null);
   const [latestEvent, setLatestEvent] = useState<TickerEntry | null>(null);
   const [liveAlert, setLiveAlert] = useState<AlertEvent | null>(null);
-  const voiceEvents = useSentinelVoiceEvents();
-
   const tickerIdRef = useRef(0);
-  const timerRef = useRef<number | null>(null);
 
-  // Subscribe to the shared LiveKit room as a viewer so live device feeds
-  // appear in the camera grid. Returns [] when LiveKit isn't configured.
+  const voiceEvents = useSentinelVoiceEvents();
   const liveFeeds = useLivekitFeeds("sentinel-live");
-
-  const alert: AlertEvent | null = liveAlert ?? (run ? run.scenario.alert : null);
-  const displayedRevealUpTo = liveAlert ? liveAlert.conversation.length : revealUpTo;
+  const alert: AlertEvent | null = liveAlert;
+  const displayedRevealUpTo = alert?.conversation.length ?? 0;
   const isAlerting = phase !== "idle" && phase !== "resolved";
+
+  const liveCameras = useMemo(
+    () =>
+      liveFeeds.map((feed, index) => {
+        const inferredId = cameraIdFromIdentity(feed.identity);
+        const id =
+          inferredId ?? (liveFeeds.length === 1 && alert ? alert.cameraId : `LIVE-${index + 1}`);
+        const zone = alert?.cameraId === id ? alert.zone : readableIdentity(feed.identity);
+
+        return {
+          feed,
+          camera: {
+            id,
+            zone,
+            lastMotion: "connected",
+            device: "live-phone",
+          } satisfies Camera,
+        };
+      }),
+    [alert, liveFeeds],
+  );
+
   const selectedCamera: Camera | null = selected
-    ? (cameras.find((c) => c.id === selected) ?? null)
+    ? (liveCameras.find(({ camera }) => camera.id === selected)?.camera ??
+      (alert?.cameraId === selected
+        ? {
+            id: alert.cameraId,
+            zone: alert.zone,
+            lastMotion: "event received",
+            device: "live-phone",
+          }
+        : null))
     : null;
 
   const pushTicker = useCallback((text: string) => {
@@ -61,119 +67,22 @@ export function SentinelDashboard() {
     setLatestEvent({ id: tickerIdRef.current++, at, text });
   }, []);
 
-  const stopTimer = () => {
-    if (timerRef.current !== null) {
-      window.clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-  };
-
-  const startScenario = useCallback(
-    (scenario: Scenario) => {
-      stopTimer();
-      setRun({ scenario, stepIndex: -1 });
-      setLiveAlert(null);
-      setPhase("idle");
-      setRevealUpTo(0);
-      setStatus(scenario.alert.actionTaken);
-      setSelected(scenario.alert.cameraId);
-      pushTicker(`scenario · ${scenario.id} · started`);
-    },
-    [pushTicker],
-  );
-
-  const resetAll = useCallback(() => {
-    stopTimer();
-    setRun(null);
-    setLiveAlert(null);
-    setPhase("idle");
-    setRevealUpTo(0);
-    setStatus("Awaiting human review");
-    setSelected(null);
-    pushTicker("scenario · reset");
-  }, [pushTicker]);
-
   useEffect(() => {
     if (!voiceEvents.latestAlert) return;
-    stopTimer();
     setLiveAlert(voiceEvents.latestAlert);
-    setRun(null);
     setSelected(voiceEvents.latestAlert.cameraId);
     setStatus(voiceEvents.latestAlert.actionTaken);
-    setPhase(
-      voiceEvents.latestAlert.actionTaken === "Error report created" ? "resolved" : "interpreted",
-    );
+    setPhase(resolveLivePhase(voiceEvents.latestAlert));
     pushTicker(voiceEvents.latestTicker ?? "live voice · interaction received");
   }, [voiceEvents.latestAlert, voiceEvents.latestTicker, pushTicker]);
 
-  // Click on a camera tile: start its scenario if mapped, else just select it.
   const handleCameraClick = (cameraId: string) => {
-    const scenario = scenarioByCamera[cameraId];
-    if (scenario) {
-      startScenario(scenario);
-    } else {
-      stopTimer();
-      setRun(null);
-      setLiveAlert(null);
-      setPhase("idle");
-      setRevealUpTo(0);
-      setStatus("Awaiting human review");
-      setSelected(cameraId);
-      pushTicker(`feed · ${cameraId} · preview`);
-    }
+    setSelected(cameraId);
+    pushTicker(`feed · ${cameraId} · selected`);
   };
-
-  useEffect(() => {
-    if (!run) return;
-    const nextIdx = run.stepIndex + 1;
-    if (nextIdx >= run.scenario.steps.length) return;
-    const step = run.scenario.steps[nextIdx];
-
-    const tick = () => {
-      setPhase(step.phase);
-      setRevealUpTo(step.revealUpTo);
-      if (step.status) setStatus(step.status);
-      if (step.ticker) pushTicker(step.ticker);
-      setRun((prev) => (prev ? { ...prev, stepIndex: nextIdx } : prev));
-    };
-
-    if (run.stepIndex === -1) {
-      timerRef.current = window.setTimeout(tick, 200);
-    } else {
-      const prev = run.scenario.steps[run.stepIndex];
-      timerRef.current = window.setTimeout(tick, prev.durationMs);
-    }
-    return stopTimer;
-  }, [run, pushTicker]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === "d" || e.key === "D") {
-        e.preventDefault();
-        startScenario(successScenario);
-      } else if (e.key === "f" || e.key === "F") {
-        e.preventDefault();
-        startScenario(failureScenario);
-      } else if (e.key === "r" || e.key === "R") {
-        e.preventDefault();
-        resetAll();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [startScenario, resetAll]);
-
-  const handleAction = (next: AlertStatus) => {
-    setStatus(next);
-    pushTicker(`action · ${alert?.cameraId ?? "—"} · ${next.toLowerCase()}`);
-  };
-
-  const analyzingId = alert?.cameraId ?? null;
 
   return (
     <main className="flex h-screen w-full flex-col overflow-hidden px-4 py-2">
-      {/* TOP — single row */}
       <header className="flex flex-shrink-0 items-center justify-between gap-2 py-1">
         <div className="flex min-w-0 items-center gap-2">
           <div
@@ -190,91 +99,52 @@ export function SentinelDashboard() {
               ].join(" ")}
             />
             <span className="mono uppercase tracking-[0.18em] text-[10px]">
-              {isAlerting && alert ? `flagged ${alert.cameraId} — review` : "Sentinel is watching"}
+              {isAlerting && alert ? `flagged ${alert.cameraId} · review` : "live dashboard"}
             </span>
           </div>
           <AudioMetricPill />
         </div>
-
-        <div className="flex shrink-0 items-center gap-1.5">
-          <Link
-            to="/metrics"
-            className="mono cursor-pointer inline-flex items-center rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-primary transition hover:border-primary/70 hover:bg-primary/15"
-          >
-            metrics
-          </Link>
-          {scenarios.map((s) => {
-            const active = run?.scenario.id === s.id;
-            const isFailure = s.id === "failure";
-            return (
-              <button
-                key={s.id}
-                onClick={() => startScenario(s)}
-                className={[
-                  "mono cursor-pointer inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] backdrop-blur-sm transition",
-                  active
-                    ? isFailure
-                      ? "border-alert/60 bg-alert/15 text-alert"
-                      : "border-primary/60 bg-primary/15 text-primary"
-                    : "border-border bg-background/40 text-muted-foreground hover:text-foreground",
-                ].join(" ")}
-                aria-pressed={active}
-                title={s.description}
-              >
-                <span
-                  className={[
-                    "h-1.5 w-1.5 rounded-full",
-                    active
-                      ? isFailure
-                        ? "bg-alert animate-soft-pulse"
-                        : "bg-primary animate-soft-pulse"
-                      : "bg-muted-foreground",
-                  ].join(" ")}
-                />
-                {isFailure ? "F · failure" : "D · success"}
-              </button>
-            );
-          })}
-          <button
-            onClick={resetAll}
-            className="mono cursor-pointer inline-flex items-center rounded-full border border-border bg-background/40 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground transition hover:text-foreground"
-          >
-            R · reset
-          </button>
-        </div>
       </header>
 
-      {/* MAIN — left (cameras + alert video) | right (log) */}
-      <section className="mt-2 grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[3fr_2fr]">
-        {/* LEFT column */}
+      <section className="mt-2 grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.38fr)_minmax(380px,0.82fr)]">
         <div className="flex min-h-0 flex-col gap-3">
-          {/* Camera grid 3x2 */}
           <div aria-label="Camera grid" className="grid min-h-0 flex-[3] grid-cols-3 gap-2">
-            {cameras.map((cam, i) => {
-              const feed = liveFeeds[i];
-              return (
+            {liveCameras.length > 0 ? (
+              liveCameras.map(({ camera, feed }) => (
                 <CameraTile
-                  key={cam.id}
-                  camera={cam}
-                  isAlert={alert?.cameraId === cam.id}
-                  isAnalyzing={analyzingId !== cam.id}
-                  isSelected={selected === cam.id}
-                  hasDemo={Boolean(scenarioByCamera[cam.id])}
-                  liveTrack={feed?.track}
-                  liveIdentity={feed?.identity}
-                  onClick={() => handleCameraClick(cam.id)}
+                  key={feed.sid}
+                  camera={camera}
+                  isAlert={alert?.cameraId === camera.id}
+                  isSelected={selected === camera.id}
+                  liveTrack={feed.track}
+                  liveIdentity={feed.identity}
+                  onClick={() => handleCameraClick(camera.id)}
                 />
-              );
-            })}
+              ))
+            ) : (
+              <div className="col-span-3 flex min-h-[220px] items-center justify-center rounded-lg border border-dashed border-border bg-panel/40 px-4 text-center">
+                <div>
+                  <div className="mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                    no camera publishers connected
+                  </div>
+                  <div className="mt-1 text-[12px] text-muted-foreground/80">
+                    Live feeds appear here when a device publishes video to the Sentinel room.
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Active review — smaller */}
-          <div className="min-h-0 flex-[2]">
-            <AlertVideoPanel alert={alert} selectedCamera={selectedCamera} />
+          <div className="grid min-h-0 flex-[2.15] grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)]">
+            <div className="min-h-0">
+              <AlertVideoPanel alert={alert} selectedCamera={selectedCamera} />
+            </div>
+            <div className="min-h-0">
+              <DashboardEvidencePanel />
+            </div>
           </div>
         </div>
 
-        {/* RIGHT column — log full height */}
         <div className="min-h-0">
           <ReviewLogPanel
             alert={alert}
@@ -282,17 +152,12 @@ export function SentinelDashboard() {
             revealUpTo={displayedRevealUpTo}
             status={status}
             selectedCameraId={selected}
-            onAction={handleAction}
-            onStartSuccess={() => startScenario(successScenario)}
-            onStartFailure={() => startScenario(failureScenario)}
           />
         </div>
       </section>
 
-      {/* FOOTER */}
       <footer className="mt-2 flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-2">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <InferenceCounter />
           {latestEvent && (
             <span className="mono truncate text-[10px] text-muted-foreground/80">
               <span className="text-muted-foreground/60">{latestEvent.at}</span> ·{" "}
@@ -304,4 +169,20 @@ export function SentinelDashboard() {
       </footer>
     </main>
   );
+}
+
+function resolveLivePhase(alert: AlertEvent): Phase {
+  if (alert.actionTaken !== "Awaiting human review") return "resolved";
+  if (alert.conversation.some((message) => message.speaker === "guard")) return "interpreted";
+  return "flagged";
+}
+
+function cameraIdFromIdentity(identity: string) {
+  const match = identity.match(/cam[-_\s]?(\d{1,2})/i);
+  if (!match) return null;
+  return `CAM-${match[1].padStart(2, "0")}`;
+}
+
+function readableIdentity(identity: string) {
+  return identity.replace(/[-_]+/g, " ");
 }

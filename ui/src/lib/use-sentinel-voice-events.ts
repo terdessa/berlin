@@ -68,12 +68,7 @@ export function useSentinelVoiceEvents(roomName = "sentinel-live") {
   const [latestAlert, setLatestAlert] = useState<AlertEvent | null>(null);
   const [latestTicker, setLatestTicker] = useState<string | null>(null);
   const conversationRef = useRef<ConversationMessage[]>([]);
-  const visualRef = useRef<VisualEventPayload>({
-    cameraId: "camera-aisle-5",
-    zone: "Aisle 5",
-    summary: "Camera requires review. Human review recommended.",
-    confidence: 0.82,
-  });
+  const visualRef = useRef<VisualEventPayload | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -128,7 +123,8 @@ export function useSentinelVoiceEvents(roomName = "sentinel-live") {
               timestamp: nowStamp(),
             },
           ];
-          setLatestAlert(makeLiveAlert(visualRef.current, conversationRef.current));
+          const alert = makeLiveAlert(visualRef.current, conversationRef.current);
+          if (alert) setLatestAlert(alert);
           setLatestTicker("live transcription · sentinel response");
           return;
         }
@@ -149,7 +145,8 @@ export function useSentinelVoiceEvents(roomName = "sentinel-live") {
               unclear: enhanced < 0.7,
             },
           ];
-          setLatestAlert(makeLiveAlert(visualRef.current, conversationRef.current));
+          const alert = makeLiveAlert(visualRef.current, conversationRef.current);
+          if (alert) setLatestAlert(alert);
           setLatestTicker("live transcription · guard speech transcribed");
           return;
         }
@@ -199,7 +196,8 @@ export function useSentinelVoiceEvents(roomName = "sentinel-live") {
               : {}),
           },
         ];
-        setLatestAlert(makeLiveAlert(visualRef.current, conversationRef.current));
+        const alert = makeLiveAlert(visualRef.current, conversationRef.current);
+        if (alert) setLatestAlert(alert);
         setLatestTicker(`live transcription · ${speaker} transcript received`);
       };
 
@@ -231,17 +229,21 @@ export function useSentinelVoiceEvents(roomName = "sentinel-live") {
 }
 
 function makeLiveAlert(
-  visual: VisualEventPayload,
+  visual: VisualEventPayload | null,
   conversation: ConversationMessage[],
-): AlertEvent {
+): AlertEvent | null {
+  if (!visual) return null;
+
+  const cameraId = visual.cameraId ? normalizeCameraId(visual.cameraId) : "UNASSIGNED";
+  const firstSentinelMessage = conversation.find((t) => t.speaker === "sentinel")?.text;
+
   return {
-    cameraId: normalizeCameraId(visual.cameraId ?? "camera-aisle-5"),
-    zone: visual.zone ?? "Aisle 5",
+    cameraId,
+    zone: visual.zone ?? "unassigned zone",
     timestamp: nowStamp(),
-    sceneSummary: visual.summary ?? "Camera requires review. Human review recommended.",
-    visualConfidence: visual.confidence ?? 0.82,
-    assistantMessage:
-      conversation.find((t) => t.speaker === "sentinel")?.text ?? "Camera requires review",
+    sceneSummary: visual.summary ?? "Live visual event received.",
+    visualConfidence: visual.confidence ?? 0,
+    assistantMessage: firstSentinelMessage ?? "",
     conversation,
     actionTaken: "Awaiting human review",
   };
@@ -299,8 +301,7 @@ function recordToAlert(record: InteractionRecord): AlertEvent {
     }),
     sceneSummary: record.visualEvent.summary,
     visualConfidence: record.visualEvent.confidence,
-    assistantMessage:
-      record.conversation.find((t) => t.speaker === "assistant")?.text ?? "Camera requires review",
+    assistantMessage: record.conversation.find((t) => t.speaker === "assistant")?.text ?? "",
     conversation,
     actionTaken: record.outcome === "error" ? "Error report created" : "Floor associate dispatched",
   };

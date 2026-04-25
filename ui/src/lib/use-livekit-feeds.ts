@@ -74,7 +74,7 @@ export function useLivekitFeeds(room: string): LiveFeed[] {
           }
         }
       } catch {
-        // LiveKit unavailable — stay silent, tiles keep their placeholders.
+        // LiveKit unavailable — stay silent and let the dashboard show its empty state.
       }
     })();
 

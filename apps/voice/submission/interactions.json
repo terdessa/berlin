@@ -276,5 +276,3942 @@
     "actionTaken": "opened_evidence_video",
     "failure": null,
     "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-05-54-387591Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-05-54-387591Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.812,
+          "noisiness": 3.541,
+          "coloration": 4.034,
+          "discontinuity": 4.527,
+          "loudness": 2.882
+        },
+        "enhanced": {
+          "mos": 3.856,
+          "noisiness": 3.648,
+          "coloration": 4.08,
+          "discontinuity": 4.512,
+          "loudness": 2.875
+        },
+        "delta": {
+          "mos": 0.044
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?', enhanced: 'If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.8 → enhanced 3.9 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-05-55-797909Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-05-55-797909Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.965,
+          "noisiness": 3.957,
+          "coloration": 4.233,
+          "discontinuity": 4.509,
+          "loudness": 2.631
+        },
+        "enhanced": {
+          "mos": 3.92,
+          "noisiness": 3.899,
+          "coloration": 4.185,
+          "discontinuity": 4.471,
+          "loudness": 2.613
+        },
+        "delta": {
+          "mos": -0.045
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'As I mentioned late', enhanced: 'As I mentioned late') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 4.0 → enhanced 3.9 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-06-00-184082Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-06-00-184082Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.951,
+          "noisiness": 3.513,
+          "coloration": 4.256,
+          "discontinuity": 5.0,
+          "loudness": 2.719
+        },
+        "enhanced": {
+          "mos": 3.973,
+          "noisiness": 3.566,
+          "coloration": 4.283,
+          "discontinuity": 5.0,
+          "loudness": 2.694
+        },
+        "delta": {
+          "mos": 0.022
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "enhancedTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'For example, we checked before AI acoustic with AI acoustics.', enhanced: 'For example, we checked before AI acoustic with AI acoustics.') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 4.0 → enhanced 4.0 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-06-04-889488Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-06-04-889488Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 4.181,
+          "noisiness": 3.886,
+          "coloration": 4.443,
+          "discontinuity": 5.0,
+          "loudness": 3.063
+        },
+        "enhanced": {
+          "mos": 4.191,
+          "noisiness": 3.907,
+          "coloration": 4.454,
+          "discontinuity": 5.0,
+          "loudness": 3.065
+        },
+        "delta": {
+          "mos": 0.01
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "enhancedTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Then, before context with a context, or what?",
+        "enhancedTranscript": "Then, before context with a context, or what?",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'Then, before context with a context, or what?', enhanced: 'Then, before context with a context, or what?') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 4.2 → enhanced 4.2 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-06-07-955568Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-06-07-955568Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.858,
+          "noisiness": 3.755,
+          "coloration": 4.318,
+          "discontinuity": 4.88,
+          "loudness": 1.628
+        },
+        "enhanced": {
+          "mos": 3.764,
+          "noisiness": 3.733,
+          "coloration": 4.208,
+          "discontinuity": 4.682,
+          "loudness": 1.566
+        },
+        "delta": {
+          "mos": -0.094
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "enhancedTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Then, before context with a context, or what?",
+        "enhancedTranscript": "Then, before context with a context, or what?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "А потім для пшенку АВО, як його тестити?",
+        "enhancedTranscript": "А потім для пшенку АВО, як його тестити?",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'А потім для пшенку АВО, як його тестити?', enhanced: 'А потім для пшенку АВО, як його тестити?') did not match any supported command. NISQA improvement: +-0.1 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.9 → enhanced 3.8 (+-0.1 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-06-15-904092Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-06-15-904092Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.356,
+          "noisiness": 3.937,
+          "coloration": 3.521,
+          "discontinuity": 3.104,
+          "loudness": 2.148
+        },
+        "enhanced": {
+          "mos": 3.349,
+          "noisiness": 3.98,
+          "coloration": 3.508,
+          "discontinuity": 3.036,
+          "loudness": 2.132
+        },
+        "delta": {
+          "mos": -0.007
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "enhancedTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Then, before context with a context, or what?",
+        "enhancedTranscript": "Then, before context with a context, or what?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "А потім для пшенку АВО, як його тестити?",
+        "enhancedTranscript": "А потім для пшенку АВО, як його тестити?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "enhancedTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.', enhanced: 'Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.4 → enhanced 3.3 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-06-16-959175Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-06-16-959175Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 4.066,
+          "noisiness": 4.287,
+          "coloration": 4.643,
+          "discontinuity": 5.0,
+          "loudness": 1.029
+        },
+        "enhanced": {
+          "mos": 4.053,
+          "noisiness": 4.267,
+          "coloration": 4.633,
+          "discontinuity": 5.0,
+          "loudness": 1.012
+        },
+        "delta": {
+          "mos": -0.013
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "enhancedTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Then, before context with a context, or what?",
+        "enhancedTranscript": "Then, before context with a context, or what?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "А потім для пшенку АВО, як його тестити?",
+        "enhancedTranscript": "А потім для пшенку АВО, як його тестити?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "enhancedTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Toshiba.",
+        "enhancedTranscript": "Toshiba.",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'Toshiba.', enhanced: 'Toshiba.') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 4.1 → enhanced 4.1 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-06-22-083602Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-06-22-083602Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.467,
+          "noisiness": 4.042,
+          "coloration": 2.521,
+          "discontinuity": 1.0,
+          "loudness": 1.149
+        },
+        "enhanced": {
+          "mos": 2.449,
+          "noisiness": 4.01,
+          "coloration": 2.505,
+          "discontinuity": 1.0,
+          "loudness": 1.13
+        },
+        "delta": {
+          "mos": -0.018
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "enhancedTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Then, before context with a context, or what?",
+        "enhancedTranscript": "Then, before context with a context, or what?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "А потім для пшенку АВО, як його тестити?",
+        "enhancedTranscript": "А потім для пшенку АВО, як його тестити?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "enhancedTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Toshiba.",
+        "enhancedTranscript": "Toshiba.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "gest",
+        "enhancedTranscript": "gest",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'gest', enhanced: 'gest') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 2.5 → enhanced 2.4 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-06-28-012835Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-06-28-012835Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.546,
+          "noisiness": 4.001,
+          "coloration": 3.829,
+          "discontinuity": 3.657,
+          "loudness": 1.829
+        },
+        "enhanced": {
+          "mos": 3.53,
+          "noisiness": 4.006,
+          "coloration": 3.81,
+          "discontinuity": 3.613,
+          "loudness": 1.815
+        },
+        "delta": {
+          "mos": -0.016
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "enhancedTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Then, before context with a context, or what?",
+        "enhancedTranscript": "Then, before context with a context, or what?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "А потім для пшенку АВО, як його тестити?",
+        "enhancedTranscript": "А потім для пшенку АВО, як його тестити?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "enhancedTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Toshiba.",
+        "enhancedTranscript": "Toshiba.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "gest",
+        "enhancedTranscript": "gest",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Ты подключал лицо агентов?",
+        "enhancedTranscript": "Ты подключал лицо агентов?",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'Ты подключал лицо агентов?', enhanced: 'Ты подключал лицо агентов?') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.5 → enhanced 3.5 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-06-31-181389Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-06-31-181389Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.452,
+          "noisiness": 4.126,
+          "coloration": 3.708,
+          "discontinuity": 3.29,
+          "loudness": 1.718
+        },
+        "enhanced": {
+          "mos": 3.421,
+          "noisiness": 4.086,
+          "coloration": 3.676,
+          "discontinuity": 3.266,
+          "loudness": 1.703
+        },
+        "delta": {
+          "mos": -0.031
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "enhancedTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Then, before context with a context, or what?",
+        "enhancedTranscript": "Then, before context with a context, or what?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "А потім для пшенку АВО, як його тестити?",
+        "enhancedTranscript": "А потім для пшенку АВО, як його тестити?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "enhancedTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Toshiba.",
+        "enhancedTranscript": "Toshiba.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "gest",
+        "enhancedTranscript": "gest",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Ты подключал лицо агентов?",
+        "enhancedTranscript": "Ты подключал лицо агентов?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello, hello, hello.",
+        "enhancedTranscript": "Hello, hello, hello, hello.",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'Hello, hello, hello, hello.', enhanced: 'Hello, hello, hello, hello.') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.5 → enhanced 3.4 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-06-34-099561Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-06-34-099561Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.662,
+          "noisiness": 4.194,
+          "coloration": 3.995,
+          "discontinuity": 3.797,
+          "loudness": 1.641
+        },
+        "enhanced": {
+          "mos": 3.676,
+          "noisiness": 4.178,
+          "coloration": 4.024,
+          "discontinuity": 3.87,
+          "loudness": 1.6
+        },
+        "delta": {
+          "mos": 0.014
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "enhancedTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Then, before context with a context, or what?",
+        "enhancedTranscript": "Then, before context with a context, or what?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "А потім для пшенку АВО, як його тестити?",
+        "enhancedTranscript": "А потім для пшенку АВО, як його тестити?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "enhancedTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Toshiba.",
+        "enhancedTranscript": "Toshiba.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "gest",
+        "enhancedTranscript": "gest",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Ты подключал лицо агентов?",
+        "enhancedTranscript": "Ты подключал лицо агентов?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello, hello, hello.",
+        "enhancedTranscript": "Hello, hello, hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello, hello.",
+        "enhancedTranscript": "Hello, hello, hello.",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'Hello, hello, hello.', enhanced: 'Hello, hello, hello.') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.7 → enhanced 3.7 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-06-39-369321Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-06-39-369321Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.571,
+          "noisiness": 4.263,
+          "coloration": 3.848,
+          "discontinuity": 3.433,
+          "loudness": 1.725
+        },
+        "enhanced": {
+          "mos": 3.325,
+          "noisiness": 4.226,
+          "coloration": 3.55,
+          "discontinuity": 2.875,
+          "loudness": 1.599
+        },
+        "delta": {
+          "mos": -0.246
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "enhancedTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Then, before context with a context, or what?",
+        "enhancedTranscript": "Then, before context with a context, or what?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "А потім для пшенку АВО, як його тестити?",
+        "enhancedTranscript": "А потім для пшенку АВО, як його тестити?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "enhancedTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Toshiba.",
+        "enhancedTranscript": "Toshiba.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "gest",
+        "enhancedTranscript": "gest",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Ты подключал лицо агентов?",
+        "enhancedTranscript": "Ты подключал лицо агентов?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello, hello, hello.",
+        "enhancedTranscript": "Hello, hello, hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello, hello.",
+        "enhancedTranscript": "Hello, hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello!",
+        "enhancedTranscript": "Hello, hello!",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'Hello, hello!', enhanced: 'Hello, hello!') did not match any supported command. NISQA improvement: +-0.2 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.6 → enhanced 3.3 (+-0.2 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-06-45-650609Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-06-45-650609Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.289,
+          "noisiness": 4.148,
+          "coloration": 3.529,
+          "discontinuity": 2.911,
+          "loudness": 1.516
+        },
+        "enhanced": {
+          "mos": 2.816,
+          "noisiness": 4.138,
+          "coloration": 2.942,
+          "discontinuity": 1.746,
+          "loudness": 1.303
+        },
+        "delta": {
+          "mos": -0.473
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "enhancedTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Then, before context with a context, or what?",
+        "enhancedTranscript": "Then, before context with a context, or what?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "А потім для пшенку АВО, як його тестити?",
+        "enhancedTranscript": "А потім для пшенку АВО, як його тестити?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "enhancedTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Toshiba.",
+        "enhancedTranscript": "Toshiba.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "gest",
+        "enhancedTranscript": "gest",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Ты подключал лицо агентов?",
+        "enhancedTranscript": "Ты подключал лицо агентов?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello, hello, hello.",
+        "enhancedTranscript": "Hello, hello, hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello, hello.",
+        "enhancedTranscript": "Hello, hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello!",
+        "enhancedTranscript": "Hello, hello!",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello.",
+        "enhancedTranscript": "Hello, hello.",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'Hello, hello.', enhanced: 'Hello, hello.') did not match any supported command. NISQA improvement: +-0.5 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.3 → enhanced 2.8 (+-0.5 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-06-47-359978Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-06-47-359978Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.833,
+          "noisiness": 4.319,
+          "coloration": 4.185,
+          "discontinuity": 4.052,
+          "loudness": 1.743
+        },
+        "enhanced": {
+          "mos": 3.84,
+          "noisiness": 4.312,
+          "coloration": 4.211,
+          "discontinuity": 4.109,
+          "loudness": 1.671
+        },
+        "delta": {
+          "mos": 0.007
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "enhancedTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Then, before context with a context, or what?",
+        "enhancedTranscript": "Then, before context with a context, or what?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "А потім для пшенку АВО, як його тестити?",
+        "enhancedTranscript": "А потім для пшенку АВО, як його тестити?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "enhancedTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Toshiba.",
+        "enhancedTranscript": "Toshiba.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "gest",
+        "enhancedTranscript": "gest",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Ты подключал лицо агентов?",
+        "enhancedTranscript": "Ты подключал лицо агентов?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello, hello, hello.",
+        "enhancedTranscript": "Hello, hello, hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello, hello.",
+        "enhancedTranscript": "Hello, hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello!",
+        "enhancedTranscript": "Hello, hello!",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello.",
+        "enhancedTranscript": "Hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello.",
+        "enhancedTranscript": "Hello, hello.",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'Hello, hello.', enhanced: 'Hello, hello.') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.8 → enhanced 3.8 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-06-55-696442Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-06-55-696442Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.206,
+          "noisiness": 3.969,
+          "coloration": 3.406,
+          "discontinuity": 2.842,
+          "loudness": 1.695
+        },
+        "enhanced": {
+          "mos": 2.959,
+          "noisiness": 3.911,
+          "coloration": 3.105,
+          "discontinuity": 2.298,
+          "loudness": 1.594
+        },
+        "delta": {
+          "mos": -0.247
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "enhancedTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Then, before context with a context, or what?",
+        "enhancedTranscript": "Then, before context with a context, or what?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "А потім для пшенку АВО, як його тестити?",
+        "enhancedTranscript": "А потім для пшенку АВО, як його тестити?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "enhancedTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Toshiba.",
+        "enhancedTranscript": "Toshiba.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "gest",
+        "enhancedTranscript": "gest",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Ты подключал лицо агентов?",
+        "enhancedTranscript": "Ты подключал лицо агентов?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello, hello, hello.",
+        "enhancedTranscript": "Hello, hello, hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello, hello.",
+        "enhancedTranscript": "Hello, hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello!",
+        "enhancedTranscript": "Hello, hello!",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello.",
+        "enhancedTranscript": "Hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello.",
+        "enhancedTranscript": "Hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "What is going on about commerce? Can you see something?",
+        "enhancedTranscript": "What is going on about commerce? Can you see something?",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'What is going on about commerce? Can you see something?', enhanced: 'What is going on about commerce? Can you see something?') did not match any supported command. NISQA improvement: +-0.2 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.2 → enhanced 3.0 (+-0.2 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:05:35.313209Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:05:35.313465Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-07-10-778900Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-07-10-778900Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.56,
+          "noisiness": 4.188,
+          "coloration": 2.594,
+          "discontinuity": 1.0,
+          "loudness": 1.307
+        },
+        "enhanced": {
+          "mos": 2.542,
+          "noisiness": 4.168,
+          "coloration": 2.584,
+          "discontinuity": 1.0,
+          "loudness": 1.25
+        },
+        "delta": {
+          "mos": -0.018
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "enhancedTranscript": "If an innovative in this way, how we measure or how often Sentinel makes correct decisions, what type of metrics can be, like, created and they would be impressed to see?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "As I mentioned late",
+        "enhancedTranscript": "As I mentioned late",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "enhancedTranscript": "For example, we checked before AI acoustic with AI acoustics.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Then, before context with a context, or what?",
+        "enhancedTranscript": "Then, before context with a context, or what?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "А потім для пшенку АВО, як його тестити?",
+        "enhancedTranscript": "А потім для пшенку АВО, як його тестити?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "enhancedTranscript": "Не переключайся. Ты можешь с компа переключиться, попробуй, дай же микрофон.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Toshiba.",
+        "enhancedTranscript": "Toshiba.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "gest",
+        "enhancedTranscript": "gest",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Ты подключал лицо агентов?",
+        "enhancedTranscript": "Ты подключал лицо агентов?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello, hello, hello.",
+        "enhancedTranscript": "Hello, hello, hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello, hello.",
+        "enhancedTranscript": "Hello, hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello!",
+        "enhancedTranscript": "Hello, hello!",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello.",
+        "enhancedTranscript": "Hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hello, hello.",
+        "enhancedTranscript": "Hello, hello.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "What is going on about commerce? Can you see something?",
+        "enhancedTranscript": "What is going on about commerce? Can you see something?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "What is happening on the cameras?",
+        "enhancedTranscript": "What is happening on the cameras?",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'What is happening on the cameras?', enhanced: 'What is happening on the cameras?') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 2.6 → enhanced 2.5 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:39:17.668010Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:39:17.668031Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-40-38-635135Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-40-38-635135Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.872,
+          "noisiness": 3.667,
+          "coloration": 3.072,
+          "discontinuity": 2.476,
+          "loudness": 1.343
+        },
+        "enhanced": {
+          "mos": 3.093,
+          "noisiness": 3.681,
+          "coloration": 3.402,
+          "discontinuity": 3.122,
+          "loudness": 1.156
+        },
+        "delta": {
+          "mos": 0.221
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Das ist nicht so tough.",
+        "enhancedTranscript": "Das ist nicht so tough.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Das ist nicht so tough.', enhanced: 'Das ist nicht so tough.') did not match any supported command. NISQA improvement: +0.2 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 3.1 (+0.2 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:49:39.694165Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:49:39.694185Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-50-02-261700Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-50-02-261700Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.858,
+          "noisiness": 4.775,
+          "coloration": 2.887,
+          "discontinuity": 1.0,
+          "loudness": 1.431
+        },
+        "enhanced": {
+          "mos": 2.853,
+          "noisiness": 4.78,
+          "coloration": 2.89,
+          "discontinuity": 1.0,
+          "loudness": 1.383
+        },
+        "delta": {
+          "mos": -0.005
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you see any cameras right now?",
+        "enhancedTranscript": "Can you see any cameras right now?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Can you see any cameras right now?', enhanced: 'Can you see any cameras right now?') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.9 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T19:49:39.694165Z-camera-aisle-5",
+    "timestamp": "2026-04-25T19:49:39.694185Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T19-50-44-861951Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T19-50-44-861951Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.896,
+          "noisiness": 4.892,
+          "coloration": 2.946,
+          "discontinuity": 1.0,
+          "loudness": 1.316
+        },
+        "enhanced": {
+          "mos": 2.89,
+          "noisiness": 4.887,
+          "coloration": 2.944,
+          "discontinuity": 1.0,
+          "loudness": 1.292
+        },
+        "delta": {
+          "mos": -0.006
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you see any cameras right now?",
+        "enhancedTranscript": "Can you see any cameras right now?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you see any cameras at all? Hello?",
+        "enhancedTranscript": "Can you see any cameras at all? Hello?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Can you see any cameras at all? Hello?', enhanced: 'Can you see any cameras at all? Hello?') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.9 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T20:01:33.415681Z-camera-aisle-5",
+    "timestamp": "2026-04-25T20:01:33.415711Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T20-02-17-618211Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T20-02-17-618211Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.676,
+          "noisiness": 4.708,
+          "coloration": 3.815,
+          "discontinuity": 2.921,
+          "loudness": 2.291
+        },
+        "enhanced": {
+          "mos": 2.868,
+          "noisiness": 4.706,
+          "coloration": 2.853,
+          "discontinuity": 1.0,
+          "loudness": 1.715
+        },
+        "delta": {
+          "mos": -0.808
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hi, can you hear me?",
+        "enhancedTranscript": "Hi, can you hear me?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Hi, can you hear me?', enhanced: 'Hi, can you hear me?') did not match any supported command. NISQA improvement: +-0.8 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.7 → enhanced 2.9 (+-0.8 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T20:01:33.415681Z-camera-aisle-5",
+    "timestamp": "2026-04-25T20:01:33.415711Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T20-03-11-853497Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T20-03-11-853497Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.922,
+          "noisiness": 4.942,
+          "coloration": 2.971,
+          "discontinuity": 1.0,
+          "loudness": 1.332
+        },
+        "enhanced": {
+          "mos": 2.906,
+          "noisiness": 4.939,
+          "coloration": 2.969,
+          "discontinuity": 1.0,
+          "loudness": 1.233
+        },
+        "delta": {
+          "mos": -0.016
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hi, can you hear me?",
+        "enhancedTranscript": "Hi, can you hear me?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you watch the cameras?",
+        "enhancedTranscript": "Can you watch the cameras?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Can you watch the cameras?', enhanced: 'Can you watch the cameras?') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.9 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T20:48:24.627672Z-camera-aisle-5",
+    "timestamp": "2026-04-25T20:48:24.627698Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T20-49-06-895681Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T20-49-06-895681Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.862,
+          "noisiness": 4.754,
+          "coloration": 2.877,
+          "discontinuity": 1.0,
+          "loudness": 1.523
+        },
+        "enhanced": {
+          "mos": 2.855,
+          "noisiness": 4.771,
+          "coloration": 2.886,
+          "discontinuity": 1.0,
+          "loudness": 1.426
+        },
+        "delta": {
+          "mos": -0.007
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you see any cameras?",
+        "enhancedTranscript": "Can you see any cameras?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Can you see any cameras?', enhanced: 'Can you see any cameras?') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.9 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T20:48:24.627672Z-camera-aisle-5",
+    "timestamp": "2026-04-25T20:48:24.627698Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T20-49-29-814155Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T20-49-29-814155Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.938,
+          "noisiness": 4.932,
+          "coloration": 2.966,
+          "discontinuity": 1.0,
+          "loudness": 1.468
+        },
+        "enhanced": {
+          "mos": 2.916,
+          "noisiness": 4.922,
+          "coloration": 2.961,
+          "discontinuity": 1.0,
+          "loudness": 1.354
+        },
+        "delta": {
+          "mos": -0.022
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you see any cameras?",
+        "enhancedTranscript": "Can you see any cameras?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you hear me?",
+        "enhancedTranscript": "Can you hear me?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Can you hear me?', enhanced: 'Can you hear me?') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.9 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T20:48:24.627672Z-camera-aisle-5",
+    "timestamp": "2026-04-25T20:48:24.627698Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T20-49-42-582329Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T20-49-42-582329Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.063,
+          "noisiness": 4.687,
+          "coloration": 3.124,
+          "discontinuity": 1.56,
+          "loudness": 1.675
+        },
+        "enhanced": {
+          "mos": 2.952,
+          "noisiness": 4.662,
+          "coloration": 3.011,
+          "discontinuity": 1.359,
+          "loudness": 1.515
+        },
+        "delta": {
+          "mos": -0.111
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you see any cameras?",
+        "enhancedTranscript": "Can you see any cameras?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you hear me?",
+        "enhancedTranscript": "Can you hear me?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "What can you see on the cameras?",
+        "enhancedTranscript": "What can you see on the cameras?",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'What can you see on the cameras?', enhanced: 'What can you see on the cameras?') did not match any supported command. NISQA improvement: +-0.1 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.1 → enhanced 3.0 (+-0.1 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T20:56:14.225824Z-camera-aisle-5",
+    "timestamp": "2026-04-25T20:56:14.225851Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T20-56-25-278647Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T20-56-25-278647Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.852,
+          "noisiness": 4.856,
+          "coloration": 2.928,
+          "discontinuity": 1.0,
+          "loudness": 1.14
+        },
+        "enhanced": {
+          "mos": 2.838,
+          "noisiness": 4.846,
+          "coloration": 2.923,
+          "discontinuity": 1.0,
+          "loudness": 1.073
+        },
+        "delta": {
+          "mos": -0.014
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Let's see the",
+        "enhancedTranscript": "Let's see the",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Let's see the', enhanced: 'Let's see the') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.8 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T20:56:14.225824Z-camera-aisle-5",
+    "timestamp": "2026-04-25T20:56:14.225851Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T20-56-37-758500Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T20-56-37-758500Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.867,
+          "noisiness": 4.683,
+          "coloration": 4.051,
+          "discontinuity": 3.419,
+          "loudness": 2.404
+        },
+        "enhanced": {
+          "mos": 3.312,
+          "noisiness": 4.638,
+          "coloration": 3.418,
+          "discontinuity": 2.197,
+          "loudness": 1.903
+        },
+        "delta": {
+          "mos": -0.555
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Let's see the",
+        "enhancedTranscript": "Let's see the",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you see something on the cameras?",
+        "enhancedTranscript": "Can you see something on the cameras?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Can you see something on the cameras?', enhanced: 'Can you see something on the cameras?') did not match any supported command. NISQA improvement: +-0.6 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.9 → enhanced 3.3 (+-0.6 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T20:56:14.225824Z-camera-aisle-5",
+    "timestamp": "2026-04-25T20:56:14.225851Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T20-56-51-625247Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T20-56-51-625247Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.678,
+          "noisiness": 4.639,
+          "coloration": 3.828,
+          "discontinuity": 3.017,
+          "loudness": 2.283
+        },
+        "enhanced": {
+          "mos": 3.389,
+          "noisiness": 4.593,
+          "coloration": 3.499,
+          "discontinuity": 2.405,
+          "loudness": 2.034
+        },
+        "delta": {
+          "mos": -0.289
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Let's see the",
+        "enhancedTranscript": "Let's see the",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you see something on the cameras?",
+        "enhancedTranscript": "Can you see something on the cameras?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you see something on the cameras?",
+        "enhancedTranscript": "Can you see something on the cameras?",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'Can you see something on the cameras?', enhanced: 'Can you see something on the cameras?') did not match any supported command. NISQA improvement: +-0.3 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.7 → enhanced 3.4 (+-0.3 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T21:13:04.905793Z-camera-aisle-5",
+    "timestamp": "2026-04-25T21:13:04.905803Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T21-13-29-368793Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T21-13-29-368793Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.488,
+          "noisiness": 4.797,
+          "coloration": 3.743,
+          "discontinuity": 2.69,
+          "loudness": 1.339
+        },
+        "enhanced": {
+          "mos": 3.416,
+          "noisiness": 4.799,
+          "coloration": 3.65,
+          "discontinuity": 2.502,
+          "loudness": 1.32
+        },
+        "delta": {
+          "mos": -0.072
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "What can you see on the camera?",
+        "enhancedTranscript": "What can you see on the camera?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'What can you see on the camera?', enhanced: 'What can you see on the camera?') did not match any supported command. NISQA improvement: +-0.1 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.5 → enhanced 3.4 (+-0.1 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T22:17:48.781570Z-camera-aisle-5",
+    "timestamp": "2026-04-25T22:17:48.781598Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T22-18-58-465427Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T22-18-58-465427Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.029,
+          "noisiness": 4.08,
+          "coloration": 3.202,
+          "discontinuity": 2.324,
+          "loudness": 1.465
+        },
+        "enhanced": {
+          "mos": 2.919,
+          "noisiness": 4.106,
+          "coloration": 3.055,
+          "discontinuity": 2.003,
+          "loudness": 1.446
+        },
+        "delta": {
+          "mos": -0.11
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "I get what can you see on the",
+        "enhancedTranscript": "I get what can you see on the",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'I get what can you see on the', enhanced: 'I get what can you see on the') did not match any supported command. NISQA improvement: +-0.1 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.0 → enhanced 2.9 (+-0.1 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T22:17:48.781570Z-camera-aisle-5",
+    "timestamp": "2026-04-25T22:17:48.781598Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T22-18-58-840947Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T22-18-58-840947Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 4.4,
+          "noisiness": 5.0,
+          "coloration": 5.0,
+          "discontinuity": 5.0,
+          "loudness": 1.0
+        },
+        "enhanced": {
+          "mos": 4.4,
+          "noisiness": 5.0,
+          "coloration": 5.0,
+          "discontinuity": 5.0,
+          "loudness": 1.0
+        },
+        "delta": {
+          "mos": 0.0
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "I get what can you see on the",
+        "enhancedTranscript": "I get what can you see on the",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "screen?",
+        "enhancedTranscript": "screen?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'screen?', enhanced: 'screen?') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 4.4 → enhanced 4.4 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T22:17:48.781570Z-camera-aisle-5",
+    "timestamp": "2026-04-25T22:17:48.781598Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T22-19-06-983254Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T22-19-06-983254Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.422,
+          "noisiness": 4.509,
+          "coloration": 3.638,
+          "discontinuity": 2.768,
+          "loudness": 1.614
+        },
+        "enhanced": {
+          "mos": 3.323,
+          "noisiness": 4.522,
+          "coloration": 3.508,
+          "discontinuity": 2.494,
+          "loudness": 1.597
+        },
+        "delta": {
+          "mos": -0.099
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "I get what can you see on the",
+        "enhancedTranscript": "I get what can you see on the",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "screen?",
+        "enhancedTranscript": "screen?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hi, what can you see on the",
+        "enhancedTranscript": "Hi, what can you see on the",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'Hi, what can you see on the', enhanced: 'Hi, what can you see on the') did not match any supported command. NISQA improvement: +-0.1 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.4 → enhanced 3.3 (+-0.1 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T22:17:48.781570Z-camera-aisle-5",
+    "timestamp": "2026-04-25T22:17:48.781598Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T22-19-07-277612Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T22-19-07-277612Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 4.4,
+          "noisiness": 5.0,
+          "coloration": 5.0,
+          "discontinuity": 5.0,
+          "loudness": 1.0
+        },
+        "enhanced": {
+          "mos": 4.4,
+          "noisiness": 5.0,
+          "coloration": 5.0,
+          "discontinuity": 5.0,
+          "loudness": 1.0
+        },
+        "delta": {
+          "mos": 0.0
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "I get what can you see on the",
+        "enhancedTranscript": "I get what can you see on the",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "screen?",
+        "enhancedTranscript": "screen?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hi, what can you see on the",
+        "enhancedTranscript": "Hi, what can you see on the",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "screen?",
+        "enhancedTranscript": "screen?",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'screen?', enhanced: 'screen?') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 4.4 → enhanced 4.4 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T22:17:48.781570Z-camera-aisle-5",
+    "timestamp": "2026-04-25T22:17:48.781598Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T22-25-02-368539Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T22-25-02-368539Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.922,
+          "noisiness": 4.989,
+          "coloration": 2.994,
+          "discontinuity": 1.0,
+          "loudness": 1.184
+        },
+        "enhanced": {
+          "mos": 2.92,
+          "noisiness": 4.989,
+          "coloration": 2.994,
+          "discontinuity": 1.0,
+          "loudness": 1.167
+        },
+        "delta": {
+          "mos": -0.002
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "I get what can you see on the",
+        "enhancedTranscript": "I get what can you see on the",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "screen?",
+        "enhancedTranscript": "screen?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hi, what can you see on the",
+        "enhancedTranscript": "Hi, what can you see on the",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "screen?",
+        "enhancedTranscript": "screen?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you tell me what you see on the",
+        "enhancedTranscript": "Can you tell me what you see on the",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'Can you tell me what you see on the', enhanced: 'Can you tell me what you see on the') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.9 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T22:17:48.781570Z-camera-aisle-5",
+    "timestamp": "2026-04-25T22:17:48.781598Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T22-25-02-620239Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T22-25-02-620239Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 4.4,
+          "noisiness": 5.0,
+          "coloration": 5.0,
+          "discontinuity": 5.0,
+          "loudness": 1.0
+        },
+        "enhanced": {
+          "mos": 4.4,
+          "noisiness": 5.0,
+          "coloration": 5.0,
+          "discontinuity": 5.0,
+          "loudness": 1.0
+        },
+        "delta": {
+          "mos": 0.0
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "I get what can you see on the",
+        "enhancedTranscript": "I get what can you see on the",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "screen?",
+        "enhancedTranscript": "screen?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean unknown at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Hi, what can you see on the",
+        "enhancedTranscript": "Hi, what can you see on the",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "screen?",
+        "enhancedTranscript": "screen?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you tell me what you see on the",
+        "enhancedTranscript": "Can you tell me what you see on the",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "screen?",
+        "enhancedTranscript": "screen?",
+        "asrConfidence": 1.0
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'screen?', enhanced: 'screen?') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Aisle 5?",
+      "acousticNote": "NISQA: raw 4.4 → enhanced 4.4 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
   }
 ]

@@ -12,7 +12,8 @@ Run:
 Credentials (set in .env at repo root):
   LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET
   AICOUSTICS_API_KEY
-  OPENAI_API_KEY  (STT/TTS until telli is wired)
+  GRADIUM_API_KEY, GRADIUM_VOICE_ID  (preferred STT/TTS runtime)
+  OPENAI_API_KEY  (fallback STT/TTS if Gradium plugin is unavailable)
 """
 
 from __future__ import annotations
@@ -41,6 +42,11 @@ from livekit.plugins import openai as lk_openai
 from livekit.plugins import ai_coustics
 from livekit.plugins import silero
 from livekit.plugins.ai_coustics import EnhancerModel
+
+try:
+    from livekit.plugins import gradium as lk_gradium
+except ImportError:
+    lk_gradium = None
 
 from .audio_capture import CapturingFrameProcessor
 from .interpret import (
@@ -111,8 +117,10 @@ Rules:
 - Never say "thief", "criminal", "stealing", or make identity claims.
 - Use language like "requires review", "item appears to move", "human review recommended".
 - When you don't understand the guard, ask for clarification. Never guess and act.
-- Supported commands you can execute: open camera, watch live, replay last 10 seconds,
-  send floor associate, mark false alarm, create report.
+- Supported commands you can execute: open camera, switch camera, watch live,
+  replay last 10 seconds, pause video, resume playback, zoom in, follow that
+  person, show previous alert, what happened there, flag suspicious, call backup, send floor
+  associate, mark false alarm, create report.
 - If the guard's command is unclear, say exactly:
   "I didn't catch that clearly. Did you mean [your best guess]?"
 
@@ -258,11 +266,7 @@ async def entrypoint(ctx: JobContext):
 
     agent = Agent(instructions=SYSTEM_PROMPT)
 
-    agent_session = AgentSession(
-        stt=lk_openai.STT(),     # swap for telli STT when available
-        tts=lk_openai.TTS(),     # swap for telli TTS when available
-        vad=silero.VAD.load(),
-    )
+    agent_session = _build_agent_session()
 
     session.add_assistant_turn(EARPIECE_ALERT)
 
@@ -383,8 +387,20 @@ def _route_command(result: InterpretResult) -> dict:
             f"Opening evidence video for {result.target_camera_id or 'the flagged camera'}.",
             "opened_evidence_video",
         ),
+        "switch_camera": (
+            f"Switching to {result.target_camera_id or 'the requested camera'}.",
+            "switched_camera",
+        ),
         "watch_live": ("Switching to live feed.", "switched_to_live"),
         "replay_last_10_seconds": ("Replaying last 10 seconds.", "replayed_clip"),
+        "pause_video": ("Pausing the evidence video.", "paused_video"),
+        "resume_playback": ("Resuming playback.", "resumed_playback"),
+        "zoom_in": ("Zooming in on the review area.", "zoomed_in"),
+        "flag_suspicious": ("Flag added for human review.", "flagged_suspicious"),
+        "show_previous_alert": ("Showing the previous alert.", "showed_previous_alert"),
+        "call_for_backup": ("Calling for backup.", "called_for_backup"),
+        "follow_person": ("Following the camera sequence for review.", "followed_person"),
+        "what_happened_there": ("The active camera requires review. I can show the evidence clip or open the live feed.", "summarized_current_event"),
         "send_floor_associate": ("Dispatching a floor associate.", "dispatched_associate"),
         "mark_false_alarm": ("Marking as false alarm. Alert cleared.", "marked_false_alarm"),
         "create_report": ("Creating review report.", "created_report"),
@@ -392,6 +408,39 @@ def _route_command(result: InterpretResult) -> dict:
     }
     response, action_taken = responses.get(result.command, ("Command not recognised.", "none"))
     return {"response": response, "action_taken": action_taken}
+
+
+def _build_agent_session() -> AgentSession:
+    """
+    Prefer Gradium STT/TTS when its LiveKit plugin is installed.
+
+    ai-coustics stays in RoomInputOptions below, so the guard mic enhancement
+    path remains unchanged regardless of the voice runtime. The direct Gradium
+    SDK adapter used by batch evaluation lives in src/providers/gradium.py.
+    """
+
+    if os.getenv("GRADIUM_API_KEY") and lk_gradium is not None:
+        voice_id = os.getenv("GRADIUM_VOICE_ID", "").strip()
+        try:
+            tts_kwargs = {"voice_id": voice_id} if voice_id else {}
+            return AgentSession(
+                stt=lk_gradium.STT(vad_threshold=0.6, vad_bucket=1),
+                tts=lk_gradium.TTS(**tts_kwargs),
+            )
+        except Exception:
+            log.exception("failed to initialize Gradium LiveKit voice runtime; falling back to OpenAI")
+
+    if os.getenv("GRADIUM_API_KEY") and lk_gradium is None:
+        log.warning(
+            "GRADIUM_API_KEY is set, but livekit.plugins.gradium is unavailable; "
+            "install livekit-agents[gradium] to enable Gradium in the live agent"
+        )
+
+    return AgentSession(
+        stt=lk_openai.STT(),
+        tts=lk_openai.TTS(),
+        vad=silero.VAD.load(),
+    )
 
 
 if __name__ == "__main__":

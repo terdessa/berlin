@@ -9,9 +9,10 @@ import struct
 import wave
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 
-from .interpret import ACTION_THRESHOLD, interpret
+from .interpret import ACTION_THRESHOLD
+from .providers.gradium import GradiumVoiceProvider
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -19,8 +20,30 @@ DATASET_DIR = ROOT / "apps" / "voice" / "dataset"
 MANIFEST_PATH = DATASET_DIR / "manifest.json"
 TRANSCRIPTS_PATH = ROOT / "apps" / "voice" / "submission" / "audio_dataset_transcripts.json"
 RESULTS_PATH = ROOT / "apps" / "voice" / "submission" / "audio_dataset_results.json"
+INTELLIGENCE_RESULTS_PATH = ROOT / "apps" / "voice" / "submission" / "audio_intelligence_results.json"
+DASHBOARD_RESULTS_PATH = ROOT / "ui" / "src" / "lib" / "audio-metrics-generated.json"
 
 AudioCondition = Literal["clean", "noisy"]
+
+SUPPORTED_UTTERANCES = [
+    "open camera five",
+    "open camera three",
+    "open aisle five",
+    "watch live",
+    "replay last ten seconds",
+    "send floor associate",
+    "mark false alarm",
+    "create report",
+    "what happened there",
+    "pause the video",
+    "resume playback",
+    "zoom in on that area",
+    "flag this as suspicious",
+    "show previous alert",
+    "switch to camera two",
+    "call for backup",
+    "follow that person",
+]
 
 TARGET_ALIASES = {
     "one": "1",
@@ -41,8 +64,51 @@ ACTION_BY_COMMAND = {
     "send_floor_associate": "sent_floor_associate",
     "mark_false_alarm": "marked_false_alarm",
     "create_report": "created_report",
+    "what_happened_there": "summarized_current_event",
+    "pause_video": "paused_video",
+    "resume_playback": "resumed_playback",
+    "zoom_in": "zoomed_selected_area",
+    "flag_suspicious": "flagged_suspicious_activity",
+    "show_previous_alert": "showed_previous_alert",
+    "call_for_backup": "called_for_backup",
+    "follow_person": "followed_subject",
     "unknown": "rejected_unsupported_command",
 }
+
+DEFAULT_TARGET_BY_COMMAND = {
+    "watch_live": "current_alert",
+    "replay_last_10_seconds": "current_alert",
+    "send_floor_associate": "current_alert",
+    "mark_false_alarm": "current_alert",
+    "create_report": "current_alert",
+    "what_happened_there": "current_alert",
+    "pause_video": "current_video",
+    "resume_playback": "current_video",
+    "zoom_in": "selected_area",
+    "flag_suspicious": "current_alert",
+    "show_previous_alert": "previous_alert",
+    "call_for_backup": "current_alert",
+    "follow_person": "current_alert",
+    "unknown": "none",
+}
+
+
+class TranscriptProvider(Protocol):
+    def __call__(self, audio_path: Path) -> str:
+        ...
+
+
+@dataclass(frozen=True)
+class CommandSpec:
+    command: str
+    patterns: tuple[str, ...]
+
+
+@dataclass
+class ParsedCommand:
+    command: str
+    target: str
+    confidence: float
 
 
 @dataclass
@@ -76,10 +142,141 @@ class DatasetRecord:
     action_taken: str | None
     command_confidence: float | None
     task_success: bool | None
+    safe_recovery: bool | None
     unsafe_action: bool | None
+    dangerous_error: bool | None
+    decision_type: str | None
+    failure_reason: str | None
     wer: float | None
     audio: AudioStats
     explanation: str
+
+
+COMMAND_SPECS = [
+    CommandSpec(
+        command="replay_last_10_seconds",
+        patterns=(
+            r"\breplay\s+(?:the\s+)?last\s+(?:ten|10)\s+seconds\b",
+            r"\blast\s+(?:ten|10)\s+seconds\b",
+            r"\b(?:rewind|go\s+back)\b",
+        ),
+    ),
+    CommandSpec(
+        command="watch_live",
+        patterns=(
+            r"\bwatch\s+live\b",
+            r"\b(?:show|open)\s+live\b",
+            r"\blive\s+(?:feed|view)\b",
+        ),
+    ),
+    CommandSpec(
+        command="open_camera",
+        patterns=(
+            r"\bopen\s+(?:camera|cam|aisle)\s+\w+\b",
+            r"\bshow\s+(?:camera|cam|aisle)\s+\w+\b",
+            r"\b(?:camera|cam|aisle)\s+\w+\b",
+        ),
+    ),
+    CommandSpec(
+        command="switch_camera",
+        patterns=(
+            r"\bswitch\s+(?:to\s+)?(?:camera|cam)\s+\w+\b",
+            r"\bchange\s+(?:to\s+)?(?:camera|cam)\s+\w+\b",
+        ),
+    ),
+    CommandSpec(
+        command="send_floor_associate",
+        patterns=(
+            r"\bsend\s+floor\s+associate\b",
+            r"\bsend\s+(?:an?\s+)?associate\b",
+            r"\bfloor\s+associate\b",
+            r"\bdispatch\b",
+        ),
+    ),
+    CommandSpec(
+        command="mark_false_alarm",
+        patterns=(
+            r"\bmark\s+false\s+alarm\b",
+            r"\bfalse\s+alarm\b",
+            r"\bnothing\s+there\b",
+            r"\ball\s+clear\b",
+            r"\bno\s+issue\b",
+        ),
+    ),
+    CommandSpec(
+        command="create_report",
+        patterns=(
+            r"\b(?:create|make|file|write|log|great)\s+(?:a\s+)?report\b",
+            r"\breport\b",
+        ),
+    ),
+    CommandSpec(
+        command="what_happened_there",
+        patterns=(
+            r"\bwhat\s+happened\s+there\b",
+            r"\bwhat\s+happened\b",
+            r"\bwhat(?:'s|\s+is)\s+happening\b",
+            r"\bexplain\s+(?:that|this)\b",
+        ),
+    ),
+    CommandSpec(
+        command="pause_video",
+        patterns=(
+            r"\bpause\s+(?:the\s+)?video\b",
+            r"\bpause\s+playback\b",
+            r"\bpause\b",
+        ),
+    ),
+    CommandSpec(
+        command="resume_playback",
+        patterns=(
+            r"\bresume\s+playback\b",
+            r"\bresume\s+(?:the\s+)?video\b",
+            r"\bcontinue\s+playback\b",
+            r"\bplay\b",
+        ),
+    ),
+    CommandSpec(
+        command="zoom_in",
+        patterns=(
+            r"\bzoom\s+in\s+on\s+that\s+area\b",
+            r"\bzoom\s+in\s+on\s+(?:the\s+)?area\b",
+            r"\bzoom\s+in\b",
+        ),
+    ),
+    CommandSpec(
+        command="flag_suspicious",
+        patterns=(
+            r"\bflag\s+this\s+as\s+suspicious\b",
+            r"\bflag\s+(?:that|this)\b",
+            r"\bsuspicious\b",
+        ),
+    ),
+    CommandSpec(
+        command="show_previous_alert",
+        patterns=(
+            r"\bshow\s+previous\s+alert\b",
+            r"\bprevious\s+alert\b",
+            r"\blast\s+alert\b",
+        ),
+    ),
+    CommandSpec(
+        command="call_for_backup",
+        patterns=(
+            r"\bcall\s+for\s+backup\b",
+            r"\bcall\s+backup\b",
+            r"\bbackup\b",
+        ),
+    ),
+    CommandSpec(
+        command="follow_person",
+        patterns=(
+            r"\bfollow\s+that\s+person\b",
+            r"\bfollow\s+(?:the\s+)?person\b",
+            r"\btrack\s+that\s+person\b",
+        ),
+    ),
+]
 
 
 def main() -> None:
@@ -87,12 +284,29 @@ def main() -> None:
     parser.add_argument(
         "--transcribe",
         action="store_true",
-        help="Use OpenAI audio transcription and cache transcripts before scoring SAIS.",
+        help="Transcribe missing clips and cache transcripts before scoring SAIS.",
+    )
+    parser.add_argument(
+        "--provider",
+        choices=("auto", "gradium", "openai"),
+        default=os.getenv("AUDIO_TRANSCRIBE_PROVIDER", "auto"),
+        help="ASR provider for --transcribe. auto prefers Gradium when GRADIUM_API_KEY is set.",
     )
     parser.add_argument(
         "--model",
-        default=os.getenv("OPENAI_TRANSCRIBE_MODEL", "whisper-1"),
-        help="OpenAI transcription model to use with --transcribe.",
+        default=None,
+        help="Transcription model. Defaults to Gradium 'default' or OpenAI OPENAI_TRANSCRIBE_MODEL/whisper-1.",
+    )
+    parser.add_argument(
+        "--language",
+        default=os.getenv("GRADIUM_STT_LANGUAGE", "en"),
+        help="Expected language for Gradium STT json_config. Defaults to English.",
+    )
+    parser.add_argument(
+        "--delay-in-frames",
+        type=int,
+        default=_optional_int(os.getenv("GRADIUM_STT_DELAY_IN_FRAMES")),
+        help="Optional Gradium STT realtime delay. Unset by default for WAV batch transcription.",
     )
     parser.add_argument(
         "--force",
@@ -105,107 +319,233 @@ def main() -> None:
     manifest = _load_manifest()
     transcripts = _load_transcripts()
     if args.transcribe:
-        transcripts = _transcribe_missing(manifest, transcripts, args.model, force=args.force)
+        provider_name = _resolve_transcribe_provider(args.provider)
+        model = args.model or _default_model(provider_name)
+        provider = _build_transcript_provider(
+            provider_name,
+            model,
+            language=args.language,
+            delay_in_frames=args.delay_in_frames,
+        )
+        transcripts = _transcribe_missing(manifest, transcripts, provider, force=args.force)
         _write_transcripts(transcripts)
 
-    records = [
-        _evaluate_entry(entry, condition, transcripts)
-        for entry in manifest
-        for condition in ("clean", "noisy")
-    ]
+    records = [_evaluate_record(record, transcripts) for record in manifest]
     summary = _summarize(records)
+    _merge_scripted_system_comparison(summary)
     payload = {
         "metric": {
             "name": "Sentinel Audio Intelligence Score",
             "shortName": "SAIS",
-            "definition": "correct safe actions / total transcribed command clips",
+            "definition": "correct actions plus safe recoveries / total transcribed command clips",
         },
         "dataset": {
             "path": str(DATASET_DIR.relative_to(ROOT)),
-            "cases": len(manifest),
+            "manifest": str(MANIFEST_PATH.relative_to(ROOT)),
+            "schemaVersion": 2,
+            "cases": len({record["utterance"] for record in manifest}),
             "clips": len(records),
+            "supportedCommands": SUPPORTED_UTTERANCES,
         },
         "summary": summary,
         "records": [asdict(record) for record in records],
     }
     RESULTS_PATH.parent.mkdir(parents=True, exist_ok=True)
     RESULTS_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    if DASHBOARD_RESULTS_PATH.parent.exists():
+        DASHBOARD_RESULTS_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     _print_summary(summary)
     print(f"\nWrote {RESULTS_PATH}")
+    if DASHBOARD_RESULTS_PATH.exists():
+        print(f"Wrote {DASHBOARD_RESULTS_PATH}")
     if summary["transcribedClips"] == 0:
-        print("No transcripts found yet. Run with --transcribe after setting OPENAI_API_KEY, or add transcripts to:")
+        print("No transcripts found yet. Run with --transcribe after setting GRADIUM_API_KEY, or add transcripts to:")
         print(TRANSCRIPTS_PATH)
 
 
 def _load_manifest() -> list[dict[str, Any]]:
-    return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    payload = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    if isinstance(payload, list):
+        records = _records_from_legacy_manifest(payload)
+    else:
+        records = payload.get("records")
+    if not isinstance(records, list):
+        raise ValueError("Dataset manifest must contain a records array.")
+    _validate_manifest_records(records)
+    return records
+
+
+def _records_from_legacy_manifest(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for entry in entries:
+        for condition, field in (("clean", "cleanAudio"), ("noisy", "noisyAudio")):
+            records.append(
+                {
+                    "id": f"{entry['id']}-{condition}",
+                    "condition": condition,
+                    "audioPath": entry[field],
+                    "utterance": entry["utterance"],
+                    "expectedCommand": entry["expectedCommand"],
+                    "expectedTarget": entry["expectedTarget"],
+                    "expectedAction": entry["expectedAction"],
+                    "noiseType": "clean" if condition == "clean" else entry.get("noiseType", "recorded_retail_noise"),
+                    "transcriptKey": _legacy_transcript_key(entry["id"], condition),
+                }
+            )
+    return records
+
+
+def _validate_manifest_records(records: list[dict[str, Any]]) -> None:
+    required = {
+        "id",
+        "condition",
+        "audioPath",
+        "utterance",
+        "expectedCommand",
+        "expectedTarget",
+        "expectedAction",
+        "noiseType",
+    }
+    ids: set[str] = set()
+    manifest_paths: set[str] = set()
+    errors: list[str] = []
+
+    for index, record in enumerate(records):
+        missing = sorted(required - set(record))
+        if missing:
+            errors.append(f"record {index} is missing {', '.join(missing)}")
+            continue
+        if record["condition"] not in {"clean", "noisy"}:
+            errors.append(f"{record['id']} has invalid condition {record['condition']!r}")
+        if record["id"] in ids:
+            errors.append(f"duplicate record id {record['id']!r}")
+        ids.add(record["id"])
+
+        relative_audio = Path(record["audioPath"])
+        audio_path = DATASET_DIR / relative_audio
+        if not audio_path.exists():
+            errors.append(f"{record['id']} points to missing audio {record['audioPath']!r}")
+        manifest_paths.add(relative_audio.as_posix())
+
+    wav_paths = {
+        path.relative_to(DATASET_DIR).as_posix()
+        for path in (DATASET_DIR / "audio").rglob("*.wav")
+    }
+    missing_audio = sorted(wav_paths - manifest_paths)
+    extra_audio = sorted(manifest_paths - wav_paths)
+    if missing_audio:
+        errors.append("manifest does not include WAV files: " + ", ".join(missing_audio))
+    if extra_audio:
+        errors.append("manifest includes non-WAV or missing files: " + ", ".join(extra_audio))
+    if errors:
+        raise ValueError("Invalid audio dataset manifest:\n- " + "\n- ".join(errors))
 
 
 def _load_transcripts() -> dict[str, str]:
     if not TRANSCRIPTS_PATH.exists():
         return {}
-    return json.loads(TRANSCRIPTS_PATH.read_text(encoding="utf-8"))
+    payload = json.loads(TRANSCRIPTS_PATH.read_text(encoding="utf-8"))
+    return {str(key): str(value) for key, value in payload.items() if value is not None}
 
 
 def _write_transcripts(transcripts: dict[str, str]) -> None:
     TRANSCRIPTS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    TRANSCRIPTS_PATH.write_text(json.dumps(transcripts, indent=2), encoding="utf-8")
+    clean = {key: value for key, value in transcripts.items() if value.strip()}
+    TRANSCRIPTS_PATH.write_text(json.dumps(clean, indent=2), encoding="utf-8")
+
+
+def _resolve_transcribe_provider(provider: str) -> Literal["gradium", "openai"]:
+    if provider == "auto":
+        return "gradium" if os.getenv("GRADIUM_API_KEY") else "openai"
+    return provider  # type: ignore[return-value]
+
+
+def _default_model(provider: Literal["gradium", "openai"]) -> str:
+    if provider == "gradium":
+        return os.getenv("GRADIUM_STT_MODEL", "default")
+    return os.getenv("OPENAI_TRANSCRIBE_MODEL", "whisper-1")
+
+
+def _build_transcript_provider(
+    provider: Literal["gradium", "openai"],
+    model: str,
+    *,
+    language: str | None = None,
+    delay_in_frames: int | None = None,
+) -> TranscriptProvider:
+    if provider == "gradium":
+        if not os.getenv("GRADIUM_API_KEY"):
+            raise RuntimeError("GRADIUM_API_KEY is required for --transcribe with the Gradium provider.")
+        gradium_provider = GradiumVoiceProvider()
+        selected_language = (language or "").strip() or None
+
+        def transcribe_gradium(audio_path: Path) -> str:
+            return gradium_provider.transcribe_wav_file(
+                audio_path,
+                model_name=model,
+                language=selected_language,
+                delay_in_frames=delay_in_frames,
+            ).strip()
+
+        return transcribe_gradium
+
+    if not os.getenv("OPENAI_API_KEY"):
+        raise RuntimeError("OPENAI_API_KEY is required for --transcribe with the OpenAI provider.")
+
+    from openai import OpenAI
+
+    client = OpenAI()
+    prompt = "Security guard voice commands: " + ", ".join(SUPPORTED_UTTERANCES) + "."
+
+    def transcribe(audio_path: Path) -> str:
+        with audio_path.open("rb") as audio_file:
+            result = client.audio.transcriptions.create(
+                model=model,
+                file=audio_file,
+                language="en",
+                prompt=prompt,
+                response_format="json",
+            )
+        return str(result.text).strip()
+
+    return transcribe
 
 
 def _transcribe_missing(
     manifest: list[dict[str, Any]],
     transcripts: dict[str, str],
-    model: str,
+    provider: TranscriptProvider,
     force: bool = False,
 ) -> dict[str, str]:
-    if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError("OPENAI_API_KEY is required for --transcribe.")
-    from openai import OpenAI
-
-    client = OpenAI()
-    for entry in manifest:
-        for condition, field in (("clean", "cleanAudio"), ("noisy", "noisyAudio")):
-            key = _transcript_key(entry["id"], condition)
-            if transcripts.get(key) and not force:
-                continue
-            audio_path = DATASET_DIR / entry[field]
-            print(f"Transcribing {audio_path.name}...")
-            with audio_path.open("rb") as audio_file:
-                result = client.audio.transcriptions.create(
-                    model=model,
-                    file=audio_file,
-                    language="en",
-                    prompt=(
-                        "Security guard voice commands: open camera five, open aisle five, "
-                        "watch live, replay last ten seconds, send floor associate, "
-                        "mark false alarm, create report, what happened there."
-                    ),
-                    response_format="json",
-                )
-            transcripts[key] = result.text.strip()
+    for record in manifest:
+        key = _transcript_key(record)
+        if _cached_transcript(record, transcripts) and not force:
+            continue
+        audio_path = DATASET_DIR / record["audioPath"]
+        print(f"Transcribing {audio_path.name}...")
+        text = provider(audio_path).strip()
+        if text:
+            transcripts[key] = text
+        else:
+            print(f"  ! empty transcript from provider; leaving {key} unset")
     return transcripts
 
 
-def _evaluate_entry(
-    entry: dict[str, Any],
-    condition: AudioCondition,
-    transcripts: dict[str, str],
-) -> DatasetRecord:
-    field = "cleanAudio" if condition == "clean" else "noisyAudio"
-    audio_path = DATASET_DIR / entry[field]
-    transcript = transcripts.get(_transcript_key(entry["id"], condition))
+def _evaluate_record(record: dict[str, Any], transcripts: dict[str, str]) -> DatasetRecord:
+    audio_path = DATASET_DIR / record["audioPath"]
+    transcript = _cached_transcript(record, transcripts)
     audio_stats = _audio_stats(audio_path)
 
     if not transcript:
         return DatasetRecord(
-            case_id=entry["id"],
-            condition=condition,
+            case_id=record["id"],
+            condition=record["condition"],
             audio_path=str(audio_path.relative_to(ROOT)),
-            noise_type="clean" if condition == "clean" else entry["noiseType"],
-            expected_utterance=entry["utterance"],
-            expected_command=entry["expectedCommand"],
-            expected_target=entry["expectedTarget"],
-            expected_action=entry["expectedAction"],
+            noise_type=record["noiseType"],
+            expected_utterance=record["utterance"],
+            expected_command=record["expectedCommand"],
+            expected_target=record["expectedTarget"],
+            expected_action=record["expectedAction"],
             transcript=None,
             repaired_transcript=None,
             parsed_command=None,
@@ -213,7 +553,11 @@ def _evaluate_entry(
             action_taken=None,
             command_confidence=None,
             task_success=None,
+            safe_recovery=None,
             unsafe_action=None,
+            dangerous_error=None,
+            decision_type=None,
+            failure_reason="missing_transcript",
             wer=None,
             audio=audio_stats,
             explanation="Audio stats computed, but no ASR transcript is available yet.",
@@ -221,36 +565,38 @@ def _evaluate_entry(
 
     repaired_transcript, repair_note = _repair_transcript(transcript)
     parse_text = repaired_transcript or transcript
-    result = interpret(parse_text, camera_id="camera-aisle-5")
-    parsed_target = _target_from_text(parse_text, result.command)
-    action_taken = _decide_action(result.command, parsed_target, result.confidence)
-    task_success = action_taken == entry["expectedAction"]
-    unsafe_action = _is_unsafe_action(entry, action_taken, result.command, parsed_target)
+    parsed = _parse_command(parse_text)
+    action_taken = _decide_action(parsed.command, parsed.target, parsed.confidence)
+    task_success = action_taken == record["expectedAction"]
+    dangerous_error = _is_dangerous_error(action_taken, task_success)
+    safe_recovery = bool(not task_success and not dangerous_error and action_taken in {"asked_clarification", "rejected_unsupported_command"})
+    decision_type = _decision_type(task_success, safe_recovery, dangerous_error)
+    failure_reason = _failure_reason(record, parsed, action_taken, task_success, safe_recovery, dangerous_error)
 
     return DatasetRecord(
-        case_id=entry["id"],
-        condition=condition,
+        case_id=record["id"],
+        condition=record["condition"],
         audio_path=str(audio_path.relative_to(ROOT)),
-        noise_type="clean" if condition == "clean" else entry["noiseType"],
-        expected_utterance=entry["utterance"],
-        expected_command=entry["expectedCommand"],
-        expected_target=entry["expectedTarget"],
-        expected_action=entry["expectedAction"],
+        noise_type=record["noiseType"],
+        expected_utterance=record["utterance"],
+        expected_command=record["expectedCommand"],
+        expected_target=record["expectedTarget"],
+        expected_action=record["expectedAction"],
         transcript=transcript,
         repaired_transcript=repaired_transcript,
-        parsed_command=result.command,
-        parsed_target=parsed_target,
+        parsed_command=parsed.command,
+        parsed_target=parsed.target,
         action_taken=action_taken,
-        command_confidence=round(result.confidence, 3),
+        command_confidence=round(parsed.confidence, 3),
         task_success=task_success,
-        unsafe_action=unsafe_action,
-        wer=_wer(entry["utterance"], parse_text),
+        safe_recovery=safe_recovery,
+        unsafe_action=dangerous_error,
+        dangerous_error=dangerous_error,
+        decision_type=decision_type,
+        failure_reason=failure_reason,
+        wer=_wer(record["utterance"], parse_text),
         audio=audio_stats,
-        explanation=(
-            repair_note or "Transcribed audio produced the expected safe action."
-            if task_success
-            else f"{repair_note + ' ' if repair_note else ''}Expected {entry['expectedAction']}, but produced {action_taken}."
-        ),
+        explanation=_explanation(record, parsed, action_taken, task_success, repair_note, failure_reason),
     )
 
 
@@ -260,10 +606,18 @@ def _repair_transcript(transcript: str) -> tuple[str | None, str | None]:
     rules = [
         (r"\bopen\s+a[l1i]5\b", "open aisle five", "Repaired Open AL5 -> open aisle five."),
         (r"\bopen\s+ao5\b", "open aisle five", "Repaired Open AO5 -> open aisle five."),
+        (r"\bopen\s+o5\b", "open aisle five", "Repaired Open O5 -> open aisle five."),
         (r"\bwatch\s+life\b.*", "watch live", "Repaired watch life -> watch live."),
         (r"\bwatch\s+line\b.*", "watch live", "Repaired watch line -> watch live."),
+        (r"\bwhich\s+live\b", "watch live", "Repaired which live -> watch live."),
+        (r"\breplay\s+lost\s+(?:ten|10)\s+seconds\b", "replay last ten seconds", "Repaired lost -> last replay command."),
+        (r"\bwe\s+play\s+los\s+(?:ten|10)\s+seconds\b", "replay last ten seconds", "Repaired we play los 10 seconds -> replay last ten seconds."),
         (r"\bsan\s+flores.*oceania\b", "send floor associate", "Repaired San Flores/Oceania -> send floor associate."),
         (r"\bgreat\s+report\b", "create report", "Repaired great report -> create report."),
+        (r"\bgreat\s+reports\b", "create report", "Repaired great reports -> create report."),
+        (r"\bfalse\s+alarms\b", "false alarm", "Normalized plural false alarms -> false alarm."),
+        (r"\bmark\s+falsalarm\b", "mark false alarm", "Repaired falsalarm -> false alarm."),
+        (r"\bwhat\s+happen(?:ed)?\s+there\b", "what happened there", "Normalized event-summary command."),
     ]
     notes: list[str] = []
     repaired = text
@@ -273,13 +627,38 @@ def _repair_transcript(transcript: str) -> tuple[str | None, str | None]:
             repaired = updated
             notes.append(note)
 
-    if compact in {"openal5", "openao5"}:
+    if compact in {"openal5", "openao5", "openo5"}:
         repaired = "open aisle five"
         notes.append("Repaired compact aisle-five ASR token.")
 
     if repaired == text:
         return None, None
     return repaired, " ".join(notes)
+
+
+def _parse_command(text: str) -> ParsedCommand:
+    normalized = text.lower().strip()
+    scores: dict[str, float] = {}
+    for spec in COMMAND_SPECS:
+        hits = [index for index, pattern in enumerate(spec.patterns) if re.search(pattern, normalized)]
+        if not hits:
+            continue
+        primary_hit = 0 in hits
+        base = 0.82 if primary_hit else 0.62
+        extra = 0.05 * (len(hits) - (1 if primary_hit else 0))
+        boost = 0.08 if len(_tokens(normalized)) <= 6 else 0.0
+        score = min(base + extra + boost, 0.95)
+        scores[spec.command] = max(scores.get(spec.command, 0.0), score)
+
+    if not scores:
+        return ParsedCommand(command="unknown", target="none", confidence=0.0)
+
+    command, confidence = max(scores.items(), key=lambda item: item[1])
+    return ParsedCommand(
+        command=command,
+        target=_target_from_text(normalized, command),
+        confidence=confidence,
+    )
 
 
 def _audio_stats(path: Path) -> AudioStats:
@@ -320,8 +699,6 @@ def _audio_stats(path: Path) -> AudioStats:
     zcr = crossings / max(1, len(samples) - 1)
     clipping_rate = clipped / len(samples)
 
-    # Lightweight, deterministic quality proxy. Real NISQA/DNSMOS can replace
-    # this; the goal here is to compare the uploaded clips without dependencies.
     loudness_score = _clamp((rms_dbfs + 45.0) / 6.0, 1.0, 5.0)
     clipping_penalty = min(clipping_rate * 40.0, 2.0)
     zcr_penalty = min(max(0.0, zcr - 0.12) * 8.0, 2.0)
@@ -356,18 +733,15 @@ def _dbfs(value: float) -> float:
 
 def _target_from_text(text: str, command: str) -> str:
     normalized = text.lower()
-    if command != "open_camera":
-        return "none" if command == "unknown" else "current_alert"
-
-    aisle = re.search(r"\baisle\s+(\w+)\b", normalized)
-    if aisle:
-        return f"camera_aisle_{_number_token(aisle.group(1))}"
-
-    camera = re.search(r"\bcamera\s+(\w+)\b", normalized)
-    if camera:
-        return f"camera_{_number_token(camera.group(1))}"
-
-    return "unknown"
+    if command in {"open_camera", "switch_camera"}:
+        aisle = re.search(r"\baisle\s+(\w+)\b", normalized)
+        if aisle:
+            return f"camera_aisle_{_number_token(aisle.group(1))}"
+        camera = re.search(r"\b(?:camera|cam)\s+(\w+)\b", normalized)
+        if camera:
+            return f"camera_{_number_token(camera.group(1))}"
+        return "unknown"
+    return DEFAULT_TARGET_BY_COMMAND.get(command, "none")
 
 
 def _number_token(token: str) -> str:
@@ -381,21 +755,68 @@ def _decide_action(command: str, target: str, confidence: float) -> str:
         return "asked_clarification"
     if command == "open_camera":
         return f"opened_{target}" if target != "unknown" else "asked_clarification"
+    if command == "switch_camera":
+        return f"switched_to_{target}" if target != "unknown" else "asked_clarification"
     return ACTION_BY_COMMAND.get(command, "asked_clarification")
 
 
-def _is_unsafe_action(
-    entry: dict[str, Any],
-    action_taken: str,
-    parsed_command: str,
-    parsed_target: str,
-) -> bool:
-    if action_taken in {"asked_clarification", "rejected_unsupported_command"}:
+def _is_dangerous_error(action_taken: str, task_success: bool) -> bool:
+    if task_success:
         return False
+    return action_taken not in {"asked_clarification", "rejected_unsupported_command"}
+
+
+def _decision_type(task_success: bool, safe_recovery: bool, dangerous_error: bool) -> str:
+    if task_success:
+        return "correct_action"
+    if safe_recovery:
+        return "safe_recovery"
+    if dangerous_error:
+        return "dangerous_error"
+    return "safe_recovery"
+
+
+def _failure_reason(
+    record: dict[str, Any],
+    parsed: ParsedCommand,
+    action_taken: str,
+    task_success: bool,
+    safe_recovery: bool,
+    dangerous_error: bool,
+) -> str | None:
+    if task_success:
+        return None
+    if action_taken == "asked_clarification":
+        if parsed.target != "unknown" and parsed.target != record["expectedTarget"]:
+            return "context_mismatch_target_confusion"
+        return "low_command_confidence"
+    if parsed.command == "unknown":
+        return "out_of_vocabulary"
+    if dangerous_error:
+        if parsed.command != record["expectedCommand"]:
+            return "wrong_command"
+        if parsed.target != record["expectedTarget"]:
+            return "wrong_target"
+        return "wrong_action"
+    if safe_recovery:
+        return "safe_recovery"
+    return "unclassified_failure"
+
+
+def _explanation(
+    record: dict[str, Any],
+    parsed: ParsedCommand,
+    action_taken: str,
+    task_success: bool,
+    repair_note: str | None,
+    failure_reason: str | None,
+) -> str:
+    prefix = f"{repair_note} " if repair_note else ""
+    if task_success:
+        return prefix + "Transcribed audio produced the expected safe action."
     return (
-        parsed_command != entry["expectedCommand"]
-        or parsed_target != entry["expectedTarget"]
-        or action_taken != entry["expectedAction"]
+        f"{prefix}Expected {record['expectedAction']}, but produced {action_taken}. "
+        f"Parsed {parsed.command}/{parsed.target} at {parsed.confidence:.0%}; reason: {failure_reason}."
     )
 
 
@@ -427,20 +848,51 @@ def _tokens(text: str) -> list[str]:
 
 def _summarize(records: list[DatasetRecord]) -> dict[str, Any]:
     transcribed = [record for record in records if record.transcript is not None]
-    by_condition = {
-        condition: [record for record in transcribed if record.condition == condition]
-        for condition in ("clean", "noisy")
-    }
-    audio_by_condition = {
-        condition: [record for record in records if record.condition == condition]
-        for condition in ("clean", "noisy")
-    }
-    return {
+    conditions = ["clean", "noisy"]
+    summary: dict[str, Any] = {
         "totalClips": len(records),
         "transcribedClips": len(transcribed),
-        "clean": _condition_summary(by_condition["clean"], audio_by_condition["clean"]),
-        "noisy": _condition_summary(by_condition["noisy"], audio_by_condition["noisy"]),
+        "overall": _condition_summary(transcribed, records),
+        "failureBreakdown": _failure_breakdown(transcribed),
+        "commandPerformance": _command_performance(transcribed),
     }
+    for condition in conditions:
+        condition_transcribed = [record for record in transcribed if record.condition == condition]
+        condition_audio = [record for record in records if record.condition == condition]
+        summary[condition] = _condition_summary(condition_transcribed, condition_audio)
+    return summary
+
+
+def _merge_scripted_system_comparison(summary: dict[str, Any]) -> None:
+    if not INTELLIGENCE_RESULTS_PATH.exists():
+        return
+    try:
+        scripted = json.loads(INTELLIGENCE_RESULTS_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return
+
+    scripted_summary = scripted.get("summary")
+    if not isinstance(scripted_summary, dict):
+        return
+
+    for key in ("raw_noisy", "aicoustics_only", "aicoustics_plus_sentinel"):
+        block = scripted_summary.get(key)
+        if not isinstance(block, dict):
+            continue
+        cases = block.get("totalCases")
+        unsafe = block.get("unsafeActionRate")
+        summary[key] = {
+            "clips": cases,
+            "transcribedClips": cases,
+            "sais": block.get("sais"),
+            "correctActionRate": None,
+            "safeRecoveryRate": block.get("retryRate"),
+            "dangerousErrorRate": unsafe,
+            "unsafeActionRate": unsafe,
+            "wer": block.get("wer"),
+            "avgConfidence": None,
+            "avgUsabilityScore": block.get("nisqaMos"),
+        }
 
 
 def _condition_summary(
@@ -449,16 +901,60 @@ def _condition_summary(
 ) -> dict[str, float | int | None]:
     count = len(transcribed_records)
     audio_count = len(audio_records) or 1
+    correct = sum(record.task_success is True for record in transcribed_records)
+    recoveries = sum(record.safe_recovery is True for record in transcribed_records)
+    dangerous = sum(record.dangerous_error is True for record in transcribed_records)
     return {
         "clips": len(audio_records),
         "transcribedClips": count,
-        "sais": round(sum(record.task_success is True for record in transcribed_records) / count, 3) if count else None,
+        "sais": round((correct + recoveries) / count, 3) if count else None,
+        "correctActionRate": round(correct / count, 3) if count else None,
+        "safeRecoveryRate": round(recoveries / count, 3) if count else None,
+        "dangerousErrorRate": round(dangerous / count, 3) if count else None,
         "wer": round(sum(record.wer or 0.0 for record in transcribed_records) / count, 3) if count else None,
-        "unsafeActionRate": round(sum(record.unsafe_action is True for record in transcribed_records) / count, 3) if count else None,
+        "unsafeActionRate": round(dangerous / count, 3) if count else None,
         "retryRate": round(sum(record.action_taken == "asked_clarification" for record in transcribed_records) / count, 3) if count else None,
+        "avgConfidence": round(sum(record.command_confidence or 0.0 for record in transcribed_records) / count, 3) if count else None,
         "avgUsabilityScore": round(sum(record.audio.usability_score for record in audio_records) / audio_count, 3),
         "avgRmsDbfs": round(sum(record.audio.rms_dbfs for record in audio_records) / audio_count, 3),
     }
+
+
+def _failure_breakdown(records: list[DatasetRecord]) -> list[dict[str, Any]]:
+    failures = [record for record in records if record.failure_reason]
+    total = len(failures)
+    counts: dict[str, int] = {}
+    for record in failures:
+        assert record.failure_reason is not None
+        counts[record.failure_reason] = counts.get(record.failure_reason, 0) + 1
+    return [
+        {"label": label, "count": count, "pct": round(count / total, 3) if total else 0.0}
+        for label, count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    ]
+
+
+def _command_performance(records: list[DatasetRecord]) -> list[dict[str, Any]]:
+    by_command: dict[str, list[DatasetRecord]] = {}
+    for record in records:
+        by_command.setdefault(record.expected_command, []).append(record)
+
+    rows: list[dict[str, Any]] = []
+    for command, command_records in sorted(by_command.items()):
+        count = len(command_records)
+        correct = sum(record.decision_type == "correct_action" for record in command_records)
+        recoveries = sum(record.decision_type == "safe_recovery" for record in command_records)
+        dangerous = sum(record.decision_type == "dangerous_error" for record in command_records)
+        rows.append(
+            {
+                "command": command,
+                "clips": count,
+                "sais": round((correct + recoveries) / count, 3),
+                "wer": round(sum(record.wer or 0.0 for record in command_records) / count, 3),
+                "avgConfidence": round(sum(record.command_confidence or 0.0 for record in command_records) / count, 3),
+                "dangerousErrorRate": round(dangerous / count, 3),
+            }
+        )
+    return rows
 
 
 def _print_summary(summary: dict[str, Any]) -> None:
@@ -485,8 +981,35 @@ def _format_optional(value: float | int | None) -> str:
     return "n/a" if value is None else f"{value:.3f}"
 
 
-def _transcript_key(case_id: str, condition: str) -> str:
+def _transcript_key(record: dict[str, Any]) -> str:
+    return str(record.get("transcriptKey") or record["id"])
+
+
+def _transcript_keys(record: dict[str, Any]) -> list[str]:
+    keys = [
+        str(record.get("transcriptKey") or ""),
+        str(record["id"]),
+        str(record["audioPath"]),
+    ]
+    return list(dict.fromkeys(key for key in keys if key))
+
+
+def _cached_transcript(record: dict[str, Any], transcripts: dict[str, str]) -> str | None:
+    for key in _transcript_keys(record):
+        transcript = transcripts.get(key)
+        if transcript:
+            return transcript.strip()
+    return None
+
+
+def _legacy_transcript_key(case_id: str, condition: str) -> str:
     return f"{case_id}:{condition}"
+
+
+def _optional_int(value: str | None) -> int | None:
+    if value is None or value.strip() == "":
+        return None
+    return int(value)
 
 
 def _load_dotenv(path: Path) -> None:
