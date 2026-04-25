@@ -25,6 +25,7 @@ export type GeminiCameraResult =
     };
 
 const DEFAULT_MODEL = "gemini-3.1-pro-preview";
+const DEFAULT_FALLBACK_MODEL = "gemini-2.5-flash-lite";
 const MAX_HISTORY_TURNS = 8;
 
 export const analyzeCameraFrame = createServerFn({ method: "POST" })
@@ -59,6 +60,7 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<GeminiCameraResult> => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
     const model = process.env.GEMINI_CAMERA_MODEL || DEFAULT_MODEL;
+    const fallbackModel = process.env.GEMINI_CAMERA_FALLBACK_MODEL || DEFAULT_FALLBACK_MODEL;
 
     if (!apiKey || apiKey.startsWith("replace-with") || apiKey === "AIzaSy...") {
       return {
@@ -93,60 +95,132 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
       },
     ];
 
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-          model,
-        )}:generateContent`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": apiKey,
-          },
-          body: JSON.stringify({
-            systemInstruction: {
-              parts: [{ text: systemInstruction }],
-            },
-            contents,
-            generationConfig: {
-              temperature: data.mode === "commentary" ? 0.5 : 0.35,
-              maxOutputTokens: data.mode === "commentary" ? 220 : 420,
-            },
-          }),
-        },
-      );
+    const primary = await requestGemini({
+      apiKey,
+      model,
+      systemInstruction,
+      contents,
+      mode: data.mode,
+    });
 
-      const payload = (await response.json().catch(() => null)) as {
-        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-        error?: { message?: string };
-      } | null;
+    if (primary.ok) return primary;
 
-      if (!response.ok) {
-        return {
-          ok: false,
-          reason: "api-error",
-          message: payload?.error?.message || `Gemini request failed with ${response.status}.`,
-        };
-      }
+    const shouldFallback =
+      fallbackModel &&
+      fallbackModel !== model &&
+      (primary.status === 404 || primary.status === 429 || primary.message.includes("quota"));
 
-      const text =
-        payload?.candidates?.[0]?.content?.parts
-          ?.map((part) => part.text)
-          .filter(Boolean)
-          .join("\n")
-          .trim() || "";
-
+    if (shouldFallback) {
+      const fallback = await requestGemini({
+        apiKey,
+        model: fallbackModel,
+        systemInstruction,
+        contents,
+        mode: data.mode,
+      });
+      if (fallback.ok) return fallback;
       return {
-        ok: true,
-        text: text || "I could not produce a visual analysis for this frame.",
-        model,
+        ok: false,
+        reason: "api-error",
+        message: `${model} failed: ${primary.message}. ${fallbackModel} also failed: ${fallback.message}`,
       };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      return { ok: false, reason: "api-error", message };
     }
+
+    return { ok: false, reason: "api-error", message: primary.message };
   });
+
+type GeminiRequestInput = {
+  apiKey: string;
+  model: string;
+  systemInstruction: string;
+  contents: Array<{
+    role: string;
+    parts: Array<
+      | { text: string }
+      | {
+          inlineData: {
+            mimeType: string;
+            data: string;
+          };
+        }
+    >;
+  }>;
+  mode?: "question" | "commentary";
+};
+
+type GeminiRequestResult =
+  | {
+      ok: true;
+      text: string;
+      model: string;
+    }
+  | {
+      ok: false;
+      status?: number;
+      message: string;
+    };
+
+async function requestGemini({
+  apiKey,
+  model,
+  systemInstruction,
+  contents,
+  mode,
+}: GeminiRequestInput): Promise<GeminiRequestResult> {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+        model,
+      )}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: systemInstruction }],
+          },
+          contents,
+          generationConfig: {
+            temperature: mode === "commentary" ? 0.5 : 0.35,
+            maxOutputTokens: mode === "commentary" ? 220 : 420,
+          },
+        }),
+      },
+    );
+
+    const payload = (await response.json().catch(() => null)) as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      error?: { message?: string };
+    } | null;
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        status: response.status,
+        message: payload?.error?.message || `Gemini request failed with ${response.status}.`,
+      };
+    }
+
+    const text =
+      payload?.candidates?.[0]?.content?.parts
+        ?.map((part) => part.text)
+        .filter(Boolean)
+        .join("\n")
+        .trim() || "";
+
+    return {
+      ok: true,
+      text: text || "I could not produce a visual analysis for this frame.",
+      model,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { ok: false, message };
+  }
+}
 
 function stripDataUrlPrefix(value: string) {
   return value.replace(/^data:image\/[a-z0-9.+-]+;base64,/i, "");
