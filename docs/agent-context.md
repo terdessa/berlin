@@ -140,6 +140,38 @@ Note:
 
 Aikido is a side challenge only and does not count toward the 3 required partner technologies.
 
+## UI Implementation
+
+The dashboard UI lives in a separate repository, cloned locally at `ui/`:
+
+- Repo: https://github.com/terdessa/sentinel-watch
+- Stack: Vite + React + TypeScript + Tailwind + shadcn/ui + Bun, Cloudflare deploy target
+- Originally scaffolded in Lovable, now developed directly
+
+### UI Architecture Decisions
+
+- **Cameras are video-only.** They do not capture audio. The guard's voice comes from a separate earpiece/mic device that connects to the backend independently. The dashboard must never imply cameras are listening.
+- **AI agent continuously analyzes all camera feeds**, not just the alerted one. Tiles should show a subtle "analyzing" indicator on every camera so the always-on pipeline is visible.
+- **Two-way voice channel.** Agent → guard (TTS to earpiece), guard → agent (speech with ai-coustics enhancement). Both directions are surfaced in the UI.
+
+### UI Layout
+
+- Single page, dark theme, security-ops aesthetic. Deep slate background, monospaced numerals, amber/red accents for alerts, teal for normal state.
+- **No top bar.** A small ambient "🟢 Sentinel is watching" pill in a corner is the only persistent status element. It shifts to "🟠 Sentinel flagged CAM-XX — requires review" when an alert fires.
+- **Camera grid** (top ~40% viewport): 8–12 small live tiles, each with continuous-analysis indicator, camera ID, zone label, live dot. The active alert tile pulses amber.
+- **Alert video panel** (below grid, ~50% width): large playback of the flagged camera with non-accusatory scene summary overlay, scrubber, replay-last-10s, watch-live, and a visual-model confidence bar.
+- **Right-side log panel** (other ~50% width): collapsed by default; slides in only when an alert is active.
+
+### Review Record / Log Panel
+
+- **Conversation history is text-only — no audio waveforms or playback.** Chat-style stack with two speakers:
+  - **Sentinel** — left, teal accent, shield icon
+  - **Guard · earpiece** — right, amber accent, headset icon
+- Each message: speaker label, text, timestamp; guard messages also show a confidence chip.
+- Low-confidence guard messages render with a dashed border and inline "voice command unclear — clarification requested" note.
+- "Live" pulse at the top of the panel while the channel is open; "channel closed" once the alert is resolved.
+- Status badges and footer actions (Send floor associate, Mark false alarm, Create report) sit below the conversation.
+
 ## Next Open Question
 
 Define the exact schema for:
@@ -147,4 +179,4 @@ Define the exact schema for:
 - visual event
 - voice command
 - action result
-- error report
+- error report (text-conversation transcript instead of audio blobs)
