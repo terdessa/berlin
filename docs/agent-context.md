@@ -4,11 +4,11 @@
 
 Sentinel is a **voice-first retail security copilot** for the **telli + ai-coustics** track.
 
-It watches live CCTV/store camera feeds, flags review-worthy activity, speaks concise alerts to a security guard through an earpiece, understands the guard's spoken response in noisy store conditions, and logs rich review/error reports.
+It watches live CCTV/store camera feeds, flags review-worthy activity, speaks concise alerts to a security guard through an earpiece, understands the guard's spoken response in noisy store conditions, and — when it cannot be sure what the guard said — produces a richly diagnosed error record that ai-coustics can use as evaluation/training data for their model. The full session ships as a structured JSON corpus alongside the demo.
 
 One-line pitch:
 
-> Sentinel helps retail security teams hear, review, and respond to camera events hands-free, even in noisy supermarkets.
+> Sentinel helps retail security teams hear, review, and respond to camera events hands-free, even in noisy supermarkets — and turns every voice failure into labeled, contextualized data ai-coustics can take home and learn from.
 
 ## Track Fit
 
@@ -21,7 +21,9 @@ Why it fits:
 - Real-world audio is central, not decorative.
 - The guard operates in noisy stores with music, checkout beeps, carts, customers, and radio chatter.
 - ai-coustics improves the audio path so the agent can hear commands reliably.
-- The demo should show a measurable audio improvement or task-completion improvement.
+- The demo shows a measurable NISQA MOS uplift (raw vs enhanced) and a corpus of labeled failure cases — both of which directly answer the track's "audio intelligence metric" requirement.
+
+Voice runtime stack: **LiveKit** as the agent framework (using the official [livekit/plugins-ai-coustics-python](https://github.com/livekit/plugins-ai-coustics-python) plugin), **telli** for STT + TTS + realtime conversation, **ai-coustics** for audio enhancement in front of telli. We deliberately do not stack any third-party voice runtime on top of telli, so ai-coustics stays the single variable in the before/after metric.
 
 Fallback:
 
@@ -51,24 +53,38 @@ Example guard commands:
 - false alarm
 - create report
 
-## Report Value
+## Report Value (Track Differentiator)
 
-Every alert/review can store:
+Every interaction (success or failure) is written to a JSON corpus file with audio files alongside, so the whole session can be shared with the ai-coustics team after the demo.
+
+A single interaction record stores:
 
 - camera ID and store zone
 - triggering video frame or clip
-- visual scene summary
+- visual scene summary and confidence
 - assistant message to guard
 - raw guard audio
 - enhanced audio
-- transcript attempt
-- interpreted command
-- confidence score
+- NISQA v2 scores for raw and enhanced (MOS plus four sub-dimensions)
+- estimated SNR and noise tag
+- raw and enhanced transcript attempts
+- interpreted command, command candidates, and confidence
 - action taken
-- error reason, if any
+- failure classification and natural-language explanation, if any
+- suggested clarification question, if any
 - final human correction, if any
 
-The error report is a key differentiator: when the voice agent fails, Sentinel preserves enough context to debug the failure.
+Why this is the track wedge: the official ai-coustics track asks teams to design an audio intelligence metric and show what it looks like when the agent passes it. The judge added that real-world failure data is expensive to collect and that diverse, contextualised failure scenarios help the company improve the product. Our corpus is positioned as that data product, not just hackathon evidence.
+
+Failure classifications used in the corpus:
+
+- `acoustic_residual_noise` — enhanced NISQA still low; their problem to fix
+- `acoustic_confusion` — clean audio but acoustically similar tokens confused (floor vs four)
+- `semantic_ambiguity` — clean audio, clear words, multiple valid commands
+- `out_of_vocabulary` — clean audio, clear words, no supported command
+- `multi_cause` — combination
+
+To make the corpus look like a dataset rather than one demo clip, the demo runs at least six scripted scenarios with varied noise types and outcomes (see `docs/person-3-voice-error-logging.md`).
 
 ## Safety Guardrails
 
@@ -105,15 +121,17 @@ Show:
 - earpiece alert transcript
 - noisy guard command
 - ai-coustics enhanced transcript
-- command confidence
-- opened evidence video
-- review or error report
+- NISQA score before and after enhancement
+- command confidence and candidates considered
+- opened evidence video on a successful command
+- a richly diagnosed error record (with failure classification and suggested clarification) when a command is unclear
+- a `submission/` folder with `interactions.json` + audio files we can hand to the judges
 
-Simple metric:
+Primary metric: NISQA MOS uplift from raw to enhanced, averaged across a scripted scenario set, with the per-scenario breakdown visible.
 
-- command recognition with vs. without ai-coustics
-- transcript confidence before/after enhancement
-- task completion under store noise
+Secondary metric: command recognition rate with vs without ai-coustics on the same scenario set.
+
+Both metrics are computed from `interactions.json` so they are reproducible from the corpus alone.
 
 ## Partner Tech
 
@@ -121,14 +139,15 @@ Use at least 3 partner technologies.
 
 Core implementation stack:
 
-- ai-coustics: noisy audio enhancement
-- Gradium: realtime voice interaction
+- ai-coustics: noisy audio enhancement, integrated via the official `livekit/plugins-ai-coustics-python` plugin
+- LiveKit: voice agent framework that hosts the ai-coustics plugin
+- telli: realtime voice interaction (track host runtime)
 - Google DeepMind: video/scene understanding
 - Entire: human review and error-report workflow
+- NISQA v2 (`gabrielmittag/NISQA`): objective audio quality metric for raw vs enhanced
 
 Side challenge focus:
 
-- Gradium: pursue through the realtime voice loop.
 - Entire: pursue through review tasks, action tracking, and error-report workflow.
 - Aikido: pursue if setup is quick by connecting the public repo and submitting the security report screenshot.
 
@@ -142,41 +161,34 @@ Aikido is a side challenge only and does not count toward the 3 required partner
 
 ## UI Implementation
 
-The dashboard UI lives in a separate repository, cloned locally at `ui/`:
+The dashboard UI lives at `ui/` in this repo:
 
-- Repo: https://github.com/terdessa/sentinel-watch
 - Stack: Vite + React + TypeScript + Tailwind + shadcn/ui + Bun, Cloudflare deploy target
 - Originally scaffolded in Lovable, now developed directly
 
 ### UI Architecture Decisions
 
-- **Cameras are video-only.** They do not capture audio. The guard's voice comes from a separate earpiece/mic device that connects to the backend independently. The dashboard must never imply cameras are listening.
-- **AI agent continuously analyzes all camera feeds**, not just the alerted one. Tiles should show a subtle "analyzing" indicator on every camera so the always-on pipeline is visible.
+- **Cameras are video-only.** They do not capture audio. The guard's voice comes from a separate earpiece/mic device that connects to the backend independently.
+- **AI agent continuously analyzes all camera feeds.** Tiles show a subtle "analyzing" indicator on every camera.
 - **Two-way voice channel.** Agent → guard (TTS to earpiece), guard → agent (speech with ai-coustics enhancement). Both directions are surfaced in the UI.
 
 ### UI Layout
 
 - Single page, dark theme, security-ops aesthetic. Deep slate background, monospaced numerals, amber/red accents for alerts, teal for normal state.
-- **No top bar.** A small ambient "🟢 Sentinel is watching" pill in a corner is the only persistent status element. It shifts to "🟠 Sentinel flagged CAM-XX — requires review" when an alert fires.
-- **Camera grid** (top ~40% viewport): 8–12 small live tiles, each with continuous-analysis indicator, camera ID, zone label, live dot. The active alert tile pulses amber.
-- **Alert video panel** (below grid, ~50% width): large playback of the flagged camera with non-accusatory scene summary overlay, scrubber, replay-last-10s, watch-live, and a visual-model confidence bar.
-- **Right-side log panel** (other ~50% width): collapsed by default; slides in only when an alert is active.
+- **No top bar.** Ambient "Sentinel is watching" pill in a corner is the only persistent status.
+- **Camera grid** (top ~40% viewport): 8–12 small live tiles, each with continuous-analysis indicator.
+- **Alert video panel** (below grid, ~50% width): flagged camera playback with scene summary overlay.
+- **Right-side log panel** (other ~50% width): slides in only when an alert is active.
 
 ### Review Record / Log Panel
 
-- **Conversation history is text-only — no audio waveforms or playback.** Chat-style stack with two speakers:
-  - **Sentinel** — left, teal accent, shield icon
-  - **Guard · earpiece** — right, amber accent, headset icon
-- Each message: speaker label, text, timestamp; guard messages also show a confidence chip.
-- Low-confidence guard messages render with a dashed border and inline "voice command unclear — clarification requested" note.
-- "Live" pulse at the top of the panel while the channel is open; "channel closed" once the alert is resolved.
+- **Conversation history is text-only — no audio waveforms or playback.** Chat-style with two speakers: Sentinel (left, teal) and Guard (right, amber).
+- Guard messages show a confidence chip. Low-confidence messages render with dashed border and "voice command unclear" note.
 - Status badges and footer actions (Send floor associate, Mark false alarm, Create report) sit below the conversation.
 
-## Next Open Question
+## Open State
 
-Define the exact schema for:
-
-- visual event
-- voice command
-- action result
-- error report (text-conversation transcript instead of audio blobs)
+- ai-coustics credentials: in hand ✅
+- LiveKit cloud: connected ✅ (`wss://berlin-vc00ggsm.livekit.cloud`)
+- OpenAI STT/TTS: wired as voice runtime (telli-swappable in two lines)
+- `interactions.json` corpus: written per session by `apps/voice/src/logger.py`

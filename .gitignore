@@ -22,3 +22,18 @@ pnpm-debug.log*
 Test Live/
 Test Video Live/
 Test Audio Live/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Audio corpus files (large binaries — share folder separately)
+apps/voice/submission/audio/raw/*.wav
+apps/voice/submission/audio/enhanced/*.wav

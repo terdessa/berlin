@@ -2,6 +2,8 @@ Current direction:
 
 Sentinel is a voice-first retail security copilot for the telli + ai-coustics track.
 
-It watches CCTV, alerts a guard through an earpiece, understands noisy spoken commands, opens the relevant video, and logs review/error reports with video + voice context.
+It watches CCTV, alerts a guard through an earpiece, hears noisy spoken commands using ai-coustics + telli, opens the relevant video, and writes a structured interaction record for every exchange. Failures get a rich diagnostic record (raw + enhanced audio, NISQA scores, command candidates, failure classification, natural-language explanation). The whole session ships as a submission/interactions.json corpus that can be shared with the ai-coustics team as evaluation or training data.
 
-Side challenge focus: Gradium for voice, Entire for review/error workflow, Aikido if quick.
+Voice runtime: telli (track host). Audio enhancement: ai-coustics via livekit/plugins-ai-coustics-python. Objective metric: NISQA v2.
+
+Side challenge focus: Entire for review/error tasks (push at least one corpus record), Aikido if quick.

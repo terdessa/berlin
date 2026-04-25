@@ -5,18 +5,19 @@ Core demo:
 1. CCTV feed shows review-worthy shelf-to-pocket behavior.
 2. Sentinel says in the guard's earpiece: "Aisle 5 requires review."
 3. Guard says in noisy store audio: "Open aisle five."
-4. ai-coustics enhances the audio.
-5. Voice layer understands the command.
-6. Sentinel opens the video and logs the context.
-7. If voice understanding fails, Sentinel creates an error report with video, assistant prompt, raw audio, enhanced audio, transcript attempt, command guess, confidence, and correction.
+4. ai-coustics enhances the audio (NISQA before/after visible).
+5. telli understands the command.
+6. Sentinel opens the video and writes the interaction record.
+7. If voice understanding is unclear, Sentinel writes a richly diagnosed error record instead of taking action: visual context, conversation, raw + enhanced audio, NISQA scores, command candidates, failure classification (acoustic_residual_noise / acoustic_confusion / semantic_ambiguity / out_of_vocabulary / multi_cause), natural-language explanation, suggested clarification.
+8. The session ships as a submission/interactions.json corpus with audio files attached — positioned as evaluation or training data for the ai-coustics team.
 
 Track:
 
-telli + ai-coustics, with Wildcard as fallback.
+telli + ai-coustics, with Wildcard as fallback. Audio path: mic -> ai-coustics (via livekit/plugins-ai-coustics-python) -> telli. Kept minimal so ai-coustics is the single variable in the before/after metric.
 
 Side challenges:
 
-Focus on Gradium and Entire. Add Aikido if setup is quick.
+Entire first (push one corpus record as a review/error task). Aikido if setup is quick.
 
 Safety:
 
