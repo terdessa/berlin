@@ -1,55 +1,36 @@
-# Risks And Safety
+# Safety Notes
 
-## Privacy Positioning
+## Positioning
 
-Sentinel should be positioned as a B2B retail loss-prevention awareness tool, not an automated accusation, public surveillance, B2G, or enforcement tool.
+Sentinel is a retail security awareness assistant, not an automated accusation or enforcement system.
 
 ## Guardrails
 
 - No facial recognition
 - No identity tracking
-- No automated accusation, punishment, detention, or enforcement
-- Human confirmation before any store action
-- Evidence shown with alerts
-- Confidence and uncertainty displayed clearly
+- No automated accusation
+- No automated detention, punishment, or enforcement
+- Human review before any store action
+- Confidence shown for visual and voice outputs
+- Error reports debug the system, not the guard
 
-## Product Risks
+## Good Language
 
-- False positives could create alert fatigue.
-- False negatives could create overconfidence.
-- Users may misunderstand the system as proof that theft occurred.
-- Accusation-heavy language could make the idea legally and ethically risky.
-- A staged theft-like demo could feel careless if it appears to identify or accuse a real person.
-- Public webcam feeds may raise reliability, consent, and usage concerns.
-
-## Mitigations
-
-- Use confidence and severity levels.
-- Keep humans in the loop.
-- Focus on private retail environments where security camera monitoring is already expected.
-- Present the system as assistive rather than authoritative.
-- Make alerts explainable with evidence snippets.
-- Keep the staged demo obviously controlled and avoid presenting the participant as guilty.
-- Use looped local videos instead of public webcams when possible.
-- Avoid storing or displaying unnecessary personal details.
-- Require human review before any store action.
-
-## Language Guidance
-
-Prefer:
-
+- "camera requires review"
+- "item appears to move from shelf to pocket"
 - "possible loss-prevention review"
-- "observable shelf-to-pocket sequence"
-- "camera requires human review"
-- "item appears to be placed into a pocket or bag"
+- "voice command unclear"
+- "clarification needed"
 
-Avoid:
+## Bad Language
 
-- claiming theft or intent
-- identifying people
-- accusing someone
-- presenting uncertain model output as fact
+- "this person is stealing"
+- "thief"
+- "criminal"
+- "guilty"
+- identity claims
+- intent claims
 
-## Demo Safety Notes
+## Failure Behavior
 
-The staged high-risk retail event should be safe, controlled, and clearly for demonstration. The product should frame the model output as observable evidence requiring human review, not as a final judgment or accusation.
+If the voice command is unclear, Sentinel should ask for clarification or create an error report. It should not take irreversible action from a low-confidence command.

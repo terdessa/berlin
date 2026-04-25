@@ -1,113 +1,150 @@
 # Sentinel Agent Context
 
-## Project
+## Current Idea
 
-Sentinel is a hackathon concept for a real-time multimodal AI system that analyzes live video and audio streams to detect high-risk retail situations and alert humans instantly.
+Sentinel is a **voice-first retail security copilot** for the **telli + ai-coustics** track.
 
-The current high-level idea:
+It watches live CCTV/store camera feeds, flags review-worthy activity, speaks concise alerts to a security guard through an earpiece, understands the guard's spoken response in noisy store conditions, and logs rich review/error reports.
 
-> Sentinel turns passive video and audio streams into real-time awareness.
+One-line pitch:
 
-## Current Direction
+> Sentinel helps retail security teams hear, review, and respond to camera events hands-free, even in noisy supermarkets.
 
-Sentinel is now focused on B2B retail loss-prevention awareness. The team is no longer pursuing a B2G, city, or public emergency-response framing.
+## Track Fit
 
-The target environments are private retail sites such as supermarkets, convenience stores, shops, pharmacies, electronics stores, and other businesses where security operators already monitor many cameras.
+Primary track:
 
-Documentation should emphasize the product core: real-time awareness from video and audio streams, high-risk camera highlighting, evidence summaries, and human review support for retail security and store operations teams.
+- **telli + ai-coustics: Voice AI that works in the wild**
 
-## Hackathon Constraints
+Why it fits:
 
-- Team size maximum: 5
-- Project must be newly created during the hackathon
-- Submission requires a 2-minute demo video
-- Submission requires a public GitHub repository
-- Project must use at least 3 partner technologies
+- Real-world audio is central, not decorative.
+- The guard operates in noisy stores with music, checkout beeps, carts, customers, and radio chatter.
+- ai-coustics improves the audio path so the agent can hear commands reliably.
+- The demo should show a measurable audio improvement or task-completion improvement.
 
-## Likely Track Fit
-
-Primary fit:
+Fallback:
 
 - Wildcard
 
-Possible alternate fit:
+## Product Loop
 
-- telli and ai-coustics: Voice AI that works in the wild, if the product emphasizes robust audio understanding in noisy retail environments
+1. CCTV/live camera feed shows a review-worthy retail event.
+2. Vision model analyzes the clip and produces a non-accusatory scene summary.
+3. Sentinel alerts the guard through an earpiece.
+4. Guard responds by voice in noisy store audio.
+5. ai-coustics enhances the audio.
+6. Voice layer interprets the command.
+7. Sentinel opens video, routes action, or creates an error report.
+8. System stores the video context, voice context, transcript, command, confidence, and action.
 
-## Candidate Partner Technologies
+Example earpiece alert:
 
-- Google DeepMind: multimodal reasoning over image, video, and audio context
-- Gradium or ai-coustics: real-time voice/audio layer
-- Entire: human-in-the-loop collaboration and store review workflows
-- Lovable: rapid UI prototyping
-- Tavily: contextual search for store procedures, loss-prevention policies, or response guidance
-- Pioneer: possible fine-tuning or evaluation layer if a small model replaces part of the pipeline
+> Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.
 
-## Product Principles
+Example guard commands:
 
-- Human-in-the-loop by default
-- No facial recognition
-- No identity tracking
-- No automated accusation, detention, punishment, or enforcement
-- Alerts should be explainable and reviewable
-- The demo should feel like a real operational product, not just a model output
+- open aisle five
+- watch live
+- replay last ten seconds
+- send floor associate
+- false alarm
+- create report
 
-## Core Value Proposition
+## Report Value
 
-Sentinel reduces the latency between a possible retail loss-prevention event happening and the security operator noticing it.
+Every alert/review can store:
 
-The product should help a human monitoring many cameras notice high-risk situations quickly, understand the observable evidence quickly, and decide whether any store action is appropriate.
+- camera ID and store zone
+- triggering video frame or clip
+- visual scene summary
+- assistant message to guard
+- raw guard audio
+- enhanced audio
+- transcript attempt
+- interpreted command
+- confidence score
+- action taken
+- error reason, if any
+- final human correction, if any
 
-## Alert Threshold
+The error report is a key differentiator: when the voice agent fails, Sentinel preserves enough context to debug the failure.
 
-Sentinel should interrupt humans when it detects observable high-risk retail signals that may deserve human review.
+## Safety Guardrails
 
-Examples include a person taking an item from a shelf and placing it into a pocket or bag, concealment-like hand motion, checkout bypass, self-checkout mismatch, repeated shelf-to-bag movement, unusual movement near high-value shelves, or other clear visual/audio evidence that a security operator should review.
+- No facial recognition.
+- No identity tracking.
+- No automated accusation.
+- No automated detention, punishment, or enforcement.
+- Always require human review before store action.
+- Say "requires review", not "is stealing".
+- Describe observable behavior only.
 
-Sentinel should avoid claiming theft, intent, guilt, or identity. It should surface observable evidence and ask for human review.
+Preferred language:
 
-## Primary User
+- "possible loss-prevention review"
+- "observable shelf-to-pocket sequence"
+- "camera requires human review"
+- "voice command unclear"
 
-The exact user title remains flexible. Sentinel should be designed for a retail security operator or store operations human responsible for noticing, assessing, and responding to high-risk situations across many live feeds.
+Avoid:
 
-Depending on the site, this person could be a security operator, loss-prevention associate, store manager, retail operations manager, security supervisor, or business owner.
+- "thief"
+- "criminal"
+- "this person is stealing"
+- identity or intent claims
 
-## Core Demo Surface
+## Demo Shape
 
-The most important product surface is a live retail camera operations dashboard:
+Show:
 
-- store map or site layout of camera locations
-- active camera markers
-- red pulsing alert marker when a high-risk retail event is detected
-- background multimodal monitoring
-- alert card with short summary, confidence, severity, and source feed
-- replay clip or evidence panel
-- actions such as acknowledge, watch live, send floor associate, ignore, or create incident
+- supermarket/shop camera dashboard
+- many previewable camera feeds
+- one analyzed live/control feed
+- one staged visual event
+- earpiece alert transcript
+- noisy guard command
+- ai-coustics enhanced transcript
+- command confidence
+- opened evidence video
+- review or error report
 
-The reference UI uses a dark live camera map pattern with active camera pins and one red alert pin. For Sentinel, this should be adapted into a supermarket or shop floor plan with aisles, checkout areas, exits, and high-value sections.
+Simple metric:
 
-## Prototype Strategy
+- command recognition with vs. without ai-coustics
+- transcript confidence before/after enhancement
+- task completion under store noise
 
-The demo should combine:
+## Partner Tech
 
-- around 10 previewable camera feeds
-- one real mobile phone livestream
-- AI analysis on the livestream
-- a staged retail loss-prevention review event in the livestream
-- map marker alert state when the event is detected
+Use at least 3 partner technologies.
 
-Most non-demo camera feeds can be endless loop videos that represent store camera feeds. The AI engine should only run on the mobile phone livestream for the hackathon demo.
+Core implementation stack:
 
-Clicking a normal camera opens an almost fullscreen camera view with live video, rewind, return-to-live, and camera metadata.
+- ai-coustics: noisy audio enhancement
+- Gradium: realtime voice interaction
+- Google DeepMind: video/scene understanding
+- Entire: human review and error-report workflow
 
-The normal camera preview should include the Sentinel shell, camera name, live status, large video area, playback controls, return-to-live control, fullscreen control, and a right-side details panel with camera ID, location, coordinates, status, resolution, camera type, feed type, and an add note action.
+Side challenge focus:
 
-Clicking an alert camera opens the same view in a red alert state with a split view for live video and the short evidence clip that triggered the alert, plus an AI summary and response context. Alert language must describe observable behavior, not accuse anyone of stealing.
+- Gradium: pursue through the realtime voice loop.
+- Entire: pursue through review tasks, action tracking, and error-report workflow.
+- Aikido: pursue if setup is quick by connecting the public repo and submitting the security report screenshot.
 
-## Open Questions
+Optional product additions:
 
-See `clarifying-questions.md`.
+- Tavily: store policy/review guidance
 
-## Decisions
+Note:
 
-See `decision-log.md`.
+Aikido is a side challenge only and does not count toward the 3 required partner technologies.
+
+## Next Open Question
+
+Define the exact schema for:
+
+- visual event
+- voice command
+- action result
+- error report

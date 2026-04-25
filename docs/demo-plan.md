@@ -1,107 +1,59 @@
-# Demo Plan
+# Sentinel Demo Plan
 
-## Demo Goal
+## Goal
 
-Show that Sentinel can reduce the time between a possible retail loss-prevention event happening and a human security operator noticing it by turning live or simulated shop camera feeds into clear, evidence-based review alerts.
+Prove Sentinel is a real-time voice interface that works in noisy retail environments.
 
-## Core Demo Flow
+## Demo Flow
 
-1. Operator sees a supermarket or shop floor plan with multiple live camera locations.
-2. Around 10 previewable camera feeds create the feeling of broad coverage.
-3. One camera feed is a real mobile phone livestream.
-4. Sentinel monitors the livestream in the background.
-5. A staged retail review event occurs in the phone stream, such as an item taken from a shelf and placed into a pocket or bag.
-6. Sentinel detects the observable sequence.
-7. The affected camera marker pulses red and receives an alert label.
-8. The operator clicks the alert marker.
-9. An almost fullscreen camera view opens with a red alert frame.
-10. The operator sees the live feed, the evidence clip, the AI summary, and response context.
-11. Operator chooses an action:
-   - acknowledge
-   - watch live
-   - send floor associate
-   - ignore
-   - create incident
+1. Show a supermarket dashboard with many camera feeds.
+2. One analyzed feed shows a staged review-worthy event, such as shelf-to-pocket movement.
+3. Sentinel flags the camera.
+4. Sentinel speaks an earpiece alert:
+   - "Aisle 5 requires review. Item appears to move from shelf to pocket."
+5. Guard responds over noisy store audio:
+   - "Open aisle five."
+6. ai-coustics enhances the audio.
+7. Voice layer interprets the command.
+8. Sentinel opens the relevant evidence video.
+9. Guard says:
+   - "Send floor associate and create report."
+10. Sentinel creates a review record.
+11. If voice understanding fails, Sentinel creates an error report instead of taking a risky action.
 
-## Camera View
+## Required Screens
 
-When a user clicks any normal camera, Sentinel should open an almost fullscreen popup with:
+- Camera grid or shop floor plan
+- Highlighted alert camera
+- Video/evidence panel
+- Earpiece alert transcript
+- Raw vs. enhanced guard transcript
+- Command confidence
+- Review/error report panel
 
-- Sentinel branded shell over the map
-- camera name and live status
-- camera live view
-- playback controls
-- pause control
-- short rewind control
-- return-to-live control
-- fullscreen control
-- right-side camera metadata
-- location
-- coordinates
-- camera ID
-- status
-- resolution
-- camera type
-- feed type
-- add note action
+## Error Report Contents
 
-## Alert View
+- triggering video clip
+- camera ID and store zone
+- assistant message
+- raw audio
+- enhanced audio
+- transcript attempt
+- interpreted command
+- expected command candidates
+- confidence score
+- action taken or failure reason
+- final human correction
 
-When the selected camera has an alert, the same camera view should open in an alert state:
+## Track Metric
 
-- red frame
-- live camera view
-- short evidence clip showing the fragment that triggered the alert
-- short AI summary
-- event moment
-- aisle, checkout, exit, or shelf location
-- relevant store response option or responsible staff member
-- action buttons
+Pick one:
 
-The alert view should help the operator answer two questions quickly:
+- command recognition accuracy with vs. without ai-coustics
+- transcript confidence before/after enhancement
+- task completion rate under noisy supermarket audio
+- alert-to-video-open time using voice
 
-- what is happening now
-- why did Sentinel interrupt me
+## Demo Rule
 
-## Demo Assets To Define
-
-- target retail environment
-- review scenario
-- number of feeds or camera markers
-- shop floor plan or supermarket layout visual
-- alert types
-- evidence/replay format
-- review or response destination
-- partner technologies visibly used in the flow
-- looped local videos
-- mobile phone streaming setup
-- staged trigger event
-
-## Feed Strategy
-
-Most camera markers can be backed by endless loop videos that represent store camera feeds.
-
-Only the mobile phone livestream needs to be analyzed by the AI engine for the demo.
-
-## Reference UI Pattern
-
-The reference images show a dark Sentinel camera monitoring interface:
-
-- neutral camera pins for active cameras
-- red pulsing camera marker for the triggered alert
-- visible "ALERT" label under the triggered camera
-- online camera count
-- active versus alert legend
-- fullscreen camera preview modal
-- large live video area
-- right-side camera details panel
-- playback and return-to-live controls
-- add note action
-
-This pattern should be adapted to a retail site, such as a supermarket map, shop floor plan, aisle layout, checkout area, exit view, or high-value shelf section.
-
-## Open Demo Questions
-
-- Which non-demo feeds should use looped local videos?
-- What is the single incident that best sells the product?
-- What should happen after a human review action?
+Keep language non-accusatory. The system flags review-worthy observable behavior; it does not decide that theft happened.

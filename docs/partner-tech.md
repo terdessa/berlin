@@ -1,54 +1,61 @@
-# Partner Technology Plan
+# Track And Partner Plan
 
-Sentinel must use at least 3 partner technologies to qualify.
+## Primary Track
 
-## Current Integration Strategy
+**telli + ai-coustics: Voice AI that works in the wild**
 
-The cleanest current plan is to make partner technologies visible in the demo flow:
+Sentinel fits if the demo centers on noisy voice interaction:
 
-- Google DeepMind for analyzing the mobile phone livestream and producing the alert summary
-- Lovable for rapidly building or scaffolding the dashboard UI
-- Entire for human-in-the-loop alert review, store-team action, or incident workflow
+- assistant speaks alert to guard
+- guard responds in noisy supermarket audio
+- ai-coustics enhances audio
+- command is understood or error report is created
+- demo includes an audio metric
 
-Possible additions:
+## Required Partner Stack
 
-- Tavily for retrieving store policies, loss-prevention procedures, or response guidance
-- Gradium or ai-coustics if audio from the shop stream becomes important
-- Pioneer if the team wants to show evaluation, synthetic data, or a smaller specialized detector
+Use at least 3 partner technologies.
 
-## Candidate Uses
+Recommended stack:
 
-### Google DeepMind
+- **ai-coustics:** noisy audio enhancement for guard commands
+- **Gradium:** realtime voice interaction
+- **Google DeepMind:** video/scene understanding
+- **Entire:** human review, action tracking, incident/error workflow
 
-Use for multimodal reasoning, scene understanding, event summarization, or alert explanation. In the current demo, this is the strongest fit for the AI-analyzed phone livestream.
+Ask organizers whether ai-coustics counts toward the 3 required partner technologies. To be safe, use at least 3 from the FAQ list such as Google DeepMind, Gradium, Entire, Tavily, or Lovable.
+
+## Side Challenges
 
 ### Gradium
 
-Use for real-time voice or audio intelligence if the demo includes noisy shop audio, spoken staff notes, or operator interaction.
+Pursue strongly.
 
-### ai-coustics
-
-Use for robust audio enhancement in noisy retail environments, especially if positioning toward the telli and ai-coustics track.
+Use it for the realtime voice assistant loop: spoken alerts, guard commands, or voice response handling.
 
 ### Entire
 
-Use for human-in-the-loop workflows such as reviewing alerts, sending a floor associate, marking false positives, creating incident records, or collaborating on store response.
+Pursue strongly.
 
-### Lovable
+Use it for alert review tasks, action tracking, false-positive marking, incident records, and voice error reports.
 
-Use for quickly building the dashboard UI or prototype shell.
+### Aikido
 
-### Tavily
+Pursue if setup is quick.
 
-Use for retrieving relevant store policies, loss-prevention procedures, response guidance, or camera-zone context after an alert.
+Connect the public GitHub repo and include the required security report screenshot. Aikido does not count toward the 3 required partner technologies.
 
-### Pioneer
+## Recommendation
 
-Use for fine-tuning, synthetic data generation, evaluation, or replacing a general-purpose LLM call with a smaller specialized classifier.
+Prioritize:
 
-## Open Questions
+1. telli + ai-coustics track fit
+2. Gradium side challenge
+3. Entire side challenge
+4. Aikido side challenge
 
-- Which 3 technologies will be easiest to integrate visibly and credibly?
-- Which partner technology best aligns with the chosen track?
-- Which integrations are real product dependencies versus demo accelerators?
-- Should audio be part of the first demo, or should the first demo focus on visual detection?
+Minimum side-challenge implementation:
+
+- Gradium: one working voice alert or command path.
+- Entire: one created review/error task containing video context, transcript, command, and action.
+- Aikido: one connected repo scan screenshot.
