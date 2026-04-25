@@ -13,10 +13,25 @@ AI agent continuously watches all camera feeds. On a review-worthy event it flag
 ## UI (Person 1)
 
 - Repo: `ui/` in this repo
-- Stack: Vite + React + TS + Tailwind + shadcn/ui + Bun
-- Camera grid → alert video panel → right-side log panel (slides in on alert)
+- Stack: Vite + React + TS + Tailwind + shadcn/ui + TanStack Start (SSR) + Bun
+- Dev server runs on **HTTPS** (self-signed cert auto-generated) — required for `getUserMedia` on non-localhost devices
+- Camera grid (6 tiles, 3×2): **live video from connected devices** fills tiles in join order via `useLivekitFeeds`; remaining tiles show placeholder animation
+- Alert video panel → right-side log panel (slides in on alert)
 - Review record is **text-only chat history** — no audio playback in UI
-- Demo toggle on CAM-05 runs a scripted mock scenario end-to-end
+- Demo toggle on CAM-05/CAM-08 runs a scripted mock scenario end-to-end
+
+### Live pages
+
+| Route | Role |
+|-------|------|
+| `/video` | Camera publisher — lens switcher, 720p30, LiveKit publish + subscribe, real-time stats panel |
+| `/audio` | Mic publisher — LiveKit publish + subscribe, real-time stats panel |
+
+Both are direct-link-only (not linked from dashboard). The server prints LAN + localhost URLs for all three routes at startup.
+
+### LiveKit token server function
+
+`src/lib/livekit-token.ts` — accepts `{ room, identity, viewerOnly? }`. Dashboard gets `viewerOnly: true` (subscribe only). Publishers get full access. Reads `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` from `ui/.env` (gitignored; see `.env.example`).
 
 ## Voice service (Person 3)
 
@@ -49,6 +64,8 @@ Keep all alert language non-accusatory. Show confidence, not verdicts.
 - Entire first (push one error record as a review task)
 - Aikido if setup is quick
 
-## Immediate next step
+## Immediate next steps
 
-Connect live agent voice output to the UI's LiveKit room so the conversation appears in the review log in real time.
+1. **Connect voice agent to review log** — pipe live agent output from `apps/voice` into the UI conversation panel in real time via the LiveKit data channel or a WebSocket.
+2. **Wire real visual events** — connect Person 2 (Gemini video analysis) `visual_event` output to the dashboard alert flow instead of the mock scenario.
+3. **Local LiveKit option** — for demos on a phone hotspot, running `livekit-server --dev` on the laptop keeps all traffic on the LAN and avoids mobile-upload saturation.

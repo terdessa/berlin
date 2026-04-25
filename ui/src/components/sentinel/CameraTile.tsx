@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Smartphone, Video, Battery, Signal } from "lucide-react";
+import type { RemoteVideoTrack } from "livekit-client";
 import type { Camera } from "@/lib/sentinel-data";
 
 type Props = {
@@ -8,6 +9,10 @@ type Props = {
   isAnalyzing?: boolean;
   isSelected?: boolean;
   hasDemo?: boolean;
+  /** When provided, the tile shows this live video instead of the placeholder. */
+  liveTrack?: RemoteVideoTrack;
+  /** Participant identity label shown on the tile when liveTrack is present. */
+  liveIdentity?: string;
   onClick?: () => void;
 };
 
@@ -17,14 +22,19 @@ export function CameraTile({
   isAnalyzing,
   isSelected,
   hasDemo,
+  liveTrack,
+  liveIdentity,
   onClick,
 }: Props) {
-  const [microConf, setMicroConf] = useState(() => 0.55 + Math.random() * 0.3);
+  // Start at a fixed value so server and client render the same HTML.
+  // A useEffect immediately randomises it client-side before the first paint.
+  const [microConf, setMicroConf] = useState(0.65);
+  const liveVideoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
-    const reduced =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Seed with a random value on mount, then keep drifting.
+    setMicroConf(isAlert ? 0.78 + Math.random() * 0.18 : 0.55 + Math.random() * 0.3);
     if (reduced) return;
     const id = setInterval(() => {
       setMicroConf((c) => {
@@ -37,7 +47,18 @@ export function CameraTile({
     return () => clearInterval(id);
   }, [isAlert]);
 
-  const isPhone = camera.device === "live-phone";
+  // Attach / detach the LiveKit track whenever it changes.
+  useEffect(() => {
+    const el = liveVideoRef.current;
+    if (!el || !liveTrack) return;
+    liveTrack.attach(el);
+    return () => {
+      liveTrack.detach(el);
+    };
+  }, [liveTrack]);
+
+  const isLive = Boolean(liveTrack);
+  const isPhone = isLive || camera.device === "live-phone";
   const confPct = Math.round(microConf * 100);
 
   return (
@@ -54,23 +75,37 @@ export function CameraTile({
             : "border-border hover:border-primary/40",
       ].join(" ")}
     >
-      {/* Feed background — sits behind everything */}
+      {/* Feed background — real video or placeholder gradient */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-60"
-          style={{
-            background:
-              "repeating-linear-gradient(0deg, oklch(0.24 0.018 240) 0px, oklch(0.20 0.018 240) 2px, oklch(0.22 0.018 240) 4px)",
-          }}
-        />
-        <div className="absolute inset-x-0 h-12 bg-gradient-to-b from-transparent via-white/[0.04] to-transparent animate-scan" />
-        {isAnalyzing && !isAlert && (
-          <div className="absolute inset-x-0 h-8 bg-gradient-to-b from-transparent via-[var(--ok)]/15 to-transparent animate-scan" />
+        {isLive ? (
+          // Live feed from a connected device
+          <video
+            ref={liveVideoRef}
+            autoPlay
+            muted
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          // Placeholder — fake scan-line effect
+          <>
+            <div
+              className="absolute inset-0 opacity-60"
+              style={{
+                background:
+                  "repeating-linear-gradient(0deg, oklch(0.24 0.018 240) 0px, oklch(0.20 0.018 240) 2px, oklch(0.22 0.018 240) 4px)",
+              }}
+            />
+            <div className="absolute inset-x-0 h-12 bg-gradient-to-b from-transparent via-white/[0.04] to-transparent animate-scan" />
+            {isAnalyzing && !isAlert && (
+              <div className="absolute inset-x-0 h-8 bg-gradient-to-b from-transparent via-[var(--ok)]/15 to-transparent animate-scan" />
+            )}
+          </>
         )}
         {isAlert && <div className="absolute inset-0 bg-[var(--alert)]/10" />}
       </div>
 
-      {/* TOP ROW — id+zone on the left, status pill on the right (review or live) */}
+      {/* TOP ROW — id+zone on the left, status pill on the right */}
       <div className="relative z-10 flex items-center justify-between gap-1 px-1.5 py-1 text-[10px]">
         <span className="mono truncate rounded-sm bg-background/70 px-1.5 py-0.5 text-foreground/90 backdrop-blur-sm">
           {camera.id} · {camera.zone}
@@ -85,18 +120,23 @@ export function CameraTile({
           </span>
         ) : (
           <span className="flex shrink-0 items-center gap-1 rounded-sm bg-background/70 px-1.5 py-0.5 backdrop-blur-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-ok animate-soft-pulse" />
+            <span
+              className={[
+                "h-1.5 w-1.5 rounded-full animate-soft-pulse",
+                isLive ? "bg-primary" : "bg-ok",
+              ].join(" ")}
+            />
             <span className="mono uppercase tracking-wider text-[9px] text-muted-foreground">
-              live
+              {isLive ? "streaming" : "live"}
             </span>
           </span>
         )}
       </div>
 
-      {/* Spacer — feed area, no content here so nothing can collide */}
+      {/* Spacer */}
       <div className="relative z-10 flex-1" />
 
-      {/* BOTTOM STRIP — device chip + last motion, single row, always visible */}
+      {/* BOTTOM STRIP */}
       <div className="relative z-10 flex items-center justify-between gap-1 bg-background/55 px-1.5 py-1 backdrop-blur-sm">
         <span className="flex min-w-0 items-center gap-1">
           <span
@@ -114,13 +154,18 @@ export function CameraTile({
             )}
             {isPhone ? "phone" : "cctv"}
           </span>
-          {isPhone && camera.battery !== undefined && (
+          {isLive && liveIdentity && (
+            <span className="mono truncate text-[9px] text-muted-foreground">
+              {liveIdentity}
+            </span>
+          )}
+          {!isLive && isPhone && camera.battery !== undefined && (
             <span className="mono inline-flex items-center gap-0.5 text-[9px] text-muted-foreground">
               <Battery className="h-2.5 w-2.5" />
               {camera.battery}
             </span>
           )}
-          {isPhone && camera.signal && (
+          {!isLive && isPhone && camera.signal && (
             <span className="mono inline-flex items-center gap-0.5 text-[9px] uppercase text-muted-foreground">
               <Signal className="h-2.5 w-2.5" />
               {camera.signal}
@@ -128,16 +173,16 @@ export function CameraTile({
           )}
         </span>
         <span className="mono shrink-0 truncate text-[9px] text-muted-foreground/80">
-          {camera.lastMotion}
+          {isLive ? "connected" : camera.lastMotion}
         </span>
       </div>
 
-      {/* Confidence bar — sits below the bottom strip, never overlaps content */}
+      {/* Confidence bar */}
       <div className="relative z-10 h-[3px] bg-background/40">
         <div
           className={[
             "h-full transition-all duration-700",
-            isAlert ? "bg-alert" : "bg-ok/70",
+            isAlert ? "bg-alert" : isLive ? "bg-primary/80" : "bg-ok/70",
           ].join(" ")}
           style={{ width: `${confPct}%` }}
         />

@@ -163,7 +163,8 @@ Aikido is a side challenge only and does not count toward the 3 required partner
 
 The dashboard UI lives at `ui/` in this repo:
 
-- Stack: Vite + React + TypeScript + Tailwind + shadcn/ui + Bun, Cloudflare deploy target
+- Stack: Vite + React + TypeScript + Tailwind + shadcn/ui + TanStack Start (SSR) + Bun, Cloudflare deploy target
+- Dev server runs over **HTTPS** (self-signed cert) — required for `getUserMedia` on non-localhost devices
 - Originally scaffolded in Lovable, now developed directly
 
 ### UI Architecture Decisions
@@ -171,12 +172,22 @@ The dashboard UI lives at `ui/` in this repo:
 - **Cameras are video-only.** They do not capture audio. The guard's voice comes from a separate earpiece/mic device that connects to the backend independently.
 - **AI agent continuously analyzes all camera feeds.** Tiles show a subtle "analyzing" indicator on every camera.
 - **Two-way voice channel.** Agent → guard (TTS to earpiece), guard → agent (speech with ai-coustics enhancement). Both directions are surfaced in the UI.
+- **Live camera grid.** The dashboard subscribes to the `sentinel-live` LiveKit room as a viewer. Connected publisher devices (phone, laptop camera) fill the camera tiles from left to right. Tiles without a live feed show a placeholder animation. The live feed integration is purely additive — the mock alert/demo flow is unaffected.
+
+### Live Utility Pages
+
+Two direct-link-only routes (not referenced from the dashboard) exist for hardware testing:
+
+- **`/video`** — opens the device camera, publishes to `sentinel-live`. Includes a multi-lens switcher (enumerates all video inputs after permission, hot-swaps via `LocalVideoTrack.replaceTrack`). Capture: 1280×720 @ 30 fps, 2.5 Mbps, no simulcast. Shows a real-time stats panel (kbps, fps, resolution, codec, quality-limitation reason).
+- **`/audio`** — opens the device microphone, publishes to `sentinel-live`. Shows equivalent audio stats.
+
+The dev server prints LAN + localhost URLs for all three routes (`/`, `/video`, `/audio`) at startup.
 
 ### UI Layout
 
 - Single page, dark theme, security-ops aesthetic. Deep slate background, monospaced numerals, amber/red accents for alerts, teal for normal state.
 - **No top bar.** Ambient "Sentinel is watching" pill in a corner is the only persistent status.
-- **Camera grid** (top ~40% viewport): 8–12 small live tiles, each with continuous-analysis indicator.
+- **Camera grid** (top ~40% viewport): 6 tiles (3×2). Live feeds from connected devices replace placeholders in left-to-right order.
 - **Alert video panel** (below grid, ~50% width): flagged camera playback with scene summary overlay.
 - **Right-side log panel** (other ~50% width): slides in only when an alert is active.
 
@@ -192,3 +203,6 @@ The dashboard UI lives at `ui/` in this repo:
 - LiveKit cloud: connected ✅ (`wss://berlin-vc00ggsm.livekit.cloud`)
 - OpenAI STT/TTS: wired as voice runtime (telli-swappable in two lines)
 - `interactions.json` corpus: written per session by `apps/voice/src/logger.py`
+- Dashboard live camera grid: working ✅ — phones and laptops publish via `/video`; dashboard subscribes via `useLivekitFeeds`
+- Camera-lens switcher on `/video`: working ✅ — enumerates all video inputs, hot-swaps without dropping the LiveKit connection
+- Pending: wire live voice agent output (`apps/voice`) into the dashboard review log panel in real time

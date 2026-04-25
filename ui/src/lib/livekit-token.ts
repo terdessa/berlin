@@ -3,6 +3,8 @@ import { createServerFn } from "@tanstack/react-start";
 export type IssueTokenInput = {
   room: string;
   identity: string;
+  /** When true the token only allows subscribing, not publishing. */
+  viewerOnly?: boolean;
 };
 
 export type IssueTokenResult = {
@@ -32,7 +34,7 @@ export const issueLivekitToken = createServerFn({ method: "POST" })
     if (data.room.length > 128 || data.identity.length > 128) {
       throw new Error("room and identity must be <= 128 chars");
     }
-    return { room: data.room.trim(), identity: data.identity.trim() };
+    return { room: data.room.trim(), identity: data.identity.trim(), viewerOnly: Boolean(data.viewerOnly) };
   })
   .handler(async ({ data }): Promise<IssueTokenResult | IssueTokenError> => {
     const url = process.env.LIVEKIT_URL;
@@ -67,14 +69,14 @@ export const issueLivekitToken = createServerFn({ method: "POST" })
       at.addGrant({
         roomJoin: true,
         room: data.room,
-        canPublish: true,
+        canPublish: !data.viewerOnly,
         canSubscribe: true,
-        canPublishData: true,
+        canPublishData: !data.viewerOnly,
       });
 
       const token = await at.toJwt();
       console.log(
-        `[livekit] issued token  room="${data.room}"  identity="${data.identity}"`,
+        `[livekit] issued token  room="${data.room}"  identity="${data.identity}"  viewerOnly=${data.viewerOnly ?? false}`,
       );
 
       return { ok: true, token, url };

@@ -48,8 +48,9 @@ Show confidence scores, not verdicts. No facial recognition, no identity trackin
 
 - **Cameras are video-only.** Never render mic icons on camera tiles. Never imply the cameras hear anything. Audio comes from the separate earpiece device.
 - **Every camera tile shows a continuous-analysis indicator.** The agent watches *all* feeds, not only the alerted one — the UI must reflect that.
-- **The dashboard makes no backend calls.** Dashboard data is hardcoded mocks and local state. Do not add API clients, auth, or routing for backend resources to anything under `src/components/sentinel/`.
-- **Live-stream pages are an exception.** `/video` and `/audio` may use LiveKit and the `issueLivekitToken` server function. Keep that exception scoped — do not import LiveKit from the dashboard, do not add references from the dashboard to those pages.
+- **Dashboard data is mocked.** Alert events, conversation history, and action states are hardcoded mocks and local state. Do not add API clients, auth, or routing for backend resources to anything under `src/components/sentinel/`.
+- **LiveKit in the dashboard is viewer-only.** `SentinelDashboard` uses `useLivekitFeeds("sentinel-live")` to subscribe to live camera tracks and render them in the camera grid tiles. It never publishes. All `livekit-client` usage inside the dashboard goes through `use-livekit-feeds.ts` (dynamic import inside `useEffect`). Do not static-import `livekit-client` anywhere.
+- **`/video` and `/audio` are the publisher endpoints.** Those pages handle camera/mic acquisition, `getUserMedia`, camera switching, and publishing. The dashboard only subscribes.
 
 ## Layout
 
@@ -103,9 +104,26 @@ Direct-link-only utility pages that publish the device camera/mic into a shared 
 - Identity is generated client-side as `<platform>-<random6>`.
 - Local capture works even without LiveKit credentials (the page falls back to "local preview only" with a banner).
 - All `livekit-client` usage goes through dynamic `import("livekit-client")` inside `useEffect`. Type-only imports at module level are fine. Do **not** static-import `livekit-client` — it is not SSR-safe.
-- Token issuance lives in `src/lib/livekit-token.ts` (`issueLivekitToken` server function). It reads `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` from `process.env`. These are hoisted from `ui/.env` by `vite.config.ts` at startup.
+- Token issuance lives in `src/lib/livekit-token.ts` (`issueLivekitToken` server function). It accepts `{ room, identity, viewerOnly? }`. `viewerOnly: true` issues a subscribe-only token (used by the dashboard). It reads `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` from `process.env`, hoisted from `ui/.env` by `vite.config.ts` at startup.
 
 When you need credentials, sign up at [https://cloud.livekit.io](https://cloud.livekit.io) and copy the values into a local `.env` (see `.env.example`). `.env` is gitignored.
+
+## Camera publisher page (`/video`) specifics
+
+- **Camera switcher**: after `getUserMedia` grants permission, all video inputs are enumerated and shown as buttons. Tapping a button calls `onSwitchCamera(deviceId)` which opens a new stream and hot-swaps the track in the LiveKit publication via `LocalVideoTrack.replaceTrack()` — the room connection stays alive.
+- **Capture settings**: 1280×720 @ 30 fps, 2.5 Mbps cap, `simulcast: false`. Constants `CAM_WIDTH`, `CAM_HEIGHT`, `CAM_FPS`, `CAM_MAX_BITRATE` are at the top of `src/routes/video.tsx` — adjust there if needed.
+- **Stats panel**: `useLivekitStats` polls `RTCPeerConnection.getStats()` every second and surfaces kbps, fps, actual resolution, codec, packet loss, and `qualityLimitationReason` per track.
+
+## Dashboard live camera grid
+
+`SentinelDashboard` calls `useLivekitFeeds("sentinel-live")` which connects as a viewer-only subscriber. The hook returns `LiveFeed[]` in insertion order (first publisher → index 0). The camera grid maps `liveFeeds[i]` to `cameras[i]`, so the first connected device fills CAM-01, the second fills CAM-02, and so on. Tiles without a corresponding feed keep their placeholder animation. The hook returns `[]` during SSR and when LiveKit is not configured — tiles are always rendered, only the content differs.
+
+## SSR / hydration rules
+
+- `SentinelDashboard` renders on the server. `useLivekitFeeds` returns `[]` on the server (all effects are client-only), so tiles always start as placeholders — no hydration mismatch.
+- `CameraTile` uses a fixed initial `microConf` value (`0.65`) for SSR; `useEffect` randomises it on mount. This prevents the confidence-bar width from differing between server and client HTML.
+- `InferenceCounter` uses `suppressHydrationWarning` on the formatted-number span because `toLocaleString()` can differ between the Node SSR locale and the browser's locale.
+- `/video` and `/audio` use an outer `VideoPage`/`AudioPage` wrapper that renders `<LivePageSkeleton>` during SSR and only mounts the interactive inner component after hydration.
 
 ## Dev server
 

@@ -14,14 +14,31 @@ Sentinel is a **voice-first retail security copilot** for the **telli + ai-coust
 
 ## UI (Person 1)
 
-The dashboard is at `ui/`. Stack: Vite + React + TS + Tailwind + shadcn/ui + Bun, Cloudflare deploy.
+The dashboard is at `ui/`. Stack: Vite + React + TS + Tailwind + shadcn/ui + TanStack Start (SSR) + Bun, Cloudflare deploy.
 
 - No top bar. Ambient "Sentinel is watching" corner pill is the only persistent status.
-- Camera grid on top, 8–12 video-only tiles, each shows continuous-analysis indicator.
+- Camera grid (6 tiles, 3×2): tiles show **real live video** from connected publisher devices when LiveKit is configured. Devices fill tiles in join order (first device → CAM-01, second → CAM-02, etc.). Remaining tiles keep placeholder animation.
 - Alert video panel below the grid, ~50% width.
 - Right-side log panel slides in only on alert.
 - Review record uses **text-only chat history** between Sentinel and Guard — no audio waveforms.
-- Demo toggle simulates an alert on CAM-05 with a hardcoded mock conversation.
+- Demo toggle simulates an alert on CAM-05/CAM-08 with a hardcoded mock conversation.
+- Dev server runs on **HTTPS** (self-signed cert) and prints LAN + localhost URLs for `/`, `/video`, `/audio` at startup.
+
+### Live utility pages
+
+- `/video` — publishes the device camera to `sentinel-live`; includes a camera-lens switcher (enumerate all video inputs after permission, hot-swap via `replaceTrack`). Capture: 1280×720 @ 30 fps, 2.5 Mbps, no simulcast.
+- `/audio` — publishes the device mic to `sentinel-live`.
+- Both pages subscribe to other publishers in the same room and show a real-time WebRTC stats panel (kbps, fps, resolution, codec, `qualityLimitationReason`).
+
+### Key library files added
+
+| File | Purpose |
+|------|---------|
+| `src/lib/livekit-token.ts` | Server function minting LiveKit JWTs; supports `viewerOnly` flag |
+| `src/lib/use-livekit-feeds.ts` | Viewer-only subscriber hook; returns ordered `LiveFeed[]` for the dashboard grid |
+| `src/lib/use-livekit-stats.ts` | Polls `RTCPeerConnection.getStats()` for the stats panel |
+| `src/lib/live-stats-panel.tsx` | Stats panel UI component |
+| `src/lib/live-page-skeleton.tsx` | SSR-safe skeleton preventing hydration mismatches on live pages |
 
 ## Voice service (Person 3)
 
@@ -49,6 +66,8 @@ Failure records include NISQA scores, conversation history, visual context, fail
 - Max 3 clarification attempts → error record.
 - All language non-accusatory.
 
-## Next task
+## Next tasks
 
-Connect the live voice agent output to the UI's LiveKit room so guard commands flow into the conversation log in real time.
+- Connect the live voice agent output (`apps/voice`) to the UI's LiveKit room so guard commands and Sentinel responses flow into the conversation log panel in real time.
+- Wire real `visual_event` objects from Person 2 (Gemini video analysis) into the dashboard alert flow.
+- Consider self-hosting LiveKit on the laptop for local-network demos to avoid mobile-upload bottleneck when using a phone hotspot.

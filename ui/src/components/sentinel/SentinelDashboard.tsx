@@ -11,6 +11,7 @@ import {
   type Phase,
   type Scenario,
 } from "@/lib/sentinel-data";
+import { useLivekitFeeds } from "@/lib/use-livekit-feeds";
 import { CameraTile } from "./CameraTile";
 import { AlertVideoPanel } from "./AlertVideoPanel";
 import { ReviewLogPanel } from "./ReviewLogPanel";
@@ -35,6 +36,10 @@ export function SentinelDashboard() {
 
   const tickerIdRef = useRef(0);
   const timerRef = useRef<number | null>(null);
+
+  // Subscribe to the shared LiveKit room as a viewer so live device feeds
+  // appear in the camera grid. Returns [] when LiveKit isn't configured.
+  const liveFeeds = useLivekitFeeds("sentinel-live");
 
   const alert: AlertEvent | null = run ? run.scenario.alert : null;
   const isAlerting = phase !== "idle" && phase !== "resolved";
@@ -225,17 +230,22 @@ export function SentinelDashboard() {
             aria-label="Camera grid"
             className="grid min-h-0 flex-[3] grid-cols-3 gap-2"
           >
-            {cameras.map((cam) => (
-              <CameraTile
-                key={cam.id}
-                camera={cam}
-                isAlert={alert?.cameraId === cam.id}
-                isAnalyzing={analyzingId !== cam.id}
-                isSelected={selected === cam.id}
-                hasDemo={Boolean(scenarioByCamera[cam.id])}
-                onClick={() => handleCameraClick(cam.id)}
-              />
-            ))}
+            {cameras.map((cam, i) => {
+              const feed = liveFeeds[i];
+              return (
+                <CameraTile
+                  key={cam.id}
+                  camera={cam}
+                  isAlert={alert?.cameraId === cam.id}
+                  isAnalyzing={analyzingId !== cam.id}
+                  isSelected={selected === cam.id}
+                  hasDemo={Boolean(scenarioByCamera[cam.id])}
+                  liveTrack={feed?.track}
+                  liveIdentity={feed?.identity}
+                  onClick={() => handleCameraClick(cam.id)}
+                />
+              );
+            })}
           </div>
 
           {/* Active review — smaller */}
