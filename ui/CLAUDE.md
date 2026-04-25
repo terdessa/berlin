@@ -4,7 +4,14 @@ Guidance for AI coding agents working in this repository.
 
 ## What this is
 
-**Sentinel** — a voice-first retail security copilot. This repository is the **dashboard UI only**. There is no backend, no real video pipeline, and no real audio processing in this repo. All data is mocked in-memory.
+**Sentinel** — a voice-first retail security copilot. The default page (`/`) is the **dashboard UI** with mocked data. The dashboard remains presentational — no backend calls, no real streams.
+
+There are two **direct-link-only** utility pages (not linked from the dashboard) used to test real device capture against a LiveKit room:
+
+- `/video` — publishes the device camera, subscribes to other publishers in the same room.
+- `/audio` — publishes the device microphone, subscribes to other publishers in the same room.
+
+These two routes are intentionally not referenced anywhere in the dashboard UI; they're reachable only by typing the URL. The server prints them in the terminal at startup.
 
 One-line pitch: *Sentinel helps retail security teams hear, review, and respond to camera events hands-free, even in noisy supermarkets.*
 
@@ -41,7 +48,8 @@ Show confidence scores, not verdicts. No facial recognition, no identity trackin
 
 - **Cameras are video-only.** Never render mic icons on camera tiles. Never imply the cameras hear anything. Audio comes from the separate earpiece device.
 - **Every camera tile shows a continuous-analysis indicator.** The agent watches *all* feeds, not only the alerted one — the UI must reflect that.
-- **No backend calls.** Data is hardcoded mocks and local state. Do not add API clients, auth, or routing for backend resources.
+- **The dashboard makes no backend calls.** Dashboard data is hardcoded mocks and local state. Do not add API clients, auth, or routing for backend resources to anything under `src/components/sentinel/`.
+- **Live-stream pages are an exception.** `/video` and `/audio` may use LiveKit and the `issueLivekitToken` server function. Keep that exception scoped — do not import LiveKit from the dashboard, do not add references from the dashboard to those pages.
 
 ## Layout
 
@@ -87,6 +95,22 @@ Single page, dark theme, security-ops aesthetic — deep slate background, monos
 - `role="alert"` on the live alert region only when an alert is active.
 - Responsive down to 1280px; mobile is not required.
 
+## Live-stream pages (`/video`, `/audio`)
+
+Direct-link-only utility pages that publish the device camera/mic into a shared LiveKit room. Built for hardware-capture testing during the hackathon. They share these conventions:
+
+- Default room name: `sentinel-live` (override with `?room=...`).
+- Identity is generated client-side as `<platform>-<random6>`.
+- Local capture works even without LiveKit credentials (the page falls back to "local preview only" with a banner).
+- All `livekit-client` usage goes through dynamic `import("livekit-client")` inside `useEffect`. Type-only imports at module level are fine. Do **not** static-import `livekit-client` — it is not SSR-safe.
+- Token issuance lives in `src/lib/livekit-token.ts` (`issueLivekitToken` server function). It reads `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` from `process.env`. These are hoisted from `ui/.env` by `vite.config.ts` at startup.
+
+When you need credentials, sign up at [https://cloud.livekit.io](https://cloud.livekit.io) and copy the values into a local `.env` (see `.env.example`). `.env` is gitignored.
+
+## Dev server
+
+`bun run dev` (or `npm run dev`) starts Vite over **HTTPS** with a self-signed cert cached in `node_modules/.cache/sentinel-dev-cert/`. HTTPS is required so phones (any non-localhost origin) can use `getUserMedia()`. The startup banner prints `https://localhost:<port>/...` and `https://<lan-ip>:<port>/...` URLs for `/`, `/video`, and `/audio`, and warns when LiveKit env vars are missing. Phones must accept the self-signed cert once.
+
 ## Out of scope for this repo
 
-Auth, routing for protected pages, real video streams, real audio capture/processing, API clients, persistent storage. Keep it presentational.
+Real video pipeline for the dashboard, persistent storage, auth, protected routing, server-side audio enhancement. The LiveKit pieces above are the only "real backend" surface; everything else stays presentational.

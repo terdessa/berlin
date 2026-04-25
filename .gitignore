@@ -1,6 +1,24 @@
 .DS_Store
 .vscode/
 .claude/
-ui/node_modules/
+
+# Dependencies and build artifacts (any depth)
+**/node_modules/
 ui/dist/
 ui/.wrangler/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Local env files - never commit credentials/secrets
+.env
+.env.*
+!.env.example
+
+# Superseded scratch folders kept around locally only
+Test Live/
+Test Video Live/
+Test Audio Live/
