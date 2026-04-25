@@ -1,0 +1,146 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-alert: var(--alert);
+  --color-alert-foreground: var(--alert-foreground);
+  --color-ok: var(--ok);
+  --color-grid-line: var(--grid-line);
+  --color-panel: var(--panel);
+  --color-panel-elevated: var(--panel-elevated);
+
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --animate-soft-pulse: soft-pulse 2.4s ease-in-out infinite;
+  --animate-alert-pulse: alert-pulse 1.2s ease-in-out infinite;
+  --animate-scan: scan 3s linear infinite;
+  --animate-slide-in-right: slide-in-right 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-wave: wave 1.4s ease-in-out infinite;
+}
+
+@keyframes soft-pulse {
+  0%, 100% { opacity: 0.85; box-shadow: 0 0 0 0 color-mix(in oklab, var(--ok) 40%, transparent); }
+  50% { opacity: 1; box-shadow: 0 0 0 6px color-mix(in oklab, var(--ok) 0%, transparent); }
+}
+
+@keyframes alert-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--alert) 60%, transparent), inset 0 0 0 1px var(--alert); }
+  50% { box-shadow: 0 0 0 8px color-mix(in oklab, var(--alert) 0%, transparent), inset 0 0 0 2px var(--alert); }
+}
+
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+
+:root {
+  --radius: 0.5rem;
+
+  /* Deep slate security-ops palette */
+  --background: oklch(0.18 0.015 240);
+  --foreground: oklch(0.92 0.01 230);
+
+  --panel: oklch(0.22 0.018 240);
+  --panel-elevated: oklch(0.26 0.02 240);
+
+  --card: oklch(0.22 0.018 240);
+  --card-foreground: oklch(0.92 0.01 230);
+  --popover: oklch(0.22 0.018 240);
+  --popover-foreground: oklch(0.92 0.01 230);
+
+  /* Teal — normal/healthy */
+  --ok: oklch(0.78 0.13 195);
+  --primary: oklch(0.78 0.13 195);
+  --primary-foreground: oklch(0.18 0.015 240);
+
+  --secondary: oklch(0.3 0.02 240);
+  --secondary-foreground: oklch(0.92 0.01 230);
+
+  --muted: oklch(0.26 0.018 240);
+  --muted-foreground: oklch(0.62 0.02 235);
+
+  --accent: oklch(0.3 0.04 200);
+  --accent-foreground: oklch(0.92 0.01 230);
+
+  /* Red — review/alert */
+  --alert: oklch(0.62 0.23 25);
+  --alert-foreground: oklch(0.98 0.01 230);
+
+  --destructive: oklch(0.62 0.22 25);
+  --destructive-foreground: oklch(0.96 0.01 230);
+
+  --border: oklch(0.32 0.018 240);
+  --input: oklch(0.3 0.018 240);
+  --ring: oklch(0.78 0.13 195);
+
+  --grid-line: oklch(0.28 0.018 240);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: -1px -1px;
+  }
+
+  .num, .mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+}
