@@ -19,9 +19,9 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import json
+import logging
 import os
-import uuid
-import wave
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -32,17 +32,17 @@ from livekit.agents import (
     AgentSession,
     AutoSubscribe,
     JobContext,
-    RoomIO,
     WorkerOptions,
     cli,
-    llm,
 )
 from livekit.agents.voice import Agent
 from livekit.agents.voice.room_io import RoomInputOptions
 from livekit.plugins import openai as lk_openai
 from livekit.plugins import ai_coustics
+from livekit.plugins import silero
 from livekit.plugins.ai_coustics import EnhancerModel
 
+from .audio_capture import CapturingFrameProcessor
 from .interpret import (
     ACTION_THRESHOLD,
     MAX_CLARIFICATIONS,
@@ -52,17 +52,16 @@ from .interpret import (
 )
 from .schema import (
     AudioMeasurement,
-    CommandCandidate,
     ConversationTurn,
     FailureRecord,
     Interpretation,
     InteractionRecord,
-    NisqaDelta,
-    NisqaMeasurement,
-    NisqaScore,
     VisualEvent,
 )
 from . import logger as corpus_logger
+from .nisqa import score_pair
+
+log = logging.getLogger("sentinel.voice")
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -121,35 +120,17 @@ Current alert: {EARPIECE_ALERT}
 """.strip()
 
 # ---------------------------------------------------------------------------
-# Placeholder NISQA scores
-# Real NISQA scoring runs offline via scripts/score_nisqa.py after the session.
-# ---------------------------------------------------------------------------
-
-def _placeholder_nisqa(raw_path: str, enhanced_path: str) -> NisqaMeasurement:
-    """
-    Returns placeholder NISQA scores.
-    Replace with real NISQA v2 scoring once the offline script is integrated.
-    """
-    return NisqaMeasurement(
-        raw=NisqaScore(mos=2.1, noisiness=1.8, coloration=2.4, discontinuity=2.6, loudness=3.0),
-        enhanced=NisqaScore(mos=3.7, noisiness=3.8, coloration=3.6, discontinuity=3.9, loudness=3.8),
-        delta=NisqaDelta(mos=1.6),
-    )
-
-
-# ---------------------------------------------------------------------------
 # Session state per call
 # ---------------------------------------------------------------------------
 
 class SentinelSession:
-    def __init__(self, visual_event: VisualEvent):
+    def __init__(self, visual_event: VisualEvent, audio_processor: CapturingFrameProcessor):
         self.visual_event = visual_event
+        self.audio_processor = audio_processor
         self.conversation: list[ConversationTurn] = []
         self.clarification_count = 0
         self.interaction_id = f"interaction-{datetime.datetime.utcnow().isoformat()}Z-{visual_event.camera_id}"
         self.timestamp = datetime.datetime.utcnow().isoformat() + "Z"
-        self.raw_audio_chunks: list[bytes] = []
-        self.enhanced_audio_chunks: list[bytes] = []
 
     def add_assistant_turn(self, text: str):
         self.conversation.append(ConversationTurn(speaker="assistant", text=text))
@@ -162,24 +143,31 @@ class SentinelSession:
             asr_confidence=asr_confidence,
         ))
 
-    def save_audio(self, sample_rate: int = 16000) -> tuple[str, str]:
-        ts = self.timestamp.replace(":", "-").replace(".", "-")
-        raw_path = str(_AUDIO_RAW / f"{ts}.wav")
-        enhanced_path = str(_AUDIO_ENHANCED / f"{ts}.wav")
-        # Audio saving is a stub — real implementation captures frames from LiveKit
-        return raw_path, enhanced_path
+    def save_audio(self) -> tuple[str, str, str, str]:
+        ts = datetime.datetime.utcnow().isoformat().replace(":", "-").replace(".", "-") + "Z"
+        raw_name = f"{ts}.wav"
+        enhanced_name = f"{ts}.wav"
+        raw_path = _AUDIO_RAW / raw_name
+        enhanced_path = _AUDIO_ENHANCED / enhanced_name
+        self.audio_processor.write_wav_snapshots(raw_path, enhanced_path)
+        return (
+            str(raw_path),
+            str(enhanced_path),
+            f"audio/raw/{raw_name}",
+            f"audio/enhanced/{enhanced_name}",
+        )
 
     def write_success(self, result: InterpretResult, action_taken: str):
-        raw_path, enhanced_path = self.save_audio()
-        nisqa = _placeholder_nisqa(raw_path, enhanced_path)
+        raw_path, enhanced_path, raw_clip_path, enhanced_clip_path = self.save_audio()
+        nisqa = score_pair(raw_path, enhanced_path)
         record = InteractionRecord(
             id=self.interaction_id,
             timestamp=self.timestamp,
             outcome="success",
             visual_event=self.visual_event,
             audio=AudioMeasurement(
-                raw_clip_path=raw_path,
-                enhanced_clip_path=enhanced_path,
+                raw_clip_path=raw_clip_path,
+                enhanced_clip_path=enhanced_clip_path,
                 nisqa=nisqa,
             ),
             conversation=self.conversation,
@@ -201,9 +189,10 @@ class SentinelSession:
         raw_transcript: str,
         enhanced_transcript: str,
         reason: str,
+        action_taken: str = "asked_for_clarification",
     ):
-        raw_path, enhanced_path = self.save_audio()
-        nisqa = _placeholder_nisqa(raw_path, enhanced_path)
+        raw_path, enhanced_path, raw_clip_path, enhanced_clip_path = self.save_audio()
+        nisqa = score_pair(raw_path, enhanced_path)
         explanation = failure_explanation(
             result,
             raw_transcript,
@@ -221,8 +210,8 @@ class SentinelSession:
             outcome="error",
             visual_event=self.visual_event,
             audio=AudioMeasurement(
-                raw_clip_path=raw_path,
-                enhanced_clip_path=enhanced_path,
+                raw_clip_path=raw_clip_path,
+                enhanced_clip_path=enhanced_clip_path,
                 nisqa=nisqa,
             ),
             conversation=self.conversation,
@@ -232,7 +221,7 @@ class SentinelSession:
                 candidates=result.candidates,
                 target_camera_id=result.target_camera_id,
             ),
-            action_taken="none",
+            action_taken=action_taken,
             failure=FailureRecord(
                 failure_mode=result.failure_mode or "acoustic_confusion",
                 reason=reason,
@@ -256,41 +245,97 @@ class SentinelSession:
 async def entrypoint(ctx: JobContext):
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
 
-    session = SentinelSession(visual_event=MOCK_VISUAL_EVENT)
+    audio_processor = CapturingFrameProcessor(
+        ai_coustics.audio_enhancement(
+            model=EnhancerModel.QUAIL_L,
+        )
+    )
+
+    session = SentinelSession(
+        visual_event=MOCK_VISUAL_EVENT,
+        audio_processor=audio_processor,
+    )
 
     agent = Agent(instructions=SYSTEM_PROMPT)
 
     agent_session = AgentSession(
         stt=lk_openai.STT(),     # swap for telli STT when available
         tts=lk_openai.TTS(),     # swap for telli TTS when available
-        llm=lk_openai.LLM(),
+        vad=silero.VAD.load(),
     )
 
     session.add_assistant_turn(EARPIECE_ALERT)
 
-    @agent_session.on("user_speech_committed")
+    def publish_event(kind: str, payload: dict):
+        message = {
+            "source": "sentinel-voice-agent",
+            "kind": kind,
+            "payload": payload,
+        }
+        async def _publish():
+            await ctx.room.local_participant.publish_data(
+                json.dumps(message, ensure_ascii=False),
+                reliable=True,
+                topic="sentinel.voice",
+            )
+
+        task = asyncio.create_task(_publish())
+
+        def _log_publish_failure(done: asyncio.Task):
+            try:
+                done.result()
+            except Exception:
+                log.exception("failed to publish Sentinel voice event", extra={"kind": kind})
+
+        task.add_done_callback(_log_publish_failure)
+
+    def say(text: str):
+        agent_session.say(text, allow_interruptions=True)
+        publish_event("assistant_turn", {"text": text})
+
+    @agent_session.on("user_input_transcribed")
     def on_guard_speech(event):
-        raw_text = getattr(event, "raw_transcript", event.transcript)
-        enhanced_text = event.transcript
-        asr_confidence = getattr(event, "confidence", 1.0)
+        if not getattr(event, "is_final", False):
+            return
+
+        enhanced_text = event.transcript.strip()
+        if not enhanced_text:
+            return
+
+        raw_text = getattr(event, "raw_transcript", enhanced_text)
+        asr_confidence = getattr(event, "confidence", None)
+        if asr_confidence is None:
+            asr_confidence = 1.0
 
         session.add_guard_turn(raw_text, enhanced_text, asr_confidence)
+        publish_event(
+            "guard_turn",
+            {
+                "rawTranscript": raw_text,
+                "enhancedTranscript": enhanced_text,
+                "asrConfidence": asr_confidence,
+            },
+        )
 
         result = interpret(enhanced_text, camera_id=MOCK_VISUAL_EVENT.camera_id)
 
         if result.confidence >= ACTION_THRESHOLD:
             action = _route_command(result)
             session.add_assistant_turn(action["response"])
-            session.write_success(result, action["action_taken"])
+            say(action["response"])
+            record = session.write_success(result, action["action_taken"])
+            publish_event("interaction_record", record.to_dict())
         else:
             session.clarification_count += 1
             if session.clarification_count >= MAX_CLARIFICATIONS:
-                session.write_failure(
+                record = session.write_failure(
                     result,
                     raw_text,
                     enhanced_text,
                     reason="max_clarifications_reached",
+                    action_taken="none",
                 )
+                publish_event("interaction_record", record.to_dict())
                 return
 
             clarification = (
@@ -299,20 +344,36 @@ async def entrypoint(ctx: JobContext):
                 f"at {MOCK_VISUAL_EVENT.zone}?"
             )
             session.add_assistant_turn(clarification)
+            say(clarification)
+            record = session.write_failure(
+                result,
+                raw_text,
+                enhanced_text,
+                reason="voice_command_unclear",
+                action_taken="asked_for_clarification",
+            )
+            publish_event("interaction_record", record.to_dict())
 
-    # Wire ai-coustics noise cancellation on the incoming guard audio via RoomIO
-    room_io = RoomIO(
-        agent_session,
+    # Wire ai-coustics noise cancellation on the incoming guard audio.
+    mic_identity = os.getenv("LIVEKIT_MIC_IDENTITY", "").strip() or "sentinel-guard-mic"
+    await agent_session.start(
+        agent,
         room=ctx.room,
-        input_options=RoomInputOptions(
-            noise_cancellation=ai_coustics.audio_enhancement(
-                model=EnhancerModel.QUAIL_L,
-            ),
+        room_input_options=RoomInputOptions(
+            participant_identity=mic_identity,
+            noise_cancellation=audio_processor,
         ),
     )
-
-    await agent_session.start(agent, room_io=room_io)
-    await agent_session.say(EARPIECE_ALERT, allow_interruptions=True)
+    publish_event("visual_event", MOCK_VISUAL_EVENT.to_dict() if hasattr(MOCK_VISUAL_EVENT, "to_dict") else {
+        "id": MOCK_VISUAL_EVENT.id,
+        "cameraId": MOCK_VISUAL_EVENT.camera_id,
+        "zone": MOCK_VISUAL_EVENT.zone,
+        "summary": MOCK_VISUAL_EVENT.summary,
+        "confidence": MOCK_VISUAL_EVENT.confidence,
+        "frameUrl": MOCK_VISUAL_EVENT.frame_url,
+        "clipUrl": MOCK_VISUAL_EVENT.clip_url,
+    })
+    say(EARPIECE_ALERT)
 
 
 def _route_command(result: InterpretResult) -> dict:

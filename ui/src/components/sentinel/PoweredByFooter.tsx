@@ -1,9 +1,4 @@
-const partners = [
-  "ai-coustics",
-  "Gradium",
-  "Entire",
-  "Google DeepMind",
-];
+const partners = ["ai-coustics", "Gradium", "Entire", "Google DeepMind"];
 
 export function PoweredByFooter() {
   return (

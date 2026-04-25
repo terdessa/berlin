@@ -1,1 +1,280 @@
-[]
+[
+  {
+    "id": "interaction-2026-04-25T18:16:28.134287Z-camera-aisle-5",
+    "timestamp": "2026-04-25T18:16:28.134296Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T18-16-28-134296Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T18-16-28-134296Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.882,
+          "noisiness": 3.894,
+          "coloration": 4.097,
+          "discontinuity": 4.301,
+          "loudness": 2.799
+        },
+        "enhanced": {
+          "mos": 3.83,
+          "noisiness": 3.801,
+          "coloration": 4.062,
+          "discontinuity": 4.323,
+          "loudness": 2.686
+        },
+        "delta": {
+          "mos": -0.052
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you tell me the gender of the person in aisle 5, please?",
+        "enhancedTranscript": "Can you tell me the gender of the person in aisle 5, please?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean open camera at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "open_camera",
+      "commandConfidence": 0.65,
+      "candidates": [
+        {
+          "command": "open_camera",
+          "confidence": 0.65
+        }
+      ],
+      "targetCameraId": "camera-aisle-5"
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "acoustic_confusion",
+      "reason": "voice_command_unclear",
+      "explanation": "After enhancement (+-0.1 MOS), the most likely interpretation was 'open_camera' but confidence (65%) is below the action threshold (70%). The enhanced transcript 'Can you tell me the gender of the person in aisle 5, please?' may contain acoustically similar words. Candidates considered: open_camera (65%).",
+      "suggestedClarification": "Did you mean open camera at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.9 → enhanced 3.8 (+-0.1 MOS).",
+      "expectedCommand": "open_camera"
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T18:16:28.134287Z-camera-aisle-5",
+    "timestamp": "2026-04-25T18:16:28.134296Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T18-16-28-134296Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T18-16-28-134296Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.505,
+          "noisiness": 4.542,
+          "coloration": 3.621,
+          "discontinuity": 2.7,
+          "loudness": 2.235
+        },
+        "enhanced": {
+          "mos": 3.536,
+          "noisiness": 4.521,
+          "coloration": 3.676,
+          "discontinuity": 2.83,
+          "loudness": 2.179
+        },
+        "delta": {
+          "mos": 0.031
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you tell me the gender of the person in aisle 5, please?",
+        "enhancedTranscript": "Can you tell me the gender of the person in aisle 5, please?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean open camera at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "What gender is the person on aisle 5?",
+        "enhancedTranscript": "What gender is the person on aisle 5?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean open camera at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "open_camera",
+      "commandConfidence": 0.65,
+      "candidates": [
+        {
+          "command": "open_camera",
+          "confidence": 0.65
+        }
+      ],
+      "targetCameraId": "camera-aisle-5"
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "acoustic_confusion",
+      "reason": "voice_command_unclear",
+      "explanation": "After enhancement (+0.0 MOS), the most likely interpretation was 'open_camera' but confidence (65%) is below the action threshold (70%). The enhanced transcript 'What gender is the person on aisle 5?' may contain acoustically similar words. Candidates considered: open_camera (65%).",
+      "suggestedClarification": "Did you mean open camera at Aisle 5?",
+      "acousticNote": "NISQA: raw 3.5 → enhanced 3.5 (+0.0 MOS).",
+      "expectedCommand": "open_camera"
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-25T18:16:28.134287Z-camera-aisle-5",
+    "timestamp": "2026-04-25T18:16:28.134296Z",
+    "outcome": "success",
+    "visualEvent": {
+      "id": "event-aisle-5",
+      "cameraId": "camera-aisle-5",
+      "zone": "Aisle 5",
+      "summary": "Item appears to move from shelf to pocket. Human review recommended.",
+      "confidence": 0.82,
+      "frameUrl": "frames/aisle-5-alert.jpg",
+      "clipUrl": "clips/aisle-5-event.mp4"
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-25T18-16-28-134296Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-25T18-16-28-134296Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 3.36,
+          "noisiness": 4.542,
+          "coloration": 3.443,
+          "discontinuity": 2.345,
+          "loudness": 2.154
+        },
+        "enhanced": {
+          "mos": 3.315,
+          "noisiness": 4.533,
+          "coloration": 3.395,
+          "discontinuity": 2.256,
+          "loudness": 2.106
+        },
+        "delta": {
+          "mos": -0.045
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you tell me the gender of the person in aisle 5, please?",
+        "enhancedTranscript": "Can you tell me the gender of the person in aisle 5, please?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean open camera at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "What gender is the person on aisle 5?",
+        "enhancedTranscript": "What gender is the person on aisle 5?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "I didn't catch that clearly. Did you mean open camera at Aisle 5?",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "What aisle was the incident at?",
+        "enhancedTranscript": "What aisle was the incident at?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "Opening evidence video for camera-aisle-was.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "open_camera",
+      "commandConfidence": 0.73,
+      "candidates": [
+        {
+          "command": "open_camera",
+          "confidence": 0.73
+        }
+      ],
+      "targetCameraId": "camera-aisle-was"
+    },
+    "actionTaken": "opened_evidence_video",
+    "failure": null,
+    "humanCorrection": null
+  }
+]

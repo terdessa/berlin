@@ -34,7 +34,11 @@ export const issueLivekitToken = createServerFn({ method: "POST" })
     if (data.room.length > 128 || data.identity.length > 128) {
       throw new Error("room and identity must be <= 128 chars");
     }
-    return { room: data.room.trim(), identity: data.identity.trim(), viewerOnly: Boolean(data.viewerOnly) };
+    return {
+      room: data.room.trim(),
+      identity: data.identity.trim(),
+      viewerOnly: Boolean(data.viewerOnly),
+    };
   })
   .handler(async ({ data }): Promise<IssueTokenResult | IssueTokenError> => {
     const url = process.env.LIVEKIT_URL;

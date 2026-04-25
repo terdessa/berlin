@@ -103,9 +103,7 @@ export function AlertVideoPanel({ alert, selectedCamera }: Props) {
         </div>
 
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/95 via-background/70 to-transparent p-2.5">
-          <div className="mono text-[10px] uppercase tracking-[0.18em] text-alert">
-            scene
-          </div>
+          <div className="mono text-[10px] uppercase tracking-[0.18em] text-alert">scene</div>
           <div className="mt-0.5 text-[12px] leading-snug text-foreground">
             {alert.sceneSummary}
           </div>
@@ -134,7 +132,10 @@ export function AlertVideoPanel({ alert, selectedCamera }: Props) {
             visual
           </span>
           <div className="relative h-1 w-14 overflow-hidden rounded-full bg-muted">
-            <div className="absolute inset-y-0 left-0 bg-alert/80" style={{ width: `${confidencePct}%` }} />
+            <div
+              className="absolute inset-y-0 left-0 bg-alert/80"
+              style={{ width: `${confidencePct}%` }}
+            />
           </div>
           <span className="mono text-[10px] text-foreground">{confidencePct}%</span>
         </div>

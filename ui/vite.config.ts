@@ -34,10 +34,10 @@ async function getDevHttpsCert() {
   }
 
   // selfsigned v5 returns a Promise.
-  const pems = await selfsigned.generate(
-    [{ name: "commonName", value: "sentinel.local" }],
-    { keySize: 2048, algorithm: "sha256" },
-  );
+  const pems = await selfsigned.generate([{ name: "commonName", value: "sentinel.local" }], {
+    keySize: 2048,
+    algorithm: "sha256",
+  });
 
   mkdirSync(cacheDir, { recursive: true });
   writeFileSync(keyPath, pems.private);
@@ -151,7 +151,9 @@ function printSentinelLinksPlugin(): Plugin {
             out.push(
               "  ! LiveKit not configured - /video and /audio will show local preview only.",
             );
-            out.push("    Sign up free at https://cloud.livekit.io and put real values in ui/.env:");
+            out.push(
+              "    Sign up free at https://cloud.livekit.io and put real values in ui/.env:",
+            );
             out.push("       LIVEKIT_URL=wss://your-project.livekit.cloud");
             out.push("       LIVEKIT_API_KEY=APIxxxxxxxx");
             out.push("       LIVEKIT_API_SECRET=...");

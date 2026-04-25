@@ -173,13 +173,14 @@ The dashboard UI lives at `ui/` in this repo:
 - **AI agent continuously analyzes all camera feeds.** Tiles show a subtle "analyzing" indicator on every camera.
 - **Two-way voice channel.** Agent → guard (TTS to earpiece), guard → agent (speech with ai-coustics enhancement). Both directions are surfaced in the UI.
 - **Live camera grid.** The dashboard subscribes to the `sentinel-live` LiveKit room as a viewer. Connected publisher devices (phone, laptop camera) fill the camera tiles from left to right. Tiles without a live feed show a placeholder animation. The live feed integration is purely additive — the mock alert/demo flow is unaffected.
+- **Live voice bridge.** The `/audio` route publishes the guard microphone to `sentinel-live` as `sentinel-guard-mic` by default. The Python voice agent listens to that participant, runs ai-coustics + OpenAI STT/TTS with Silero VAD, and publishes Sentinel/Guard turns plus interaction records on the `sentinel.voice` LiveKit data topic. The dashboard consumes those packets through `useSentinelVoiceEvents` and updates the review log in real time.
 
 ### Live Utility Pages
 
 Two direct-link-only routes (not referenced from the dashboard) exist for hardware testing:
 
 - **`/video`** — opens the device camera, publishes to `sentinel-live`. Includes a multi-lens switcher (enumerates all video inputs after permission, hot-swaps via `LocalVideoTrack.replaceTrack`). Capture: 1280×720 @ 30 fps, 2.5 Mbps, no simulcast. Shows a real-time stats panel (kbps, fps, resolution, codec, quality-limitation reason).
-- **`/audio`** — opens the device microphone, publishes to `sentinel-live`. Shows equivalent audio stats.
+- **`/audio`** — opens the device microphone, publishes to `sentinel-live` as `sentinel-guard-mic` by default. Shows equivalent audio stats. Use `?identity=...` only when `LIVEKIT_MIC_IDENTITY` on the Python agent is set to the same value.
 
 The dev server prints LAN + localhost URLs for all three routes (`/`, `/video`, `/audio`) at startup.
 
@@ -205,4 +206,4 @@ The dev server prints LAN + localhost URLs for all three routes (`/`, `/video`, 
 - `interactions.json` corpus: written per session by `apps/voice/src/logger.py`
 - Dashboard live camera grid: working ✅ — phones and laptops publish via `/video`; dashboard subscribes via `useLivekitFeeds`
 - Camera-lens switcher on `/video`: working ✅ — enumerates all video inputs, hot-swaps without dropping the LiveKit connection
-- Pending: wire live voice agent output (`apps/voice`) into the dashboard review log panel in real time
+- Dashboard live voice log: working ✅ — `apps/voice` emits `sentinel.voice` data packets and the dashboard subscribes via `useSentinelVoiceEvents`

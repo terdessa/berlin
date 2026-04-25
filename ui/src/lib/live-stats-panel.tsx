@@ -3,13 +3,7 @@ import type { TrackFlow } from "@/lib/use-livekit-stats";
 // Small bitrate / codec / fps overlay. Drop into /video and /audio so you can
 // confirm at a glance whether bytes are actually moving (kbps > 0) without
 // opening chrome://webrtc-internals.
-export function LiveStatsPanel({
-  flows,
-  hint,
-}: {
-  flows: TrackFlow[];
-  hint?: string;
-}) {
+export function LiveStatsPanel({ flows, hint }: { flows: TrackFlow[]; hint?: string }) {
   const out = flows.filter((f) => f.direction === "out");
   const inn = flows.filter((f) => f.direction === "in");
   const totalKbps = flows.reduce((sum, f) => sum + f.kbps, 0);
@@ -49,23 +43,13 @@ export function LiveStatsPanel({
         />
       </div>
       {hint && (
-        <p className="border-t border-border px-4 py-2 text-[11px] text-muted-foreground">
-          {hint}
-        </p>
+        <p className="border-t border-border px-4 py-2 text-[11px] text-muted-foreground">{hint}</p>
       )}
     </section>
   );
 }
 
-function FlowColumn({
-  title,
-  flows,
-  empty,
-}: {
-  title: string;
-  flows: TrackFlow[];
-  empty: string;
-}) {
+function FlowColumn({ title, flows, empty }: { title: string; flows: TrackFlow[]; empty: string }) {
   return (
     <div className="border-border px-4 py-3 sm:[&:first-child]:border-r">
       <div className="mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">

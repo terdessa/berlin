@@ -23,11 +23,12 @@ The dashboard is at `ui/`. Stack: Vite + React + TS + Tailwind + shadcn/ui + Tan
 - Review record uses **text-only chat history** between Sentinel and Guard — no audio waveforms.
 - Demo toggle simulates an alert on CAM-05/CAM-08 with a hardcoded mock conversation.
 - Dev server runs on **HTTPS** (self-signed cert) and prints LAN + localhost URLs for `/`, `/video`, `/audio` at startup.
+- Live voice events from the Python agent now feed the review log in real time through LiveKit data packets on topic `sentinel.voice`.
 
 ### Live utility pages
 
 - `/video` — publishes the device camera to `sentinel-live`; includes a camera-lens switcher (enumerate all video inputs after permission, hot-swap via `replaceTrack`). Capture: 1280×720 @ 30 fps, 2.5 Mbps, no simulcast.
-- `/audio` — publishes the device mic to `sentinel-live`.
+- `/audio` — publishes the device mic to `sentinel-live` as `sentinel-guard-mic` by default, matching the voice agent's `LIVEKIT_MIC_IDENTITY`.
 - Both pages subscribe to other publishers in the same room and show a real-time WebRTC stats panel (kbps, fps, resolution, codec, `qualityLimitationReason`).
 
 ### Key library files added
@@ -46,7 +47,8 @@ Running at `apps/voice/`. Python + LiveKit + ai-coustics plugin.
 
 - Agent connected to LiveKit cloud: `wss://berlin-vc00ggsm.livekit.cloud`
 - ai-coustics QUAIL_L wired via `RoomInputOptions(noise_cancellation=...)`
-- OpenAI STT/TTS as voice runtime (telli-swappable in two lines)
+- OpenAI STT/TTS as voice runtime (telli-swappable in two lines), with Silero VAD wrapping non-streaming STT
+- Agent listens to the `sentinel-guard-mic` participant by default and emits dashboard data events on `sentinel.voice`
 - Command interpreter: 6 commands, ACTION_THRESHOLD=0.7, failure-mode classification
 - Every interaction logged to `apps/voice/submission/interactions.json`
 
@@ -68,6 +70,6 @@ Failure records include NISQA scores, conversation history, visual context, fail
 
 ## Next tasks
 
-- Connect the live voice agent output (`apps/voice`) to the UI's LiveKit room so guard commands and Sentinel responses flow into the conversation log panel in real time.
 - Wire real `visual_event` objects from Person 2 (Gemini video analysis) into the dashboard alert flow.
 - Consider self-hosting LiveKit on the laptop for local-network demos to avoid mobile-upload bottleneck when using a phone hotspot.
+- Replace OpenAI STT/TTS with telli runtime when the booth integration is ready.

@@ -14,10 +14,7 @@ export function VoiceChannelWidget({ phase }: Props) {
     <div className="flex items-center justify-between gap-3 border-b border-border bg-background/40 px-4 py-2">
       <div className="flex items-center gap-2">
         <Headphones
-          className={[
-            "h-3.5 w-3.5",
-            closed ? "text-muted-foreground" : "text-primary",
-          ].join(" ")}
+          className={["h-3.5 w-3.5", closed ? "text-muted-foreground" : "text-primary"].join(" ")}
         />
         <span className="mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           two-way · earpiece phone · ai-coustics
@@ -41,10 +38,9 @@ export function VoiceChannelWidget({ phase }: Props) {
         {/* Guard mic indicator */}
         <div className="flex items-center gap-1">
           <Mic
-            className={[
-              "h-3 w-3",
-              guardSpeaking ? "text-alert" : "text-muted-foreground/50",
-            ].join(" ")}
+            className={["h-3 w-3", guardSpeaking ? "text-alert" : "text-muted-foreground/50"].join(
+              " ",
+            )}
           />
           <Equalizer active={guardSpeaking} tone="alert" />
         </div>

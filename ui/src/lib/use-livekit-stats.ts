@@ -111,9 +111,7 @@ async function readFlow(
   const prevSample = samples.get(key);
   const dtSec = prevSample ? (now - prevSample.ts) / 1000 : 0;
   const kbps =
-    prevSample && dtSec > 0
-      ? Math.max(0, ((rtp.bytes - prevSample.bytes) * 8) / 1000 / dtSec)
-      : 0;
+    prevSample && dtSec > 0 ? Math.max(0, ((rtp.bytes - prevSample.bytes) * 8) / 1000 / dtSec) : 0;
   samples.set(key, { bytes: rtp.bytes, ts: now });
 
   return {
@@ -143,10 +141,7 @@ type RtpRow = {
   limitedBy?: string;
 };
 
-function pickRtpStat(
-  report: RTCStatsReport,
-  type: "outbound-rtp" | "inbound-rtp",
-): RtpRow | null {
+function pickRtpStat(report: RTCStatsReport, type: "outbound-rtp" | "inbound-rtp"): RtpRow | null {
   // A peer connection can have multiple inbound/outbound entries (e.g. simulcast
   // layers); we sum the bytes for an honest aggregate kbps and take fps from
   // the highest-fps row.

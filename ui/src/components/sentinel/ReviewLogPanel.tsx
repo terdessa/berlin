@@ -1,11 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Shield, Headphones, ChevronDown } from "lucide-react";
-import type {
-  AlertEvent,
-  AlertStatus,
-  ConversationMessage,
-  Phase,
-} from "@/lib/sentinel-data";
+import type { AlertEvent, AlertStatus, ConversationMessage, Phase } from "@/lib/sentinel-data";
 import { VoiceChannelWidget } from "./VoiceChannelWidget";
 
 type Props = {
@@ -51,14 +46,21 @@ export function ReviewLogPanel({
   }, [revealUpTo, phase, alert]);
 
   if (!alert) {
-    return <IdleLog selectedCameraId={selectedCameraId} onStartSuccess={onStartSuccess} onStartFailure={onStartFailure} />;
+    return (
+      <IdleLog
+        selectedCameraId={selectedCameraId}
+        onStartSuccess={onStartSuccess}
+        onStartFailure={onStartFailure}
+      />
+    );
   }
 
   const visibleMessages = alert.conversation.slice(0, revealUpTo);
   const nextPending: "sentinel" | "guard" | null =
     revealUpTo < alert.conversation.length ? alert.conversation[revealUpTo].speaker : null;
   const showSentinelTyping =
-    nextPending === "sentinel" && (phase === "flagged" || phase === "interpreted" || phase === "acting");
+    nextPending === "sentinel" &&
+    (phase === "flagged" || phase === "interpreted" || phase === "acting");
   const showGuardListening = nextPending === "guard" && phase === "listening";
 
   return (
@@ -170,10 +172,9 @@ function IdleLog({
             what happens on alert
           </div>
           <p className="mt-1 text-[12px] leading-snug text-foreground/85">
-            When Sentinel flags a camera, this panel opens with the live two-way
-            voice channel between the agent and the guard's earpiece, the
-            conversation transcript, raw → enhanced confidence per turn, and
-            review actions.
+            When Sentinel flags a camera, this panel opens with the live two-way voice channel
+            between the agent and the guard's earpiece, the conversation transcript, raw → enhanced
+            confidence per turn, and review actions.
           </p>
         </div>
 
@@ -183,16 +184,16 @@ function IdleLog({
           </div>
           <ul className="mt-1.5 space-y-1 text-[11px] text-foreground/85">
             <li>
-              <span className="mono text-primary">CAM-05</span> · success demo —
-              guard responds clearly, floor associate dispatched
+              <span className="mono text-primary">CAM-05</span> · success demo — guard responds
+              clearly, floor associate dispatched
             </li>
             <li>
-              <span className="mono text-alert">CAM-08</span> · failure demo —
-              noisy audio, error report generated
+              <span className="mono text-alert">CAM-08</span> · failure demo — noisy audio, error
+              report generated
             </li>
             <li>
-              <span className="mono text-muted-foreground">others</span> · feed
-              preview only · no scripted review
+              <span className="mono text-muted-foreground">others</span> · feed preview only · no
+              scripted review
             </li>
           </ul>
         </div>
@@ -239,9 +240,7 @@ function SkeletonBubble({
 }) {
   const align = side === "left" ? "items-start" : "items-end";
   const bubble =
-    tone === "primary"
-      ? "border-primary/30 bg-primary/5"
-      : "border-alert/30 bg-alert/5";
+    tone === "primary" ? "border-primary/30 bg-primary/5" : "border-alert/30 bg-alert/5";
   const labelColor = tone === "primary" ? "text-primary" : "text-alert";
   const Icon = tone === "primary" ? Shield : Headphones;
   const label = tone === "primary" ? "Sentinel" : "Guard";
@@ -273,9 +272,7 @@ function MessageBubble({ message }: { message: ConversationMessage }) {
         <div className="max-w-[88%]">
           <div className="mb-0.5 flex items-center gap-1.5">
             <Shield className="h-3 w-3 text-primary" />
-            <span className="mono text-[9px] uppercase tracking-wider text-primary">
-              Sentinel
-            </span>
+            <span className="mono text-[9px] uppercase tracking-wider text-primary">Sentinel</span>
             <span className="mono text-[9px] text-muted-foreground">{message.timestamp}</span>
           </div>
           <div className="rounded-md rounded-tl-sm border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-[12px] leading-snug text-foreground">
@@ -295,9 +292,7 @@ function MessageBubble({ message }: { message: ConversationMessage }) {
       <div className="max-w-[88%]">
         <div className="mb-0.5 flex items-center justify-end gap-1.5">
           <span className="mono text-[9px] text-muted-foreground">{message.timestamp}</span>
-          <span className="mono text-[9px] uppercase tracking-wider text-alert">
-            Guard
-          </span>
+          <span className="mono text-[9px] uppercase tracking-wider text-alert">Guard</span>
           <Headphones className="h-3 w-3 text-alert" />
         </div>
         <div
@@ -308,7 +303,24 @@ function MessageBubble({ message }: { message: ConversationMessage }) {
               : "border border-alert/30 bg-alert/10",
           ].join(" ")}
         >
-          <div>{message.text}</div>
+          {message.rawText || message.enhancedText ? (
+            <div className="space-y-1">
+              <div>
+                <span className="mono text-[9px] uppercase tracking-wider text-muted-foreground">
+                  raw transcript
+                </span>
+                <div className="text-foreground/70">{message.rawText ?? message.text}</div>
+              </div>
+              <div>
+                <span className="mono text-[9px] uppercase tracking-wider text-primary">
+                  ai-coustics enhanced transcript
+                </span>
+                <div className="font-medium">{message.enhancedText ?? message.text}</div>
+              </div>
+            </div>
+          ) : (
+            <div>{message.text}</div>
+          )}
           {unclear && (
             <div className="mt-1 mono text-[10px] text-alert/80">
               voice command unclear — clarification requested
@@ -342,9 +354,7 @@ function SentinelTyping() {
       <div>
         <div className="mb-0.5 flex items-center gap-1.5">
           <Shield className="h-3 w-3 text-primary" />
-          <span className="mono text-[9px] uppercase tracking-wider text-primary">
-            Sentinel
-          </span>
+          <span className="mono text-[9px] uppercase tracking-wider text-primary">Sentinel</span>
         </div>
         <div className="inline-flex items-center gap-1 rounded-md rounded-tl-sm border border-primary/30 bg-primary/5 px-2.5 py-1.5">
           {[0, 1, 2].map((i) => (

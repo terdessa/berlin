@@ -188,7 +188,6 @@ function VideoPageInner() {
         .then((devs) => setVideoDevices(devs))
         .catch(() => {});
 
-
       // 2. Token + LiveKit connect (skip gracefully if not configured).
       const tokenResult = await issueLivekitToken({ data: { room, identity } });
       if (cancelled) {
@@ -276,23 +275,31 @@ function VideoPageInner() {
         setStatus({ state: "error", message });
         try {
           await lkRoom.disconnect();
-        } catch {}
+        } catch {
+          // Disconnect can race with LiveKit's own cleanup.
+        }
       }
 
       cleanup = () => {
         try {
           localTrackRef.current?.stop();
-        } catch {}
+        } catch {
+          // The browser may have already ended the track.
+        }
         try {
           lkRoom.disconnect();
-        } catch {}
+        } catch {
+          // Disconnect can race with LiveKit's own cleanup.
+        }
         setLkRoom(null);
         // LocalVideoTrack.stop() releases the underlying MediaStreamTrack, but
         // if we never wrapped it (local-only mode), stop the raw stream too.
         stream.getTracks().forEach((t) => {
           try {
             t.stop();
-          } catch {}
+          } catch {
+            // Some tracks may already be stopped during page teardown.
+          }
         });
       };
     })();
@@ -323,7 +330,9 @@ function VideoPageInner() {
       if (lkTrack) {
         try {
           await lkTrack.mute();
-        } catch {}
+        } catch {
+          // Keep the local UI responsive even if LiveKit is already gone.
+        }
       } else if (stream) {
         for (const t of stream.getVideoTracks()) t.enabled = false;
       } else {
@@ -334,7 +343,9 @@ function VideoPageInner() {
       if (lkTrack) {
         try {
           await lkTrack.unmute();
-        } catch {}
+        } catch {
+          // The user can retry by toggling the camera again.
+        }
       } else if (stream) {
         for (const t of stream.getVideoTracks()) t.enabled = true;
       } else {
@@ -481,7 +492,11 @@ function VideoPageInner() {
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 {remotes.map((r) => (
-                  <RemoteTile key={r.sid} feed={r} setRef={(el) => remoteRefs.current.set(r.sid, el)} />
+                  <RemoteTile
+                    key={r.sid}
+                    feed={r}
+                    setRef={(el) => remoteRefs.current.set(r.sid, el)}
+                  />
                 ))}
               </div>
             )}
@@ -520,12 +535,7 @@ function RemoteTile({
   return (
     <div className="overflow-hidden rounded-md border border-border bg-background">
       <div className="relative aspect-video w-full">
-        <video
-          ref={setRef}
-          autoPlay
-          playsInline
-          className="h-full w-full object-cover"
-        />
+        <video ref={setRef} autoPlay playsInline className="h-full w-full object-cover" />
         <span className="mono absolute left-1.5 top-1.5 rounded-sm bg-background/70 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-foreground/90 backdrop-blur-sm">
           {feed.identity}
         </span>
@@ -600,13 +610,7 @@ function DiagnosticsPanel({
           status.state === "local-only") && (
           <Row
             k="message"
-            v={
-              "message" in status
-                ? status.message
-                : "reason" in status
-                  ? status.reason
-                  : "—"
-            }
+            v={"message" in status ? status.message : "reason" in status ? status.reason : "—"}
             wide
           />
         )}
@@ -623,4 +627,3 @@ function Row({ k, v, wide }: { k: string; v: string; wide?: boolean }) {
     </div>
   );
 }
-

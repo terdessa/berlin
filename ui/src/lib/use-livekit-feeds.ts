@@ -68,11 +68,7 @@ export function useLivekitFeeds(room: string): LiveFeed[] {
         // Pick up tracks that were already published before we joined.
         for (const participant of lkRoom.remoteParticipants.values()) {
           for (const pub of participant.trackPublications.values()) {
-            if (
-              pub.isSubscribed &&
-              pub.track &&
-              pub.kind === livekit.Track.Kind.Video
-            ) {
+            if (pub.isSubscribed && pub.track && pub.kind === livekit.Track.Kind.Video) {
               addFeed(pub.track as RemoteVideoTrack, participant.identity);
             }
           }
@@ -86,11 +82,13 @@ export function useLivekitFeeds(room: string): LiveFeed[] {
       cancelled = true;
       try {
         roomRef.current?.disconnect();
-      } catch {}
+      } catch {
+        // Disconnect can race with LiveKit's internal teardown.
+      }
       roomRef.current = null;
     };
-  // room is stable for the lifetime of the dashboard.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // room is stable for the lifetime of the dashboard.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return feeds;

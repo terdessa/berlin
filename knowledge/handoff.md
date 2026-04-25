@@ -19,13 +19,14 @@ AI agent continuously watches all camera feeds. On a review-worthy event it flag
 - Alert video panel → right-side log panel (slides in on alert)
 - Review record is **text-only chat history** — no audio playback in UI
 - Demo toggle on CAM-05/CAM-08 runs a scripted mock scenario end-to-end
+- Live voice agent turns flow into the review log via LiveKit data packets on topic `sentinel.voice`.
 
 ### Live pages
 
 | Route | Role |
 |-------|------|
 | `/video` | Camera publisher — lens switcher, 720p30, LiveKit publish + subscribe, real-time stats panel |
-| `/audio` | Mic publisher — LiveKit publish + subscribe, real-time stats panel |
+| `/audio` | Mic publisher — default identity `sentinel-guard-mic`, LiveKit publish + subscribe, real-time stats panel |
 
 Both are direct-link-only (not linked from dashboard). The server prints LAN + localhost URLs for all three routes at startup.
 
@@ -39,6 +40,8 @@ Both are direct-link-only (not linked from dashboard). The server prints LAN + l
 - LiveKit cloud: `wss://berlin-vc00ggsm.livekit.cloud`
 - Room: `sentinel-live`
 - ai-coustics: QUAIL_L via `RoomInputOptions(noise_cancellation=...)`
+- Mic participant identity: `sentinel-guard-mic` by default; override only when `LIVEKIT_MIC_IDENTITY` and `/audio?identity=...` match
+- OpenAI STT/TTS plus Silero VAD; LiveKit `user_input_transcribed` events are converted into command interpretation and `sentinel.voice` dashboard packets
 - Every interaction → `apps/voice/submission/interactions.json`
 
 ## Track differentiator
@@ -66,6 +69,6 @@ Keep all alert language non-accusatory. Show confidence, not verdicts.
 
 ## Immediate next steps
 
-1. **Connect voice agent to review log** — pipe live agent output from `apps/voice` into the UI conversation panel in real time via the LiveKit data channel or a WebSocket.
-2. **Wire real visual events** — connect Person 2 (Gemini video analysis) `visual_event` output to the dashboard alert flow instead of the mock scenario.
-3. **Local LiveKit option** — for demos on a phone hotspot, running `livekit-server --dev` on the laptop keeps all traffic on the LAN and avoids mobile-upload saturation.
+1. **Wire real visual events** — connect Person 2 (Gemini video analysis) `visual_event` output to the dashboard alert flow instead of the mock scenario.
+2. **Local LiveKit option** — for demos on a phone hotspot, running `livekit-server --dev` on the laptop keeps all traffic on the LAN and avoids mobile-upload saturation.
+3. **telli runtime swap** — replace the OpenAI STT/TTS placeholder when telli credentials/API shape are confirmed.

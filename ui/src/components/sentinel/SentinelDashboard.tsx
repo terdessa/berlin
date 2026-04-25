@@ -18,6 +18,7 @@ import { ReviewLogPanel } from "./ReviewLogPanel";
 import { InferenceCounter } from "./InferenceCounter";
 import { AudioMetricPill } from "./AudioMetricBadge";
 import { PoweredByFooter } from "./PoweredByFooter";
+import { useSentinelVoiceEvents } from "@/lib/use-sentinel-voice-events";
 
 type RunState = {
   scenario: Scenario;
@@ -33,6 +34,8 @@ export function SentinelDashboard() {
   const [status, setStatus] = useState<AlertStatus>("Awaiting human review");
   const [selected, setSelected] = useState<string | null>(null);
   const [latestEvent, setLatestEvent] = useState<TickerEntry | null>(null);
+  const [liveAlert, setLiveAlert] = useState<AlertEvent | null>(null);
+  const voiceEvents = useSentinelVoiceEvents();
 
   const tickerIdRef = useRef(0);
   const timerRef = useRef<number | null>(null);
@@ -41,10 +44,11 @@ export function SentinelDashboard() {
   // appear in the camera grid. Returns [] when LiveKit isn't configured.
   const liveFeeds = useLivekitFeeds("sentinel-live");
 
-  const alert: AlertEvent | null = run ? run.scenario.alert : null;
+  const alert: AlertEvent | null = liveAlert ?? (run ? run.scenario.alert : null);
+  const displayedRevealUpTo = liveAlert ? liveAlert.conversation.length : revealUpTo;
   const isAlerting = phase !== "idle" && phase !== "resolved";
   const selectedCamera: Camera | null = selected
-    ? cameras.find((c) => c.id === selected) ?? null
+    ? (cameras.find((c) => c.id === selected) ?? null)
     : null;
 
   const pushTicker = useCallback((text: string) => {
@@ -67,6 +71,7 @@ export function SentinelDashboard() {
     (scenario: Scenario) => {
       stopTimer();
       setRun({ scenario, stepIndex: -1 });
+      setLiveAlert(null);
       setPhase("idle");
       setRevealUpTo(0);
       setStatus(scenario.alert.actionTaken);
@@ -79,12 +84,26 @@ export function SentinelDashboard() {
   const resetAll = useCallback(() => {
     stopTimer();
     setRun(null);
+    setLiveAlert(null);
     setPhase("idle");
     setRevealUpTo(0);
     setStatus("Awaiting human review");
     setSelected(null);
     pushTicker("scenario · reset");
   }, [pushTicker]);
+
+  useEffect(() => {
+    if (!voiceEvents.latestAlert) return;
+    stopTimer();
+    setLiveAlert(voiceEvents.latestAlert);
+    setRun(null);
+    setSelected(voiceEvents.latestAlert.cameraId);
+    setStatus(voiceEvents.latestAlert.actionTaken);
+    setPhase(
+      voiceEvents.latestAlert.actionTaken === "Error report created" ? "resolved" : "interpreted",
+    );
+    pushTicker(voiceEvents.latestTicker ?? "live voice · interaction received");
+  }, [voiceEvents.latestAlert, voiceEvents.latestTicker, pushTicker]);
 
   // Click on a camera tile: start its scenario if mapped, else just select it.
   const handleCameraClick = (cameraId: string) => {
@@ -94,6 +113,7 @@ export function SentinelDashboard() {
     } else {
       stopTimer();
       setRun(null);
+      setLiveAlert(null);
       setPhase("idle");
       setRevealUpTo(0);
       setStatus("Awaiting human review");
@@ -159,9 +179,7 @@ export function SentinelDashboard() {
             aria-live="polite"
             className={[
               "inline-flex shrink-0 items-center gap-2 rounded-full px-2.5 py-1 text-xs backdrop-blur-sm transition-colors",
-              isAlerting
-                ? "bg-alert/10 text-alert"
-                : "bg-background/40 text-foreground/90",
+              isAlerting ? "bg-alert/10 text-alert" : "bg-background/40 text-foreground/90",
             ].join(" ")}
           >
             <span
@@ -171,9 +189,7 @@ export function SentinelDashboard() {
               ].join(" ")}
             />
             <span className="mono uppercase tracking-[0.18em] text-[10px]">
-              {isAlerting && alert
-                ? `flagged ${alert.cameraId} — review`
-                : "Sentinel is watching"}
+              {isAlerting && alert ? `flagged ${alert.cameraId} — review` : "Sentinel is watching"}
             </span>
           </div>
           <AudioMetricPill />
@@ -226,10 +242,7 @@ export function SentinelDashboard() {
         {/* LEFT column */}
         <div className="flex min-h-0 flex-col gap-3">
           {/* Camera grid 3x2 */}
-          <div
-            aria-label="Camera grid"
-            className="grid min-h-0 flex-[3] grid-cols-3 gap-2"
-          >
+          <div aria-label="Camera grid" className="grid min-h-0 flex-[3] grid-cols-3 gap-2">
             {cameras.map((cam, i) => {
               const feed = liveFeeds[i];
               return (
@@ -259,7 +272,7 @@ export function SentinelDashboard() {
           <ReviewLogPanel
             alert={alert}
             phase={phase}
-            revealUpTo={revealUpTo}
+            revealUpTo={displayedRevealUpTo}
             status={status}
             selectedCameraId={selected}
             onAction={handleAction}
@@ -275,8 +288,8 @@ export function SentinelDashboard() {
           <InferenceCounter />
           {latestEvent && (
             <span className="mono truncate text-[10px] text-muted-foreground/80">
-              <span className="text-muted-foreground/60">{latestEvent.at}</span>{" "}
-              · {latestEvent.text}
+              <span className="text-muted-foreground/60">{latestEvent.at}</span> ·{" "}
+              {latestEvent.text}
             </span>
           )}
         </div>

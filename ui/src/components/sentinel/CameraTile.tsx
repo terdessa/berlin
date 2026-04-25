@@ -36,14 +36,15 @@ export function CameraTile({
     // Seed with a random value on mount, then keep drifting.
     setMicroConf(isAlert ? 0.78 + Math.random() * 0.18 : 0.55 + Math.random() * 0.3);
     if (reduced) return;
-    const id = setInterval(() => {
-      setMicroConf((c) => {
-        const target = isAlert
-          ? 0.78 + Math.random() * 0.18
-          : 0.55 + Math.random() * 0.3;
-        return c + (target - c) * 0.25;
-      });
-    }, 1100 + Math.random() * 600);
+    const id = setInterval(
+      () => {
+        setMicroConf((c) => {
+          const target = isAlert ? 0.78 + Math.random() * 0.18 : 0.55 + Math.random() * 0.3;
+          return c + (target - c) * 0.25;
+        });
+      },
+      1100 + Math.random() * 600,
+    );
     return () => clearInterval(id);
   }, [isAlert]);
 
@@ -147,17 +148,11 @@ export function CameraTile({
                 : "bg-background/60 text-muted-foreground",
             ].join(" ")}
           >
-            {isPhone ? (
-              <Smartphone className="h-2.5 w-2.5" />
-            ) : (
-              <Video className="h-2.5 w-2.5" />
-            )}
+            {isPhone ? <Smartphone className="h-2.5 w-2.5" /> : <Video className="h-2.5 w-2.5" />}
             {isPhone ? "phone" : "cctv"}
           </span>
           {isLive && liveIdentity && (
-            <span className="mono truncate text-[9px] text-muted-foreground">
-              {liveIdentity}
-            </span>
+            <span className="mono truncate text-[9px] text-muted-foreground">{liveIdentity}</span>
           )}
           {!isLive && isPhone && camera.battery !== undefined && (
             <span className="mono inline-flex items-center gap-0.5 text-[9px] text-muted-foreground">

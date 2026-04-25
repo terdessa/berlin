@@ -10,9 +10,9 @@ Built with Vite + React + TypeScript + Tailwind + shadcn/ui + TanStack Start (SS
 
 | Route | Description |
 |-------|-------------|
-| `/` | Security ops dashboard. Camera grid shows real live feeds from connected devices (via LiveKit) and falls back to placeholders when no devices are connected. Alert video panel and review log are driven by mock data. |
+| `/` | Security ops dashboard. Camera grid shows real live feeds from connected devices (via LiveKit) and falls back to placeholders when no devices are connected. The review log supports both mock scenarios and live voice-agent data packets. |
 | `/video` | Direct-link publisher page. Opens the device camera (with a multi-lens switcher on phones), publishes into the `sentinel-live` LiveKit room, and subscribes to other publishers. Shows a real-time stats panel (kbps, fps, resolution, codec, quality-limitation reason). |
-| `/audio` | Direct-link publisher page. Same as `/video` but for the microphone. |
+| `/audio` | Direct-link publisher page. Same as `/video` but for the microphone. Defaults to identity `sentinel-guard-mic`, which the Python voice agent listens to. |
 
 The dashboard and the two utility pages all share the same Vite dev server (single process, single port).
 
@@ -59,6 +59,12 @@ The dashboard automatically subscribes to the `sentinel-live` LiveKit room as a 
 
 To stream from a phone or second device, open `https://<laptop-LAN-IP>:<port>/video` on that device.
 
+## Live voice log
+
+The dashboard also joins `sentinel-live` as a subscriber for voice-agent data packets on topic `sentinel.voice`. The Python agent in `../apps/voice` listens to the `/audio` participant, transcribes guard speech, interprets commands, and publishes `assistant_turn`, `guard_turn`, and `interaction_record` packets. Those packets update the review log in real time.
+
+To test the voice path, run the Python voice worker and dispatch it into `sentinel-live`, then open `/audio` and speak. Use `/audio?identity=...` only if the agent's `LIVEKIT_MIC_IDENTITY` is set to the same value.
+
 ## Project layout
 
 ```
@@ -71,6 +77,7 @@ src/
   lib/
     livekit-token.ts       # TanStack Start server fn — mints LiveKit JWTs
     use-livekit-feeds.ts   # Hook — viewer subscriber, returns ordered live tracks
+    use-sentinel-voice-events.ts # Hook — subscribes to voice-agent data packets
     use-livekit-stats.ts   # Hook — polls WebRTC getStats() for the stats panel
     live-stats-panel.tsx   # Stats panel component
     live-page-skeleton.tsx # SSR-safe skeleton for /video and /audio

@@ -37,6 +37,8 @@ export type ConversationMessage =
       timestamp: string;
       confidenceRaw: number;
       confidenceEnhanced: number;
+      rawText?: string;
+      enhancedText?: string;
       unclear?: boolean;
     };
 
@@ -161,27 +163,55 @@ const failureConversation: ConversationMessage[] = [
 export const successScenario: Scenario = {
   id: "success",
   label: "Run scenario · success",
-  description:
-    "CAM-05 flagged · guard responds clearly · floor associate dispatched.",
+  description: "CAM-05 flagged · guard responds clearly · floor associate dispatched.",
   alert: {
     cameraId: "CAM-05",
     zone: "Aisle 5",
     timestamp: "14:22:08",
-    sceneSummary:
-      "Item appears to move from shelf to pocket — requires review",
+    sceneSummary: "Item appears to move from shelf to pocket — requires review",
     visualConfidence: 0.74,
     assistantMessage: "Aisle 5 requires review",
     conversation: successConversation,
     actionTaken: "Awaiting human review",
   },
   steps: [
-    { phase: "analyzing", revealUpTo: 0, durationMs: 900, ticker: "CAM-05 · scene model elevated · 0.74" },
-    { phase: "flagged", revealUpTo: 1, durationMs: 1400, ticker: "CAM-05 · review flagged · earpiece alert sent" },
-    { phase: "awaiting_voice", revealUpTo: 1, durationMs: 1300, ticker: "earpiece · awaiting guard response" },
-    { phase: "listening", revealUpTo: 1, durationMs: 1200, ticker: "earpiece · guard speaking · ai-coustics on" },
-    { phase: "interpreted", revealUpTo: 3, durationMs: 1600, ticker: "command · open aisle 5 · 0.91 (raw 0.42)" },
+    {
+      phase: "analyzing",
+      revealUpTo: 0,
+      durationMs: 900,
+      ticker: "CAM-05 · scene model elevated · 0.74",
+    },
+    {
+      phase: "flagged",
+      revealUpTo: 1,
+      durationMs: 1400,
+      ticker: "CAM-05 · review flagged · earpiece alert sent",
+    },
+    {
+      phase: "awaiting_voice",
+      revealUpTo: 1,
+      durationMs: 1300,
+      ticker: "earpiece · awaiting guard response",
+    },
+    {
+      phase: "listening",
+      revealUpTo: 1,
+      durationMs: 1200,
+      ticker: "earpiece · guard speaking · ai-coustics on",
+    },
+    {
+      phase: "interpreted",
+      revealUpTo: 3,
+      durationMs: 1600,
+      ticker: "command · open aisle 5 · 0.91 (raw 0.42)",
+    },
     { phase: "listening", revealUpTo: 3, durationMs: 1500, ticker: "earpiece · guard speaking" },
-    { phase: "acting", revealUpTo: 4, durationMs: 1500, ticker: "command · send floor associate + create report" },
+    {
+      phase: "acting",
+      revealUpTo: 4,
+      durationMs: 1500,
+      ticker: "command · send floor associate + create report",
+    },
     {
       phase: "resolved",
       revealUpTo: 5,
@@ -195,28 +225,61 @@ export const successScenario: Scenario = {
 export const failureScenario: Scenario = {
   id: "failure",
   label: "Run scenario · voice fails",
-  description:
-    "CAM-08 checkout flagged · guard audio is too noisy · error report generated.",
+  description: "CAM-08 checkout flagged · guard audio is too noisy · error report generated.",
   alert: {
     cameraId: "CAM-08",
     zone: "Checkout 2",
     timestamp: "14:31:02",
-    sceneSummary:
-      "Item scanned mismatch — bottle vs. produce barcode · requires review",
+    sceneSummary: "Item scanned mismatch — bottle vs. produce barcode · requires review",
     visualConfidence: 0.61,
     assistantMessage: "Checkout 2 requires review",
     conversation: failureConversation,
     actionTaken: "Awaiting human review",
   },
   steps: [
-    { phase: "analyzing", revealUpTo: 0, durationMs: 900, ticker: "CAM-08 · scan-mismatch detector · 0.61" },
-    { phase: "flagged", revealUpTo: 1, durationMs: 1400, ticker: "CAM-08 · review flagged · earpiece alert sent" },
-    { phase: "awaiting_voice", revealUpTo: 1, durationMs: 1300, ticker: "earpiece · awaiting guard response" },
-    { phase: "listening", revealUpTo: 1, durationMs: 1300, ticker: "earpiece · high background noise" },
-    { phase: "interpreted", revealUpTo: 2, durationMs: 1500, ticker: "command · unclear · 0.41 (raw 0.18)" },
-    { phase: "awaiting_voice", revealUpTo: 3, durationMs: 1300, ticker: "earpiece · clarification requested" },
+    {
+      phase: "analyzing",
+      revealUpTo: 0,
+      durationMs: 900,
+      ticker: "CAM-08 · scan-mismatch detector · 0.61",
+    },
+    {
+      phase: "flagged",
+      revealUpTo: 1,
+      durationMs: 1400,
+      ticker: "CAM-08 · review flagged · earpiece alert sent",
+    },
+    {
+      phase: "awaiting_voice",
+      revealUpTo: 1,
+      durationMs: 1300,
+      ticker: "earpiece · awaiting guard response",
+    },
+    {
+      phase: "listening",
+      revealUpTo: 1,
+      durationMs: 1300,
+      ticker: "earpiece · high background noise",
+    },
+    {
+      phase: "interpreted",
+      revealUpTo: 2,
+      durationMs: 1500,
+      ticker: "command · unclear · 0.41 (raw 0.18)",
+    },
+    {
+      phase: "awaiting_voice",
+      revealUpTo: 3,
+      durationMs: 1300,
+      ticker: "earpiece · clarification requested",
+    },
     { phase: "listening", revealUpTo: 3, durationMs: 1300, ticker: "earpiece · guard speaking" },
-    { phase: "interpreted", revealUpTo: 4, durationMs: 1600, ticker: "command · still unclear · 0.34" },
+    {
+      phase: "interpreted",
+      revealUpTo: 4,
+      durationMs: 1600,
+      ticker: "command · still unclear · 0.34",
+    },
     {
       phase: "resolved",
       revealUpTo: 5,

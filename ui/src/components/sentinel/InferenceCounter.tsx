@@ -6,11 +6,7 @@ type Props = {
   falseAlarms?: number;
 };
 
-export function InferenceCounter({
-  base = 1284317,
-  reviewsFlagged = 12,
-  falseAlarms = 4,
-}: Props) {
+export function InferenceCounter({ base = 1284317, reviewsFlagged = 12, falseAlarms = 4 }: Props) {
   const [frames, setFrames] = useState(base);
 
   useEffect(() => {
@@ -34,8 +30,7 @@ export function InferenceCounter({
         </span>
       </span>
       <span>
-        reviews flagged{" "}
-        <span className="text-alert/90">{reviewsFlagged}</span>
+        reviews flagged <span className="text-alert/90">{reviewsFlagged}</span>
       </span>
       <span>
         false alarms <span className="text-foreground/80">{falseAlarms}</span>

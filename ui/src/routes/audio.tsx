@@ -1,11 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type {
-  LocalAudioTrack,
-  RemoteAudioTrack,
-  RemoteParticipant,
-  Room,
-} from "livekit-client";
+import type { LocalAudioTrack, RemoteAudioTrack, RemoteParticipant, Room } from "livekit-client";
 import { issueLivekitToken } from "@/lib/livekit-token";
 import { LivePageSkeleton } from "@/lib/live-page-skeleton";
 import { useLivekitStats } from "@/lib/use-livekit-stats";
@@ -27,6 +22,7 @@ export const Route = createFileRoute("/audio")({
 });
 
 const DEFAULT_ROOM = "sentinel-live";
+const DEFAULT_MIC_IDENTITY = "sentinel-guard-mic";
 
 type Status =
   | { state: "idle" }
@@ -44,18 +40,9 @@ type RemoteVoice = {
   participant: RemoteParticipant;
 };
 
-function pickPlatformLabel() {
-  const ua = navigator.userAgent.toLowerCase();
-  if (/iphone|ipad|ipod/.test(ua)) return "phone-ios";
-  if (/android/.test(ua)) return "phone-android";
-  if (/macintosh|mac os/.test(ua)) return "mac";
-  if (/windows/.test(ua)) return "win";
-  if (/linux/.test(ua)) return "linux";
-  return "device";
-}
-
 function makeIdentity() {
-  return `${pickPlatformLabel()}-${Math.random().toString(36).slice(2, 8)}`;
+  const fromQuery = new URLSearchParams(window.location.search).get("identity");
+  return fromQuery?.trim() || DEFAULT_MIC_IDENTITY;
 }
 
 function AudioPage() {
@@ -120,7 +107,7 @@ function AudioPageInner() {
 
       // Local-stream-backed analyser for the level meter; replaced once we
       // hand the stream over to LiveKit.
-      let analyserCleanup = startAnalyser(stream, (rms, peak) => {
+      const analyserCleanup = startAnalyser(stream, (rms, peak) => {
         if (!cancelled) setLocalLevel({ rms, peak });
       });
 
@@ -187,12 +174,14 @@ function AudioPageInner() {
 
         // Reuse our existing mic stream by wrapping its track.
         const micTrack = stream.getAudioTracks()[0];
+        micTrack.enabled = true;
         const localAudio = new livekit.LocalAudioTrack(micTrack);
         localTrackRef.current = localAudio;
         await lkRoom.localParticipant.publishTrack(localAudio, {
           source: livekit.Track.Source.Microphone,
           name: "microphone",
         });
+        await localAudio.unmute();
 
         if (cancelled) {
           await lkRoom.disconnect();
@@ -206,17 +195,23 @@ function AudioPageInner() {
         setStatus({ state: "error", message });
         try {
           await lkRoom.disconnect();
-        } catch {}
+        } catch {
+          // Disconnect can race with LiveKit's own cleanup.
+        }
       }
 
       cleanup = () => {
         analyserCleanup();
         try {
           localTrackRef.current?.stop();
-        } catch {}
+        } catch {
+          // The browser may have already ended the track.
+        }
         try {
           lkRoom.disconnect();
-        } catch {}
+        } catch {
+          // Disconnect can race with LiveKit's own cleanup.
+        }
         setLkRoomState(null);
         stream.getTracks().forEach((t) => t.stop());
       };
@@ -228,6 +223,19 @@ function AudioPageInner() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Keep the browser MediaStream and LiveKit LocalAudioTrack in sync. In a few
+  // browsers, the UI can say "unmuted" while the published LiveKit track remains
+  // muted; this guard prevents that from silently breaking transcription.
+  useEffect(() => {
+    if (!micOn) return;
+    const id = window.setInterval(() => {
+      const stream = localStreamRef.current;
+      for (const t of stream?.getAudioTracks() ?? []) t.enabled = true;
+      localTrackRef.current?.unmute().catch(() => {});
+    }, 750);
+    return () => window.clearInterval(id);
+  }, [micOn]);
 
   // Attach remote audio tracks to <audio> elements so they play.
   useEffect(() => {
@@ -261,21 +269,29 @@ function AudioPageInner() {
       if (lkTrack) {
         try {
           await lkTrack.mute();
-        } catch {}
-      } else if (stream) {
+        } catch {
+          // Keep the local MediaStream muted even if LiveKit is already gone.
+        }
+      }
+      if (stream) {
         for (const t of stream.getAudioTracks()) t.enabled = false;
-      } else {
+      }
+      if (!lkTrack && !stream) {
         return;
       }
       setMicOn(false);
     } else {
+      if (stream) {
+        for (const t of stream.getAudioTracks()) t.enabled = true;
+      }
       if (lkTrack) {
         try {
           await lkTrack.unmute();
-        } catch {}
-      } else if (stream) {
-        for (const t of stream.getAudioTracks()) t.enabled = true;
-      } else {
+        } catch {
+          // The interval below will retry while the mic should be live.
+        }
+      }
+      if (!lkTrack && !stream) {
         return;
       }
       setMicOn(true);
@@ -555,13 +571,7 @@ function DiagnosticsPanel({
           status.state === "local-only") && (
           <Row
             k="message"
-            v={
-              "message" in status
-                ? status.message
-                : "reason" in status
-                  ? status.reason
-                  : "—"
-            }
+            v={"message" in status ? status.message : "reason" in status ? status.reason : "—"}
             wide
           />
         )}
@@ -618,9 +628,13 @@ function startAnalyser(
     cancelAnimationFrame(raf);
     try {
       source.disconnect();
-    } catch {}
+    } catch {
+      // The source may already be disconnected during page teardown.
+    }
     try {
       ctx.close();
-    } catch {}
+    } catch {
+      // Closing an already-closed AudioContext is harmless.
+    }
   };
 }
