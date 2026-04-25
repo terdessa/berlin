@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   cameras,
   scenarios,
@@ -196,6 +197,12 @@ export function SentinelDashboard() {
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
+          <Link
+            to="/metrics"
+            className="mono cursor-pointer inline-flex items-center rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-primary transition hover:border-primary/70 hover:bg-primary/15"
+          >
+            metrics
+          </Link>
           {scenarios.map((s) => {
             const active = run?.scenario.id === s.id;
             const isFailure = s.id === "failure";

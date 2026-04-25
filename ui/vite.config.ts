@@ -46,7 +46,8 @@ async function getDevHttpsCert() {
   return { key: pems.private, cert: pems.cert };
 }
 
-const devHttpsCert = await getDevHttpsCert();
+const useHttps = process.env.SENTINEL_DEV_HTTP !== "1";
+const devHttpsCert = useHttps ? await getDevHttpsCert() : undefined;
 
 function getLanIPv4Addrs() {
   const out: { name: string; ip: string }[] = [];

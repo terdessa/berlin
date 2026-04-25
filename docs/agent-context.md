@@ -21,7 +21,7 @@ Why it fits:
 - Real-world audio is central, not decorative.
 - The guard operates in noisy stores with music, checkout beeps, carts, customers, and radio chatter.
 - ai-coustics improves the audio path so the agent can hear commands reliably.
-- The demo shows a measurable NISQA MOS uplift (raw vs enhanced) and a corpus of labeled failure cases — both of which directly answer the track's "audio intelligence metric" requirement.
+- The demo shows a measurable Sentinel Audio Intelligence Score (SAIS), raw/enhanced audio evidence, and a corpus of labeled failure cases — all directly answer the track's "audio intelligence metric" requirement.
 
 Voice runtime stack: **LiveKit** as the agent framework (using the official [livekit/plugins-ai-coustics-python](https://github.com/livekit/plugins-ai-coustics-python) plugin), **telli** for STT + TTS + realtime conversation, **ai-coustics** for audio enhancement in front of telli. We deliberately do not stack any third-party voice runtime on top of telli, so ai-coustics stays the single variable in the before/after metric.
 
@@ -84,6 +84,8 @@ Failure classifications used in the corpus:
 - `out_of_vocabulary` — clean audio, clear words, no supported command
 - `multi_cause` — combination
 
+Updated metric direction: SAIS is the headline metric. It measures `(correct actions + safe recoveries) / total commands`, so a context-target mismatch that triggers clarification is a success, while opening the wrong camera is a dangerous error. NISQA/DNSMOS and WER remain supporting metrics. See `docs/sentinel-audio-intelligence-metric.md`.
+
 To make the corpus look like a dataset rather than one demo clip, the demo runs at least six scripted scenarios with varied noise types and outcomes (see `docs/person-3-voice-error-logging.md`).
 
 ## Safety Guardrails
@@ -127,9 +129,9 @@ Show:
 - a richly diagnosed error record (with failure classification and suggested clarification) when a command is unclear
 - a `submission/` folder with `interactions.json` + audio files we can hand to the judges
 
-Primary metric: NISQA MOS uplift from raw to enhanced, averaged across a scripted scenario set, with the per-scenario breakdown visible.
+Primary metric: SAIS, shown across raw audio, ai-coustics-enhanced audio, and ai-coustics plus Sentinel context validation.
 
-Secondary metric: command recognition rate with vs without ai-coustics on the same scenario set.
+Secondary metrics: dangerous error rate, WER, NISQA/DNSMOS uplift, and retry/safe recovery rate.
 
 Both metrics are computed from `interactions.json` so they are reproducible from the corpus alone.
 

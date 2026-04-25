@@ -48,6 +48,10 @@ Both are direct-link-only (not linked from dashboard). The server prints LAN + l
 
 Rich error corpus with NISQA before/after, failure mode classification, full conversation + visual context. Data product for ai-coustics.
 
+Latest audio strategy: SAIS is the headline metric: `(correct actions + safe recoveries) / total commands`. NISQA/DNSMOS and WER are supporting metrics. The quality dashboard is at `/metrics`; the current spec is `docs/sentinel-audio-intelligence-metric.md`.
+
+Real audio benchmark: `apps/voice/dataset/manifest.json`, `apps/voice/dataset/audio/clean`, `apps/voice/dataset/audio/noisy`, runner `python -m apps.voice.src.evaluate_audio_dataset`, output `apps/voice/submission/audio_dataset_results.json`.
+
 ## Demo must show
 
 - camera event flagged on a tile
@@ -70,5 +74,6 @@ Keep all alert language non-accusatory. Show confidence, not verdicts.
 ## Immediate next steps
 
 1. **Wire real visual events** — connect Person 2 (Gemini video analysis) `visual_event` output to the dashboard alert flow instead of the mock scenario.
-2. **Local LiveKit option** — for demos on a phone hotspot, running `livekit-server --dev` on the laptop keeps all traffic on the LAN and avoids mobile-upload saturation.
-3. **telli runtime swap** — replace the OpenAI STT/TTS placeholder when telli credentials/API shape are confirmed.
+2. **Add mismatch clips** — record or simulate aisle-five context with heard aisle-four commands so Safe Recovery Rate is visible in the real-audio benchmark.
+3. **Local LiveKit option** — for demos on a phone hotspot, running `livekit-server --dev` on the laptop keeps all traffic on the LAN and avoids mobile-upload saturation.
+4. **telli runtime swap** — replace the OpenAI STT/TTS placeholder when telli credentials/API shape are confirmed.

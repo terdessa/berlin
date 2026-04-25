@@ -79,6 +79,80 @@ The `submission/` folder is the corpus handed to the judges.
 Six scripted scenarios are defined in `fixtures/scenarios.json`.
 Run through each one during the demo to populate a diverse corpus.
 
+## Audio intelligence benchmark
+
+The custom judge-facing metric is Sentinel Audio Intelligence Score (SAIS):
+
+```
+SAIS = (correct actions + safe recoveries) / total test commands
+```
+
+Run the reproducible benchmark from the repo root:
+
+```bash
+python -m apps.voice.src.evaluate_audio_intelligence
+```
+
+Inputs:
+
+```
+apps/voice/fixtures/audio_intelligence_scenarios.json
+```
+
+Output:
+
+```
+apps/voice/submission/audio_intelligence_results.json
+```
+
+The benchmark compares `raw_noisy`, `aicoustics_only`, and
+`aicoustics_plus_sentinel` across WER, NISQA-like MOS, SAIS, retry rate, and
+unsafe action rate.
+
+## Real audio dataset benchmark
+
+Recorded clean/noisy command pairs live in:
+
+```
+apps/voice/dataset/
+  manifest.json
+  audio/
+    clean/
+    noisy/
+```
+
+The dataset manifest maps each clean/noisy pair to the expected command:
+
+```
+apps/voice/dataset/manifest.json
+```
+
+Run the audio-file evaluator:
+
+```bash
+python -m apps.voice.src.evaluate_audio_dataset
+```
+
+This computes audio stats immediately. WER and SAIS require ASR transcripts.
+To generate transcripts with OpenAI Whisper-compatible transcription:
+
+```bash
+OPENAI_API_KEY=... python -m apps.voice.src.evaluate_audio_dataset --transcribe
+```
+
+To refresh already cached transcripts after changing prompt or repair logic:
+
+```bash
+python -m apps.voice.src.evaluate_audio_dataset --transcribe --force
+```
+
+Outputs:
+
+```
+apps/voice/submission/audio_dataset_transcripts.json
+apps/voice/submission/audio_dataset_results.json
+```
+
 ## Architecture
 
 ```

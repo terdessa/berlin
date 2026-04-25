@@ -412,6 +412,95 @@ Use live microphone input during the demo:
 
 This makes the system feel real while the controlled test set keeps the numbers defensible.
 
+## Current Repository Implementation
+
+The current repo has both a scripted benchmark and a real-audio benchmark.
+
+```text
+apps/voice/
+  dataset/
+    manifest.json
+    audio/
+      clean/                 clean recorded command clips
+      noisy/                 noisy recorded command clips
+  fixtures/
+    audio_intelligence_scenarios.json
+  src/
+    evaluate_audio_dataset.py
+    evaluate_audio_intelligence.py
+  submission/
+    audio_dataset_transcripts.json
+    audio_dataset_results.json
+    audio_intelligence_results.json
+```
+
+Run the real-audio benchmark:
+
+```bash
+python -m apps.voice.src.evaluate_audio_dataset
+```
+
+Refresh OpenAI transcription cache:
+
+```bash
+python -m apps.voice.src.evaluate_audio_dataset --transcribe --force
+```
+
+Run the scripted comparison benchmark:
+
+```bash
+python -m apps.voice.src.evaluate_audio_intelligence
+```
+
+The UI quality dashboard is available at:
+
+```text
+/metrics
+```
+
+The main dashboard links to this page.
+
+## Current Benchmark State
+
+The real recorded dataset currently contains 8 clean clips and 8 noisy clips.
+
+Current real-audio result:
+
+```text
+Condition  Clips  ASR  WER     SAIS    Unsafe
+clean      8      8    0.000   1.000   0.000
+noisy      8      8    0.062   1.000   0.000
+```
+
+One noisy clip transcribed `create report` as `Great report`; Sentinel repaired it to `create report`, so the agent still produced the correct action. This is the first concrete evidence for the decision-layer value: imperfect transcript, correct operational outcome.
+
+The scripted benchmark still matters because it includes safe-recovery cases that the current real audio set does not yet contain:
+
+```text
+raw_noisy                 SAIS 0.500   WER 0.280   unsafe 0.214
+aicoustics_only           SAIS 0.714   WER 0.149   unsafe 0.143
+aicoustics_plus_sentinel  SAIS 0.857   WER 0.125   unsafe 0.000
+```
+
+Next benchmark improvement: add real mismatch clips where the active incident is aisle five but the heard/ASR command targets aisle four. These should produce `safe_recovery`, not `dangerous_error`.
+
+## Research Alignment
+
+The ai-coustics `AudioAI-Resources` repo recommends a quality dashboard with standard audio and speech signals, plus one app-specific signal.
+
+Standard signals:
+
+- DNSMOS or NISQA: perceived audio quality
+- WER: transcription degradation under noise
+- VAD miss-rate: whether speech was detected
+- LUFS: whether the input level is usable
+
+Sentinel-specific signal:
+
+- SAIS: whether the security agent made the correct or safe decision
+
+This keeps the project aligned with the track guidance: standard metrics prove the audio path improved, while SAIS proves the voice agent stayed operationally safe.
+
 ## Tools and Models
 
 Minimum winning stack:

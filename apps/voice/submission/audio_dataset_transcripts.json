@@ -1,0 +1,18 @@
+{
+  "audio-001:clean": "open camera five",
+  "audio-001:noisy": "Open camera five.",
+  "audio-002:clean": "open aisle five",
+  "audio-002:noisy": "Open aisle five.",
+  "audio-003:clean": "Watch live.",
+  "audio-003:noisy": "Watch live, Quinn.",
+  "audio-004:clean": "replay last ten seconds",
+  "audio-004:noisy": "replay last ten seconds",
+  "audio-005:clean": "send floor associate",
+  "audio-005:noisy": "Send floor associate.",
+  "audio-006:clean": "mark false alarm",
+  "audio-006:noisy": "Mark false alarm.",
+  "audio-007:clean": "create report",
+  "audio-007:noisy": "Great report.",
+  "audio-008:clean": "What happened there?",
+  "audio-008:noisy": "What happened there?"
+}

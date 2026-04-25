@@ -57,6 +57,10 @@ Running at `apps/voice/`. Python + LiveKit + ai-coustics plugin.
 Every voice interaction → structured JSON record + raw/enhanced audio files.
 Failure records include NISQA scores, conversation history, visual context, failure mode classification, and natural-language explanation. The corpus is a data product ai-coustics can take home.
 
+Current audio metric: SAIS, defined as `(correct actions + safe recoveries) / total commands`. NISQA/DNSMOS and WER are supporting metrics. Context-target mismatches should trigger clarification and count as safe recovery, not failure. Current spec lives in `docs/sentinel-audio-intelligence-metric.md`.
+
+Audio benchmark assets now live under `apps/voice/dataset/` with `manifest.json` and `audio/clean` + `audio/noisy` WAV folders. Results are written to `apps/voice/submission/audio_dataset_results.json`.
+
 ## Side challenge focus
 
 - Entire: push at least one error record as a review task
@@ -71,5 +75,6 @@ Failure records include NISQA scores, conversation history, visual context, fail
 ## Next tasks
 
 - Wire real `visual_event` objects from Person 2 (Gemini video analysis) into the dashboard alert flow.
+- Add explicit context-target mismatch examples to the audio dataset so Safe Recovery Rate is exercised by real clips, not only the scripted comparison data.
 - Consider self-hosting LiveKit on the laptop for local-network demos to avoid mobile-upload bottleneck when using a phone hotspot.
 - Replace OpenAI STT/TTS with telli runtime when the booth integration is ready.

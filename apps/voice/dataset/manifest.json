@@ -1,0 +1,82 @@
+[
+  {
+    "id": "audio-001",
+    "utterance": "open camera five",
+    "expectedCommand": "open_camera",
+    "expectedTarget": "camera_5",
+    "expectedAction": "opened_camera_5",
+    "cleanAudio": "audio/clean/open_camera_5.wav",
+    "noisyAudio": "audio/noisy/open_camera_5.wav",
+    "noiseType": "recorded_retail_noise"
+  },
+  {
+    "id": "audio-002",
+    "utterance": "open aisle five",
+    "expectedCommand": "open_camera",
+    "expectedTarget": "camera_aisle_5",
+    "expectedAction": "opened_camera_aisle_5",
+    "cleanAudio": "audio/clean/open_aisle_five.wav",
+    "noisyAudio": "audio/noisy/open_aisle_five.wav",
+    "noiseType": "recorded_retail_noise"
+  },
+  {
+    "id": "audio-003",
+    "utterance": "watch live",
+    "expectedCommand": "watch_live",
+    "expectedTarget": "current_alert",
+    "expectedAction": "opened_live_view",
+    "cleanAudio": "audio/clean/watch_live.wav",
+    "noisyAudio": "audio/noisy/watch_live.wav",
+    "noiseType": "recorded_retail_noise"
+  },
+  {
+    "id": "audio-004",
+    "utterance": "replay last ten seconds",
+    "expectedCommand": "replay_last_10_seconds",
+    "expectedTarget": "current_alert",
+    "expectedAction": "replayed_last_10_seconds",
+    "cleanAudio": "audio/clean/replay_last_10_seconds.wav",
+    "noisyAudio": "audio/noisy/replay_last_10_seconds.wav",
+    "noiseType": "recorded_retail_noise"
+  },
+  {
+    "id": "audio-005",
+    "utterance": "send floor associate",
+    "expectedCommand": "send_floor_associate",
+    "expectedTarget": "current_alert",
+    "expectedAction": "sent_floor_associate",
+    "cleanAudio": "audio/clean/send_floor_associate.wav",
+    "noisyAudio": "audio/noisy/send_floor_associate.wav",
+    "noiseType": "recorded_retail_noise"
+  },
+  {
+    "id": "audio-006",
+    "utterance": "mark false alarm",
+    "expectedCommand": "mark_false_alarm",
+    "expectedTarget": "current_alert",
+    "expectedAction": "marked_false_alarm",
+    "cleanAudio": "audio/clean/mark_false_alarm.wav",
+    "noisyAudio": "audio/noisy/mark_false_alarm.wav",
+    "noiseType": "recorded_retail_noise"
+  },
+  {
+    "id": "audio-007",
+    "utterance": "create report",
+    "expectedCommand": "create_report",
+    "expectedTarget": "current_alert",
+    "expectedAction": "created_report",
+    "cleanAudio": "audio/clean/create_report.wav",
+    "noisyAudio": "audio/noisy/create_report.wav",
+    "noiseType": "recorded_retail_noise"
+  },
+  {
+    "id": "audio-008",
+    "utterance": "what happened there",
+    "expectedCommand": "unknown",
+    "expectedTarget": "none",
+    "expectedAction": "rejected_unsupported_command",
+    "cleanAudio": "audio/clean/what_happened_there.wav",
+    "noisyAudio": "audio/noisy/what_happened_there.wav",
+    "noiseType": "recorded_retail_noise"
+  }
+]

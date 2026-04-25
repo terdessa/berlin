@@ -212,6 +212,38 @@ The difference is captured in every `audio.nisqa` block. Aggregate across the co
 
 **Scoring tool:** NISQA v2 (gabrielmittag/NISQA) — PyTorch, non-intrusive MOS prediction, no clean reference signal needed. Outputs MOS plus four sub-dimensions: noisiness, coloration, discontinuity, loudness.
 
+## Updated Strategy: SAIS and Task-Aware Audio Error Judge
+
+NISQA remains a supporting audio-quality metric, but Sentinel should not claim to be a replacement for NISQA. NISQA tells us whether a clip is perceptually better. Sentinel's home-built layer should explain whether the voice agent can safely act.
+
+The headline metric is Sentinel Audio Intelligence Score:
+
+```text
+SAIS = (correct actions + safe recoveries) / total commands
+```
+
+This means context-aware clarification is counted as useful success. If the active alert is aisle five but the heard command targets aisle four, Sentinel should ask for confirmation instead of opening the wrong camera.
+
+Add a lightweight `errorJudge` layer around the existing interaction record:
+
+- Compare raw and enhanced NISQA scores.
+- Compare raw and enhanced transcripts with edit distance and key-token changes.
+- Compare raw and enhanced command candidates and confidence.
+- Use the supported-command schema and visual event context to classify the failure.
+- Emit a concise explanation and a safe clarification question.
+
+Additional failure labels to support:
+
+- `voice_overlap` — another speaker, PA announcement, or radio chatter leaks into the command.
+- `artifact_introduced_by_enhancement` — enhancement improves noise but damages command recognition or increases coloration/discontinuity.
+- `turn_boundary_error` — VAD cuts the command too early or includes unrelated speech.
+
+Track pitch:
+
+> ai-coustics makes the audio more usable; NISQA measures perceived quality; Sentinel explains whether the agent can safely act, why it failed, and what labeled data ai-coustics can learn from.
+
+See `docs/sentinel-audio-intelligence-metric.md` for the current metric and dashboard spec.
+
 ## Implementation Stack
 
 - Language: Python
