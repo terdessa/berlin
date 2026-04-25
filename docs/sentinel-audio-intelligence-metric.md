@@ -1,239 +1,79 @@
 # Sentinel Audio Intelligence Metric & Quality Dashboard
 
-## 🧠 Overview
+## Overview
 
-Sentinel is a voice-first retail security copilot designed for **noisy real-world environments** (e.g. supermarkets).
+Sentinel is a voice-first retail security copilot for noisy real-world environments such as supermarkets. It listens to a guard's spoken commands, cleans the audio with ai-coustics, transcribes the command, checks it against the current security context, and either performs the correct action or asks a safe clarification.
 
-The goal is not just to build a voice interface, but to **prove with measurable evidence** that the system works under challenging audio conditions.
+The project is not only a voice interface. It is an evidence system that proves whether the assistant makes correct or safe decisions when speech is noisy, ambiguous, or partially misheard.
 
-We combine:
-- Standard audio metrics (WER, MOS, etc.)
-- A custom **Audio Intelligence Metric** focused on decision-making
-- A live-updating evaluation loop
+Core claim:
 
----
+> We measure not just what Sentinel hears, but whether Sentinel does the right thing.
 
-## 🎯 Core Idea
+## Demo Promise
 
-> **We measure not just whether the system hears correctly, but whether it makes the correct or safe decision under noisy conditions.**
+The demo should make three things obvious:
 
----
+1. Noisy speech is difficult for raw transcription.
+2. ai-coustics improves the audio path before transcription.
+3. Sentinel's context-aware decision layer reduces dangerous errors by asking for clarification when confidence or context looks suspicious.
 
-## 🧠 Sentinel Audio Intelligence Metric (SAIS)
-
-### Definition
-
-> **SAIS measures how often Sentinel performs the correct or safe action from voice input, using context-aware validation and live confirmation.**
-
----
-
-### Formula
-SAIS = (Correct Actions + Safe Recoveries) / Total Commands
-
----
-
-### What counts as success?
-
-| Case | Description | Result |
-|------|------------|--------|
-| ✅ Correct Action | System executes correct command | Success |
-| ✅ Safe Recovery | System detects uncertainty and asks for clarification | Success |
-| ❌ Dangerous Error | System executes incorrect or risky action | Failure |
-
----
-
-## 📊 Supporting Metrics
-
-### 1. Correct Action Rate
-Correct Action Rate = Correct Actions / Total Commands
-
----
-
-### 2. Safe Recovery Rate
-Safe Recovery Rate = Clarifications / Total Commands
-
----
-
-### 3. Dangerous Error Rate
-Dangerous Error Rate = Wrong Risky Actions / Total Commands
-
----
-
-### 4. Word Error Rate (WER)
-Measures transcription accuracy:
-WER = Word Errors / Total Words
-
-Used as a **supporting metric**, not the main one.
-
----
-
-## 🔥 What makes this metric innovative?
-
-### 1. Focus on decisions, not words
-- WER measures transcription
-- SAIS measures **real-world success**
-
----
-
-### 2. Includes safe behavior
-- Asking for clarification counts as success
-- Prevents dangerous mistakes
-
----
-
-### 3. Context-aware validation
-Example:
-
-- Context: Incident at aisle 4
-- Transcript: "Open aisle 5"
-
-Sentinel:
-> "Did you mean aisle 4?"
-
----
-
-### 4. Live metric updates
-
-Sentinel continuously updates metrics using:
-- User confirmations
-- Context mismatch detection
-- Real interaction feedback
-
----
-
-## 🔄 Live Evaluation Loop
-
-1. User speaks
-2. System transcribes
-3. Context is checked
-4. If suspicious → ask clarification
-5. User confirms
-6. System logs:
-   - Correct / safe / wrong
-   - WER update
-   - Failure reason
-7. Dashboard updates in real-time
-
----
-
-## 📦 Data Logging Format (JSON)
-
-Each interaction is logged:
-
-```json
-{
-  "command_expected": "open aisle 4",
-  "transcript": "open aisle 5",
-  "action_expected": "open_aisle_4",
-  "action_actual": "open_aisle_5",
-  "correct": false,
-  "safe_recovery": true,
-  "failure_reason": "number_confusion",
-  "confidence": 0.62
-}
-```
-
-📊 Dashboard Design
-🔹 Section 1 — Summary
-Sentinel Intelligence Score: 92%
-Correct Action Rate: 70%
-Safe Recovery Rate: 22%
-Dangerous Error Rate: 8%
-WER: 12%
-🔹 Section 2 — System Comparison
-System Version	Intelligence Score	WER	Dangerous Errors
-Raw audio	55%	35%	30%
-+ ai-coustics	80%	15%	12%
-+ context	92%	15%	5%
-🔹 Section 3 — Interaction Log
-Command	Heard	Action	Result	Reason
-open aisle 5	aisle 4	open 4	❌	number confusion
-open aisle 5	aisle 4	ask confirm	✅	context mismatch
-🔹 Section 4 — Failure Breakdown
-60% number confusion
-25% noise
-15% overlapping speech
-🧪 Testing Methodology
-Dataset
-30–50 voice commands
-Split:
-~10 quiet
-~20–30 noisy
-Conditions Tested
-Background noise (music, chatter)
-Overlapping speech
-Low confidence audio
-Evaluation Types
-1. Controlled Testing
-Predefined commands
-Known expected actions
-Used for reliable metrics
-2. Live Evaluation
-Real-time interaction
-User confirmation ("Did I do it right?")
-Metrics update dynamically
-🎬 Demo Strategy
-Part 1 — Dashboard (Proof)
-Show results from 40 test runs
-Part 2 — Live Demo (Impact)
-Noisy command
-System mishears
-Context detects mismatch
-System asks
-User confirms
-Dashboard updates live
-🧠 Use of Standard Metrics
-We optionally use tools like:
-WER (jiwer)
-DNSMOS (audio quality)
-VAD (speech detection)
-Tools like VERSA can compute these.
-Important
-These are baseline metrics.
-Our contribution is the application-level metric:
-decision correctness
-safety
-context awareness
-🔥 Final Pitch
-“We designed an audio intelligence metric that measures whether Sentinel makes correct or safe decisions from noisy speech. By combining context-aware validation and live user feedback, we go beyond transcription accuracy to evaluate real-world system reliability.”
-🧠 One-Line Summary
-We measure not just what the system hears, but whether it does the right thing.
-
----
-
-If you want next step, I can:
-- turn this into a **slide deck**
-- or generate a **UI mockup for the dashboard**
-
-You're now **fully aligned with the track**.
-
----
+The dashboard should show both the live security workflow and the quality evidence behind it.
 
 ## Sentinel Pipeline
 
 ```text
 Guard voice
-   ↓
+   v
 ai-coustics enhancement
-   ↓
+   v
 STT model
-   ↓
+   v
 Command parser
-   ↓
+   v
 Context-aware validation
-   ↓
-Decision
-   ↓
+   v
+Decision layer
+   v
 Action + logging
-   ↓
+   v
 Dashboard update
 ```
 
----
+### Conversation Loop
 
-## 1. Audio Input
+1. A camera event appears on the dashboard.
+2. Sentinel speaks a concise alert to the guard.
+3. The guard responds through the `/audio` mic connection.
+4. LiveKit routes the mic stream to the Python voice agent.
+5. ai-coustics enhances the audio before transcription.
+6. STT produces a transcript and confidence signal.
+7. The command parser maps speech to an action candidate.
+8. Context validation checks whether the command matches the active incident.
+9. Sentinel either acts, asks a clarification, or logs a failure.
+10. The dashboard updates the conversation log, metrics, and interaction table.
 
-You record guard commands:
+Example:
+
+```text
+Sentinel: Aisle five requires review. Human review recommended.
+Guard: Open aisle five.
+Sentinel: Opening aisle five.
+```
+
+Clarification example:
+
+```text
+Sentinel: Aisle five requires review. Human review recommended.
+Guard: Open aisle four.
+Sentinel: Did you mean aisle five?
+Guard: Yes.
+Sentinel: Opening aisle five.
+```
+
+## Audio Input
+
+Record guard commands that match real dashboard actions:
 
 ```text
 open camera three
@@ -245,49 +85,42 @@ mark false alarm
 create report
 ```
 
-Record in:
+Recommended test set:
 
 ```text
 12 clean samples
 25 noisy samples
 ```
 
-Use same/similar commands in clean and noisy.
+Use the same or similar commands across clean and noisy conditions so raw audio, enhanced audio, and context-aware validation can be compared fairly.
 
----
+Noise conditions to include:
 
-## 2. Audio Enhancement
+- store music
+- checkout beeps
+- crowd chatter
+- overlapping speech
+- low-volume speech
+- microphone movement
 
-Use:
+## Audio Enhancement
 
-```text
-ai-coustics SDK / LiveKit ai-coustics plugin
-```
+Use the ai-coustics SDK or the LiveKit ai-coustics plugin to clean noisy speech before transcription.
 
-Purpose:
-
-> clean noisy speech before transcription
-
-You should save both:
+For every interaction, save both versions:
 
 ```text
 raw_audio.wav
 enhanced_audio.wav
 ```
 
----
+The dashboard should make the before/after path visible without overwhelming the operator. The main UI should focus on the decision, while the quality panel shows raw versus enhanced metrics.
 
-## 3. Speech-to-Text
+## Speech-to-Text
 
-Use:
+Use faster-whisper or OpenAI Whisper/OpenAI STT, depending on what is easiest for the running demo.
 
-```text
-faster-whisper
-```
-
-or OpenAI Whisper if easier.
-
-Output:
+Expected transcript output:
 
 ```json
 {
@@ -296,136 +129,117 @@ Output:
 }
 ```
 
----
+WER is useful, but it is only a supporting metric. A perfect transcript is not the final goal; the final goal is a correct or safe security decision.
 
-## 4. WER Calculation
+## Context-Aware Validation
 
-Use:
+This is Sentinel's most important logic. It checks whether the heard command is safe in the current incident context.
 
-```text
-jiwer
-```
-
-WER means:
-
-> how different the transcript is from what the user actually said
-
-Example:
-
-```text
-Reference: open aisle five
-Transcript: open aisle four
-WER: 33%
-```
-
-This is a support metric, not your main innovation.
-
----
-
-## 5. Context-Aware Validation
-
-This is your special logic.
-
-Example:
+Example context:
 
 ```json
 {
   "active_incident": "aisle_5",
-  "expected_camera": "camera_5",
-  "heard_command": "open aisle 4"
+  "recommended_camera": "camera_5",
+  "heard_command": "open aisle 4",
+  "confidence": 0.58
 }
 ```
 
-Your system checks:
+Validation checks:
+
+- Does the command match the current incident?
+- Is confidence below the action threshold?
+- Is the command risky, irreversible, or operationally important?
+- Is there a number, aisle, camera, or action mismatch?
+
+If suspicious, Sentinel should ask for clarification instead of acting:
 
 ```text
-Does the command match the current incident context?
-Is confidence low?
-Is this a risky action?
+Did you mean aisle five?
 ```
 
-If suspicious:
+## Decision Layer
 
-```text
-Sentinel asks: “Did you mean aisle five?”
-```
+Every interaction ends in exactly one decision type:
 
----
-
-## 6. Decision Layer
-
-Possible outcomes:
-
-```text
-Correct action
-Safe clarification
-Dangerous error
-```
+| Decision type | Meaning | Metric result |
+| --- | --- | --- |
+| Correct action | Sentinel executes the expected command | Success |
+| Safe recovery | Sentinel detects uncertainty and asks for clarification | Success |
+| Dangerous error | Sentinel executes an incorrect or risky action | Failure |
 
 Examples:
 
-| Situation                              | Result          |
-| -------------------------------------- | --------------- |
-| Opens correct camera                   | correct action  |
-| Asks clarification before risky action | safe recovery   |
-| Opens wrong camera                     | dangerous error |
+| Situation | Result |
+| --- | --- |
+| Opens the correct camera | Correct action |
+| Asks before opening a mismatched aisle | Safe recovery |
+| Opens the wrong camera without confirmation | Dangerous error |
 
----
+## Main Metric
 
-## 7. Your Main Metric
-
-## Sentinel Audio Intelligence Score
+### Sentinel Audio Intelligence Score
 
 ```text
 SAIS = (Correct Actions + Safe Recoveries) / Total Commands
 ```
 
-This is your unique metric.
-
-It answers:
+SAIS answers:
 
 > Did Sentinel do the correct or safe thing under noisy audio?
 
----
+This is the main innovation because it evaluates decision quality, not only transcription quality.
 
-## 8. Metrics to Show
+## Supporting Metrics
 
-Use these 5:
+Use these five metrics in the dashboard:
+
+| Metric | Formula | Purpose |
+| --- | --- | --- |
+| SAIS | `(correct actions + safe recoveries) / total commands` | Main decision-quality score |
+| Correct Action Rate | `correct actions / total commands` | Measures direct success |
+| Safe Recovery Rate | `safe recoveries / total commands` | Measures useful caution |
+| Dangerous Error Rate | `dangerous errors / total commands` | Measures unsafe failures |
+| WER | `word errors / total words` | Measures transcript accuracy |
+
+Optional bonus metrics:
+
+- VAD miss rate using silero-vad
+- DNSMOS using VERSA or DNSMOS tooling
+- NISQA MOS uplift for raw versus enhanced audio
+
+Do not overcomplicate the dashboard. SAIS, dangerous error rate, and the raw/enhanced comparison should be the clearest signals.
+
+## Dashboard Design
+
+The dashboard should feel like a security operations surface, not a marketing page. It should be dense, calm, dark, and built for scanning.
+
+### First Screen Layout
 
 ```text
-1. SAIS
-2. Correct Action Rate
-3. Safe Recovery Rate
-4. Dangerous Error Rate
-5. WER
++-------------------------------------------------------------+
+| Camera grid: live feeds, active incident, visual alert state |
++-------------------------------+-----------------------------+
+| Active incident video/replay   | Voice conversation log       |
+| Scene summary                  | Transcript + confidence      |
+| Suggested action               | Clarification/action status  |
++-------------------------------+-----------------------------+
+| SAIS cards + comparison table + recent interaction outcomes  |
++-------------------------------------------------------------+
 ```
 
-Formulas:
+The operator should immediately see:
 
-```text
-Correct Action Rate = correct actions / total commands
+- which camera needs review
+- what Sentinel said
+- what the guard said
+- whether Sentinel acted or asked for clarification
+- how that interaction affected the quality metrics
 
-Safe Recovery Rate = safe recoveries / total commands
+### Top Metric Cards
 
-Dangerous Error Rate = dangerous errors / total commands
-
-WER = word errors / total words
-```
-
-Optional bonus:
-
-```text
-VAD miss rate using silero-vad
-DNSMOS using VERSA or DNSMOS
-```
-
-But don’t overcomplicate.
-
----
-
-## 9. Dashboard Outline
-
-### Top Cards
+Show five compact cards:
 
 ```text
 SAIS: 92%
@@ -435,33 +249,69 @@ Dangerous Error Rate: 8%
 WER: 12%
 ```
 
----
+Design guidance:
 
-### Comparison Table
+- SAIS should be visually primary.
+- Dangerous Error Rate should use the strongest warning treatment.
+- WER should be visually secondary because it supports, but does not replace, SAIS.
 
-| Version                 | SAIS | WER | Dangerous Error Rate |
-| ----------------------- | ---: | --: | -------------------: |
-| Raw audio               |  55% | 35% |                  30% |
-| + ai-coustics           |  80% | 15% |                  12% |
-| + ai-coustics + context |  92% | 15% |                   5% |
+### System Comparison Table
 
-This is the most important dashboard section.
+This is the most important evidence section.
 
----
+| Version | SAIS | WER | Dangerous Error Rate |
+| --- | ---: | ---: | ---: |
+| Raw audio | 55% | 35% | 30% |
+| + ai-coustics | 80% | 15% | 12% |
+| + ai-coustics + context | 92% | 15% | 5% |
+
+This table proves the contribution of each layer:
+
+- raw audio shows the baseline problem
+- ai-coustics shows audio improvement
+- context validation shows decision safety improvement
+
+### Voice Conversation Panel
+
+The conversation panel should be text-first:
+
+| Speaker | Content | UI treatment |
+| --- | --- | --- |
+| Sentinel | Alert, clarification, action confirmation | calm/teal assistant style |
+| Guard | Spoken command transcript | amber guard style |
+| System | Parsed command, confidence, decision | compact status chips |
+
+Each guard turn should show:
+
+- transcript
+- confidence
+- matched command
+- whether raw or enhanced audio produced the best transcript
+- clarification status when needed
+
+Low-confidence or context-mismatched turns should clearly show:
+
+```text
+voice command unclear
+context mismatch
+asking confirmation
+```
 
 ### Interaction Log
 
-| Expected                | Heard                   | Action           | Result        | Reason           |
-| ----------------------- | ----------------------- | ---------------- | ------------- | ---------------- |
-| open aisle five         | open aisle four         | ask confirmation | safe recovery | context mismatch |
-| replay last ten seconds | replay last ten seconds | replay video     | correct       | matched          |
-| mark false alarm        | mark alarm              | ask confirmation | safe recovery | risky action     |
+Show the most recent commands as a table:
 
----
+| Expected | Heard | Action | Result | Reason |
+| --- | --- | --- | --- | --- |
+| open aisle five | open aisle four | ask confirmation | safe recovery | context mismatch |
+| replay last ten seconds | replay last ten seconds | replay video | correct | matched |
+| mark false alarm | mark alarm | ask confirmation | safe recovery | risky action |
+
+The log should make failures useful, not embarrassing. Each row should explain what happened and why Sentinel chose its action.
 
 ### Failure Breakdown
 
-Show categories:
+Show a compact breakdown of failure causes:
 
 ```text
 number confusion: 60%
@@ -469,11 +319,21 @@ low confidence audio: 25%
 overlapping speech: 15%
 ```
 
----
+Useful categories:
 
-## 10. JSON Log Format
+- number confusion
+- aisle/camera mismatch
+- low confidence audio
+- overlapping speech
+- unsupported command
+- risky action
+- context mismatch
 
-Save every interaction like this:
+## JSON Log Format
+
+Save every interaction as structured JSON so the dashboard can recompute metrics from the corpus.
+
+Correct action example:
 
 ```json
 {
@@ -499,7 +359,7 @@ Save every interaction like this:
 }
 ```
 
-For recovery:
+Safe recovery example:
 
 ```json
 {
@@ -523,28 +383,58 @@ For recovery:
 }
 ```
 
----
+## Testing Methodology
 
-## 11. Tools/Models to Use
+### Controlled Testing
+
+Use predefined commands with known expected actions. This produces reliable metrics for the comparison table.
+
+Process:
+
+1. Record clean and noisy audio.
+2. Run raw audio through STT.
+3. Run enhanced audio through STT.
+4. Compare transcripts to expected commands with `jiwer`.
+5. Parse commands into action candidates.
+6. Run context-aware validation.
+7. Save each interaction as JSON.
+8. Let the dashboard calculate metrics from JSON.
+
+### Live Evaluation
+
+Use live microphone input during the demo:
+
+1. Guard speaks a command.
+2. Sentinel transcribes and validates it.
+3. If needed, Sentinel asks a clarification.
+4. Guard confirms or corrects.
+5. The dashboard updates the conversation log and metrics.
+
+This makes the system feel real while the controlled test set keeps the numbers defensible.
+
+## Tools and Models
 
 Minimum winning stack:
 
 ```text
-ai-coustics       → audio enhancement
-faster-whisper    → transcription
-jiwer             → WER calculation
-custom Python/JS  → SAIS + dashboard metrics
-React/Next.js     → dashboard
+ai-coustics       -> audio enhancement
+LiveKit           -> realtime room, mic routing, data events
+OpenAI STT/TTS    -> current fallback voice runtime
+faster-whisper    -> optional offline transcription path
+jiwer             -> WER calculation
+custom Python/JS  -> SAIS and dashboard metrics
+React/Vite        -> dashboard
 ```
 
 Optional:
 
 ```text
-silero-vad        → speech detection / missed speech
-VERSA or DNSMOS   → audio quality score
+silero-vad        -> speech detection / missed speech
+VERSA or DNSMOS   -> audio quality score
+NISQA             -> raw/enhanced MOS uplift
 ```
 
-Skip:
+Skip for the demo:
 
 ```text
 PESQ
@@ -555,23 +445,10 @@ CLAP
 heavy research metrics
 ```
 
----
-
-## 12. How to Achieve the Dashboard
-
-Simple implementation:
-
-1. Record audio files.
-2. Run each through raw STT.
-3. Run each through ai-coustics, then STT.
-4. Compare transcript to expected command using `jiwer`.
-5. Compare actual action to expected action.
-6. Run context validation.
-7. Save JSON logs.
-8. Dashboard reads JSON logs and calculates metrics.
-
----
-
 ## Final Pitch
 
-> “We built Sentinel with a live quality dashboard. Standard metrics like WER show whether the system heard correctly, but our custom Sentinel Audio Intelligence Score measures whether the system made the correct or safe security decision under noisy conditions. The dashboard compares raw audio, ai-coustics-enhanced audio, and context-aware validation, showing how each layer reduces dangerous errors.”
+> We built Sentinel with a live quality dashboard. Standard metrics like WER show whether the system heard correctly, but our custom Sentinel Audio Intelligence Score measures whether the system made the correct or safe security decision under noisy conditions. The dashboard compares raw audio, ai-coustics-enhanced audio, and context-aware validation, showing how each layer reduces dangerous errors.
+
+One-line summary:
+
+> We measure not just what the system hears, but whether it does the right thing.
