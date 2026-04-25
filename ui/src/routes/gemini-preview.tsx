@@ -37,7 +37,7 @@ type ChatMessage = GeminiCameraMessage & {
 type CameraStatus =
   | { state: "idle" }
   | { state: "starting" }
-  | { state: "ready"; label: string }
+  | { state: "ready"; cameraLabel: string; microphoneLabel: string }
   | { state: "error"; message: string };
 
 const AUTO_PROMPT =
@@ -90,15 +90,24 @@ function GeminiPreviewInner() {
           frameRate: { ideal: 24, max: 30 },
           facingMode: { ideal: "user" },
         },
-        audio: false,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play().catch(() => {});
       }
-      const track = stream.getVideoTracks()[0];
-      setStatus({ state: "ready", label: track?.label || "MacBook camera" });
+      const videoTrack = stream.getVideoTracks()[0];
+      const audioTrack = stream.getAudioTracks()[0];
+      setStatus({
+        state: "ready",
+        cameraLabel: videoTrack?.label || "MacBook camera",
+        microphoneLabel: audioTrack?.label || "MacBook microphone",
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setStatus({ state: "error", message });
@@ -301,9 +310,15 @@ function GeminiPreviewInner() {
           </div>
 
           <div className="grid gap-2 border-t border-border px-4 py-3 sm:grid-cols-3">
-            <InfoTile label="source" value={status.state === "ready" ? status.label : "pending"} />
+            <InfoTile
+              label="camera"
+              value={status.state === "ready" ? status.cameraLabel : "pending"}
+            />
+            <InfoTile
+              label="microphone"
+              value={status.state === "ready" ? status.microphoneLabel : "pending"}
+            />
             <InfoTile label="analysis" value={autoCommentary ? "continuous" : "on demand"} />
-            <InfoTile label="privacy" value="server key" />
           </div>
         </div>
 
