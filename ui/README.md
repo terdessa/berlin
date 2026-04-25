@@ -10,11 +10,12 @@ Built with Vite + React + TypeScript + Tailwind + shadcn/ui + TanStack Start (SS
 
 | Route | Description |
 |-------|-------------|
-| `/` | Security ops dashboard. Camera grid shows real live feeds from connected devices (via LiveKit) and falls back to placeholders when no devices are connected. The review log supports both mock scenarios and live voice-agent data packets. |
+| `/` | Security ops dashboard. Camera grid shows real live feeds from connected devices (via LiveKit). The review log supports live voice-agent data packets. |
 | `/video` | Direct-link publisher page. Opens the device camera (with a multi-lens switcher on phones), publishes into the `sentinel-live` LiveKit room, and subscribes to other publishers. Shows a real-time stats panel (kbps, fps, resolution, codec, quality-limitation reason). |
 | `/audio` | Direct-link publisher page. Same as `/video` but for the microphone. Defaults to identity `sentinel-guard-mic`, which the Python voice agent listens to. |
+| `/gemini-preview` | Direct-link MacBook camera analyst. Opens the local camera, captures frames on demand, and sends them through a server-side Gemini API bridge for visual chat and auto-commentary. |
 
-The dashboard and the two utility pages all share the same Vite dev server (single process, single port).
+The dashboard and utility pages all share the same Vite dev server (single process, single port).
 
 ## Prerequisites
 
@@ -30,7 +31,7 @@ bun install
 bun run dev
 ```
 
-The server starts on **HTTPS** with a self-signed certificate (required so phones on the LAN can use `getUserMedia`). At startup it prints access URLs for `/`, `/video`, and `/audio` for both localhost and your LAN IP. Phones need to accept the self-signed cert warning once.
+The server starts on **HTTPS** with a self-signed certificate (required so phones on the LAN can use `getUserMedia`). At startup it prints access URLs for `/`, `/video`, `/audio`, and `/gemini-preview` for both localhost and your LAN IP. Phones need to accept the self-signed cert warning once.
 
 Other scripts:
 
@@ -51,11 +52,22 @@ LIVEKIT_API_KEY=APIxxxxxxxxxxxx
 LIVEKIT_API_SECRET=your-secret
 ```
 
-Without credentials the dashboard and utility pages still work — cameras show placeholders and `/video`/`/audio` run in local-preview-only mode.
+Without credentials the dashboard and utility pages still work — the dashboard shows a no-publishers state and `/video`/`/audio` run in local-preview-only mode.
+
+## Gemini setup (for `/gemini-preview`)
+
+Add a server-side Gemini key to `.env`:
+
+```
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_CAMERA_MODEL=gemini-3.1-pro-preview
+```
+
+`/gemini-preview` keeps the key on the server via `src/lib/gemini-camera-analysis.ts`. The default model is Gemini 3.1 Pro Preview for frame-based visual reasoning. You can override `GEMINI_CAMERA_MODEL` if your account exposes a live-specific model.
 
 ## Live camera grid
 
-The dashboard automatically subscribes to the `sentinel-live` LiveKit room as a viewer. Connected publisher devices fill the camera tiles from left to right (CAM-01 gets the first connected device, CAM-02 gets the second, and so on). Tiles without a live feed show the existing placeholder animation.
+The dashboard automatically subscribes to the `sentinel-live` LiveKit room as a viewer. Connected publisher devices fill the camera grid from left to right.
 
 To stream from a phone or second device, open `https://<laptop-LAN-IP>:<port>/video` on that device.
 
@@ -73,9 +85,11 @@ src/
     index.tsx              # Dashboard (/)
     video.tsx              # Camera publisher (/video)
     audio.tsx              # Mic publisher (/audio)
+    gemini-preview.tsx     # Local camera + Gemini visual chat (/gemini-preview)
   components/sentinel/     # Dashboard UI components
   lib/
     livekit-token.ts       # TanStack Start server fn — mints LiveKit JWTs
+    gemini-camera-analysis.ts # TanStack Start server fn — Gemini frame analysis
     use-livekit-feeds.ts   # Hook — viewer subscriber, returns ordered live tracks
     use-sentinel-voice-events.ts # Hook — subscribes to voice-agent data packets
     use-livekit-stats.ts   # Hook — polls WebRTC getStats() for the stats panel

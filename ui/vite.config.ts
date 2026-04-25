@@ -79,6 +79,7 @@ function printSentinelLinksPlugin(): Plugin {
             { name: "HOME (dashboard)", path: "/" },
             { name: "VIDEO (camera publisher)", path: "/video" },
             { name: "AUDIO (mic publisher)", path: "/audio" },
+            { name: "GEMINI (camera analyst)", path: "/gemini-preview" },
           ];
 
           type Line = { who: string; url: string; label: string };
@@ -164,6 +165,26 @@ function printSentinelLinksPlugin(): Plugin {
           } else {
             out.push("");
             out.push("  LiveKit configured: " + lkUrl);
+          }
+
+          const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+          const geminiPlaceholder =
+            geminiKey === "replace-with-your-gemini-api-key" ||
+            geminiKey === "AIzaSy..." ||
+            (geminiKey?.startsWith("replace-with") ?? false);
+          const geminiOk = !!geminiKey && !geminiPlaceholder;
+          if (!geminiOk) {
+            out.push("");
+            out.push(
+              "  ! Gemini not configured - /gemini-preview will show the camera, but analysis",
+            );
+            out.push("    needs GEMINI_API_KEY in ui/.env.");
+          } else {
+            out.push("");
+            out.push(
+              "  Gemini configured for /gemini-preview: " +
+                (process.env.GEMINI_CAMERA_MODEL || "gemini-3.1-pro-preview"),
+            );
           }
 
           out.push("");
