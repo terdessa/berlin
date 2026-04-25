@@ -1,116 +1,276 @@
-import { useState } from "react";
-import { cameras, cam05Alert, type AlertEvent } from "@/lib/sentinel-data";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  cameras,
+  scenarios,
+  scenarioByCamera,
+  successScenario,
+  failureScenario,
+  type AlertEvent,
+  type AlertStatus,
+  type Camera,
+  type Phase,
+  type Scenario,
+} from "@/lib/sentinel-data";
 import { CameraTile } from "./CameraTile";
 import { AlertVideoPanel } from "./AlertVideoPanel";
 import { ReviewLogPanel } from "./ReviewLogPanel";
+import { InferenceCounter } from "./InferenceCounter";
+import { AudioMetricPill } from "./AudioMetricBadge";
+import { PoweredByFooter } from "./PoweredByFooter";
+
+type RunState = {
+  scenario: Scenario;
+  stepIndex: number;
+};
+
+type TickerEntry = { id: number; at: string; text: string };
 
 export function SentinelDashboard() {
-  const [alert, setAlert] = useState<AlertEvent | null>(null);
+  const [run, setRun] = useState<RunState | null>(null);
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [revealUpTo, setRevealUpTo] = useState(0);
+  const [status, setStatus] = useState<AlertStatus>("Awaiting human review");
   const [selected, setSelected] = useState<string | null>(null);
+  const [latestEvent, setLatestEvent] = useState<TickerEntry | null>(null);
 
-  const isAlerting = alert !== null;
+  const tickerIdRef = useRef(0);
+  const timerRef = useRef<number | null>(null);
 
-  const toggleDemo = () => {
-    if (alert) {
-      setAlert(null);
-      setSelected(null);
-    } else {
-      setAlert(cam05Alert);
-      setSelected("CAM-05");
+  const alert: AlertEvent | null = run ? run.scenario.alert : null;
+  const isAlerting = phase !== "idle" && phase !== "resolved";
+  const selectedCamera: Camera | null = selected
+    ? cameras.find((c) => c.id === selected) ?? null
+    : null;
+
+  const pushTicker = useCallback((text: string) => {
+    const at = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+    setLatestEvent({ id: tickerIdRef.current++, at, text });
+  }, []);
+
+  const stopTimer = () => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
   };
 
+  const startScenario = useCallback(
+    (scenario: Scenario) => {
+      stopTimer();
+      setRun({ scenario, stepIndex: -1 });
+      setPhase("idle");
+      setRevealUpTo(0);
+      setStatus(scenario.alert.actionTaken);
+      setSelected(scenario.alert.cameraId);
+      pushTicker(`scenario · ${scenario.id} · started`);
+    },
+    [pushTicker],
+  );
+
+  const resetAll = useCallback(() => {
+    stopTimer();
+    setRun(null);
+    setPhase("idle");
+    setRevealUpTo(0);
+    setStatus("Awaiting human review");
+    setSelected(null);
+    pushTicker("scenario · reset");
+  }, [pushTicker]);
+
+  // Click on a camera tile: start its scenario if mapped, else just select it.
+  const handleCameraClick = (cameraId: string) => {
+    const scenario = scenarioByCamera[cameraId];
+    if (scenario) {
+      startScenario(scenario);
+    } else {
+      stopTimer();
+      setRun(null);
+      setPhase("idle");
+      setRevealUpTo(0);
+      setStatus("Awaiting human review");
+      setSelected(cameraId);
+      pushTicker(`feed · ${cameraId} · preview`);
+    }
+  };
+
+  useEffect(() => {
+    if (!run) return;
+    const nextIdx = run.stepIndex + 1;
+    if (nextIdx >= run.scenario.steps.length) return;
+    const step = run.scenario.steps[nextIdx];
+
+    const tick = () => {
+      setPhase(step.phase);
+      setRevealUpTo(step.revealUpTo);
+      if (step.status) setStatus(step.status);
+      if (step.ticker) pushTicker(step.ticker);
+      setRun((prev) => (prev ? { ...prev, stepIndex: nextIdx } : prev));
+    };
+
+    if (run.stepIndex === -1) {
+      timerRef.current = window.setTimeout(tick, 200);
+    } else {
+      const prev = run.scenario.steps[run.stepIndex];
+      timerRef.current = window.setTimeout(tick, prev.durationMs);
+    }
+    return stopTimer;
+  }, [run, pushTicker]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === "d" || e.key === "D") {
+        e.preventDefault();
+        startScenario(successScenario);
+      } else if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        startScenario(failureScenario);
+      } else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        resetAll();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [startScenario, resetAll]);
+
+  const handleAction = (next: AlertStatus) => {
+    setStatus(next);
+    pushTicker(`action · ${alert?.cameraId ?? "—"} · ${next.toLowerCase()}`);
+  };
+
+  const analyzingId = alert?.cameraId ?? null;
+
   return (
-    <main className="relative min-h-screen w-full px-6 py-5">
-      {/* Ambient status */}
-      <div className="pointer-events-none fixed left-5 top-5 z-40">
-        <div
-          aria-live="polite"
-          className={[
-            "pointer-events-auto inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs backdrop-blur-sm transition-colors",
-            isAlerting
-              ? "bg-alert/10 text-alert"
-              : "bg-background/40 text-foreground/90",
-          ].join(" ")}
-        >
-          <span
+    <main className="flex h-screen w-full flex-col overflow-hidden px-4 py-2">
+      {/* TOP — single row */}
+      <header className="flex flex-shrink-0 items-center justify-between gap-2 py-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <div
+            aria-live="polite"
             className={[
-              "h-2 w-2 rounded-full",
-              isAlerting ? "bg-alert animate-alert-pulse" : "bg-ok animate-soft-pulse",
+              "inline-flex shrink-0 items-center gap-2 rounded-full px-2.5 py-1 text-xs backdrop-blur-sm transition-colors",
+              isAlerting
+                ? "bg-alert/10 text-alert"
+                : "bg-background/40 text-foreground/90",
             ].join(" ")}
-          />
-          <span className="mono uppercase tracking-[0.18em] text-[10px]">
-            {isAlerting
-              ? `Sentinel flagged ${alert.cameraId} — requires review`
-              : "Sentinel is watching"}
-          </span>
+          >
+            <span
+              className={[
+                "h-2 w-2 rounded-full",
+                isAlerting ? "bg-alert animate-alert-pulse" : "bg-ok animate-soft-pulse",
+              ].join(" ")}
+            />
+            <span className="mono uppercase tracking-[0.18em] text-[10px]">
+              {isAlerting && alert
+                ? `flagged ${alert.cameraId} — review`
+                : "Sentinel is watching"}
+            </span>
+          </div>
+          <AudioMetricPill />
         </div>
-      </div>
 
-      {/* Demo toggle */}
-      <div className="fixed right-5 top-5 z-40">
-        <button
-          onClick={toggleDemo}
-          className={[
-            "mono inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] backdrop-blur-sm transition",
-            isAlerting
-              ? "border-alert/50 bg-alert/10 text-alert hover:bg-alert/20"
-              : "border-border bg-background/40 text-muted-foreground hover:text-foreground",
-          ].join(" ")}
-          aria-pressed={isAlerting}
-        >
-          <span
-            className={[
-              "h-1.5 w-1.5 rounded-full",
-              isAlerting ? "bg-alert" : "bg-muted-foreground",
-            ].join(" ")}
-          />
-          demo · simulate CAM-05 {isAlerting ? "on" : "off"}
-        </button>
-      </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {scenarios.map((s) => {
+            const active = run?.scenario.id === s.id;
+            const isFailure = s.id === "failure";
+            return (
+              <button
+                key={s.id}
+                onClick={() => startScenario(s)}
+                className={[
+                  "mono cursor-pointer inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] backdrop-blur-sm transition",
+                  active
+                    ? isFailure
+                      ? "border-alert/60 bg-alert/15 text-alert"
+                      : "border-primary/60 bg-primary/15 text-primary"
+                    : "border-border bg-background/40 text-muted-foreground hover:text-foreground",
+                ].join(" ")}
+                aria-pressed={active}
+                title={s.description}
+              >
+                <span
+                  className={[
+                    "h-1.5 w-1.5 rounded-full",
+                    active
+                      ? isFailure
+                        ? "bg-alert animate-soft-pulse"
+                        : "bg-primary animate-soft-pulse"
+                      : "bg-muted-foreground",
+                  ].join(" ")}
+                />
+                {isFailure ? "F · failure" : "D · success"}
+              </button>
+            );
+          })}
+          <button
+            onClick={resetAll}
+            className="mono cursor-pointer inline-flex items-center rounded-full border border-border bg-background/40 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground transition hover:text-foreground"
+          >
+            R · reset
+          </button>
+        </div>
+      </header>
 
-      {/* Camera grid */}
-      <section
-        aria-label="Camera grid"
-        className="mt-14 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
-        style={{ minHeight: "40vh" }}
-      >
-        {cameras.map((cam) => (
-          <CameraTile
-            key={cam.id}
-            camera={cam}
-            isAlert={alert?.cameraId === cam.id}
-            isSelected={selected === cam.id}
-            onClick={() => setSelected(cam.id)}
+      {/* MAIN — left (cameras + alert video) | right (log) */}
+      <section className="mt-2 grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[3fr_2fr]">
+        {/* LEFT column */}
+        <div className="flex min-h-0 flex-col gap-3">
+          {/* Camera grid 3x2 */}
+          <div
+            aria-label="Camera grid"
+            className="grid min-h-0 flex-[3] grid-cols-3 gap-2"
+          >
+            {cameras.map((cam) => (
+              <CameraTile
+                key={cam.id}
+                camera={cam}
+                isAlert={alert?.cameraId === cam.id}
+                isAnalyzing={analyzingId !== cam.id}
+                isSelected={selected === cam.id}
+                hasDemo={Boolean(scenarioByCamera[cam.id])}
+                onClick={() => handleCameraClick(cam.id)}
+              />
+            ))}
+          </div>
+
+          {/* Active review — smaller */}
+          <div className="min-h-0 flex-[2]">
+            <AlertVideoPanel alert={alert} selectedCamera={selectedCamera} />
+          </div>
+        </div>
+
+        {/* RIGHT column — log full height */}
+        <div className="min-h-0">
+          <ReviewLogPanel
+            alert={alert}
+            phase={phase}
+            revealUpTo={revealUpTo}
+            status={status}
+            selectedCameraId={selected}
+            onAction={handleAction}
+            onStartSuccess={() => startScenario(successScenario)}
+            onStartFailure={() => startScenario(failureScenario)}
           />
-        ))}
+        </div>
       </section>
 
-      {/* Lower band: alert video + log */}
-      <section className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="min-h-[360px]">
-          <AlertVideoPanel alert={alert} />
-        </div>
-
-        <div className="min-h-[360px]">
-          {alert ? (
-            <ReviewLogPanel alert={alert} />
-          ) : (
-            <div className="flex h-full min-h-[360px] flex-col items-center justify-center rounded-lg border border-dashed border-border bg-panel/30 text-center">
-              <div className="mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                review log · collapsed
-              </div>
-              <div className="mt-2 max-w-xs px-6 text-xs text-muted-foreground/70">
-                The review record opens here when Sentinel flags a camera for human review.
-              </div>
-            </div>
+      {/* FOOTER */}
+      <footer className="mt-2 flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-2">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <InferenceCounter />
+          {latestEvent && (
+            <span className="mono truncate text-[10px] text-muted-foreground/80">
+              <span className="text-muted-foreground/60">{latestEvent.at}</span>{" "}
+              · {latestEvent.text}
+            </span>
           )}
         </div>
-      </section>
-
-      <footer className="mt-6 flex items-center justify-between text-[10px] text-muted-foreground/70">
-        <span className="mono uppercase tracking-[0.2em]">sentinel · retail security ops</span>
-        <span className="mono">cameras: video-only · audio: external earpiece device</span>
+        <PoweredByFooter />
       </footer>
     </main>
   );
