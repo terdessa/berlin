@@ -13,7 +13,6 @@ import { CameraTile } from "./CameraTile";
 import { AlertVideoPanel } from "./AlertVideoPanel";
 import { ReviewLogPanel } from "./ReviewLogPanel";
 import { IdleSidePanel } from "./IdleSidePanel";
-import { SystemPillsStrip } from "./SystemPillsStrip";
 import { InferenceCounter } from "./InferenceCounter";
 import { AudioMetricPill } from "./AudioMetricBadge";
 import { PoweredByFooter } from "./PoweredByFooter";
@@ -32,7 +31,6 @@ export function SentinelDashboard() {
   const [status, setStatus] = useState<AlertStatus>("Awaiting human review");
   const [selected, setSelected] = useState<string | null>(null);
   const [latestEvent, setLatestEvent] = useState<TickerEntry | null>(null);
-  const [voiceLatency, setVoiceLatency] = useState(180);
 
   const tickerIdRef = useRef(0);
   const timerRef = useRef<number | null>(null);
@@ -103,16 +101,6 @@ export function SentinelDashboard() {
   }, [run, pushTicker]);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setVoiceLatency((v) => {
-        const target = isAlerting ? 220 : 175;
-        return Math.round(v + (target - v) * 0.4 + (Math.random() - 0.5) * 12);
-      });
-    }, 1500);
-    return () => clearInterval(id);
-  }, [isAlerting]);
-
-  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === "d" || e.key === "D") {
@@ -139,13 +127,13 @@ export function SentinelDashboard() {
 
   return (
     <main className="flex h-screen w-full flex-col overflow-hidden px-4 py-2">
-      {/* TOP — fixed height */}
-      <header className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 py-1">
-        <div className="flex items-center gap-2">
+      {/* TOP — single row, fixed height, no wrap */}
+      <header className="flex flex-shrink-0 items-center justify-between gap-2 py-1">
+        <div className="flex min-w-0 items-center gap-2">
           <div
             aria-live="polite"
             className={[
-              "inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs backdrop-blur-sm transition-colors",
+              "inline-flex shrink-0 items-center gap-2 rounded-full px-2.5 py-1 text-xs backdrop-blur-sm transition-colors",
               isAlerting
                 ? "bg-alert/10 text-alert"
                 : "bg-background/40 text-foreground/90",
@@ -163,15 +151,10 @@ export function SentinelDashboard() {
                 : "Sentinel is watching"}
             </span>
           </div>
-          <SystemPillsStrip
-            voiceLatencyMs={voiceLatency}
-            earpieceBattery={76}
-            alerting={isAlerting}
-          />
           <AudioMetricPill />
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           {scenarios.map((s) => {
             const active = run?.scenario.id === s.id;
             const isFailure = s.id === "failure";
