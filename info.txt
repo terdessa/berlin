@@ -1,0 +1,139 @@
+That’s a smart move. For this hackathon, the stronger direction is to be specific about the B2B retail use case while staying sharp on the core system + UI.
+
+Here’s a clean, unified version you can use internally or in your pitch:
+
+---
+
+## 🧠 Core Idea
+
+**Sentinel** is a real-time multimodal AI system for retail loss-prevention awareness. It analyzes **live shop camera streams** to detect high-risk situations and alert humans instantly.
+
+It focuses on understanding **what is happening right now**, not just recording it for later.
+
+---
+
+## 🎯 Problem
+
+Retail stores already capture huge amounts of information through cameras, but:
+
+* most systems are passive and only reviewed after incidents
+* human operators cannot monitor many feeds effectively
+* high-risk retail moments are often noticed too late
+
+---
+
+## 💡 Solution
+
+Sentinel continuously processes **shop camera input** and identifies observable retail situations that may require attention.
+
+When a possible loss-prevention review moment happens, it:
+
+* generates a real-time alert
+* summarizes what is happening
+* provides context to help a human decide what to do next
+
+---
+
+## ⚙️ What the system detects
+
+* item taken from shelf and placed into pocket or bag
+* concealment-like hand motion
+* checkout bypass
+* self-checkout mismatch
+* unusual movement near high-value items
+
+The demo should pick one controlled retail review event and make the alert path feel real.
+
+---
+
+## 🖥️ UI Concept (this is where you should shine)
+
+Focus your demo here.
+
+### Main dashboard:
+
+* grid of live camera feeds
+* system runs in background
+
+### When something happens:
+
+* feed is highlighted
+* alert card appears with:
+
+  * short description
+  * confidence level
+  * timestamp
+* short video/audio clip replay
+
+### Actions:
+
+* acknowledge
+* send floor associate
+* ignore
+
+👉 This makes it feel like a real product.
+
+---
+
+## 🧩 Key Features
+
+* real-time video + audio understanding
+* instant alert generation
+* human-in-the-loop decision making
+* simple, actionable summaries
+* works on existing retail camera infrastructure
+
+---
+
+## ⚖️ Safety & Positioning
+
+* no facial recognition
+* no identity tracking
+* no automated decisions
+* always requires human confirmation
+
+---
+
+## 💰 Business Value (keep high-level)
+
+* faster review of high-risk retail situations
+* fewer missed events
+* better use of existing systems
+* reduced shrinkage and camera-monitoring overload
+
+---
+
+## 🎯 One-line pitch
+
+> Sentinel turns passive video and audio streams into real-time awareness.
+
+---
+
+## 🧠 Strategic positioning (important)
+
+If someone asks “what exactly do you detect?”:
+
+Say:
+
+> “Sentinel detects observable retail sequences that may require human review, such as shelf-to-pocket movement, shelf-to-bag movement, checkout bypass, self-checkout mismatch, or unusual high-value shelf activity.”
+
+This keeps the product B2B and human-reviewed while avoiding theft accusations or identity tracking.
+
+---
+
+## My honest take
+
+This is a **very strong hackathon approach**:
+
+* you avoid the B2G/public-surveillance framing
+* you focus on what actually wins (UI + experience)
+* you still show clear real-world potential
+
+---
+
+If you want next, I can help you:
+
+* design a **clean UI layout (what goes where on screen)**
+* or script a **perfect 2-minute demo flow**
+
+That’s where you can really stand out.

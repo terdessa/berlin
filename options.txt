@@ -1,0 +1,5 @@
+1. Retail Loss-Prevention Awareness
+The system focuses on helping security operators notice high-risk retail moments across many shop cameras. It analyzes live camera feeds for observable sequences such as an item taken from a shelf and placed into a pocket or bag, checkout bypass, or self-checkout mismatch, then highlights the relevant camera for human review without accusing anyone.
+
+2. Store Operations Copilot
+The system focuses on turning existing supermarket or shop cameras into an attention-routing layer for store teams. It helps one operator monitor many feeds, review evidence clips quickly, send a floor associate when needed, and mark false positives so the system stays human-led.
