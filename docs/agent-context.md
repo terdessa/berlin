@@ -122,13 +122,12 @@ Use at least 3 partner technologies.
 Core implementation stack:
 
 - ai-coustics: noisy audio enhancement
-- Gradium: realtime voice interaction
+- telli: realtime voice interaction (track host runtime)
 - Google DeepMind: video/scene understanding
 - Entire: human review and error-report workflow
 
 Side challenge focus:
 
-- Gradium: pursue through the realtime voice loop.
 - Entire: pursue through review tasks, action tracking, and error-report workflow.
 - Aikido: pursue if setup is quick by connecting the public repo and submitting the security report screenshot.
 

@@ -18,20 +18,19 @@ Use at least 3 partner technologies.
 
 Recommended stack:
 
-- **ai-coustics:** noisy audio enhancement for guard commands
-- **Gradium:** realtime voice interaction
+- **ai-coustics:** noisy audio enhancement for guard commands (the track differentiator)
+- **telli:** realtime voice interaction runtime (track host)
 - **Google DeepMind:** video/scene understanding
 - **Entire:** human review, action tracking, incident/error workflow
 
-Ask organizers whether ai-coustics counts toward the 3 required partner technologies. To be safe, use at least 3 from the FAQ list such as Google DeepMind, Gradium, Entire, Tavily, or Lovable.
+Why no third-party voice runtime on top of telli: keeping the audio path as
+mic → ai-coustics → telli isolates ai-coustics as the single variable in the
+before/after metric. Adding another realtime voice layer would muddy what the
+judges are looking for on this track.
+
+Ask organizers whether ai-coustics and telli count toward the 3 required partner technologies. Even if they do not, the stack above already includes Google DeepMind and Entire from the FAQ list, plus Tavily or Lovable as optional additions.
 
 ## Side Challenges
-
-### Gradium
-
-Pursue strongly.
-
-Use it for the realtime voice assistant loop: spoken alerts, guard commands, or voice response handling.
 
 ### Entire
 
@@ -50,12 +49,10 @@ Connect the public GitHub repo and include the required security report screensh
 Prioritize:
 
 1. telli + ai-coustics track fit
-2. Gradium side challenge
-3. Entire side challenge
-4. Aikido side challenge
+2. Entire side challenge
+3. Aikido side challenge
 
 Minimum side-challenge implementation:
 
-- Gradium: one working voice alert or command path.
 - Entire: one created review/error task containing video context, transcript, command, and action.
 - Aikido: one connected repo scan screenshot.

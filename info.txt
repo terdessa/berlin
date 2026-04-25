@@ -16,7 +16,7 @@ telli + ai-coustics, with Wildcard as fallback.
 
 Side challenges:
 
-Focus on Gradium and Entire. Add Aikido if setup is quick.
+Focus on Entire. Add Aikido if setup is quick. The realtime voice runtime is telli (track host); we are deliberately not stacking another voice layer on top, so ai-coustics stays the single variable in the before/after metric.
 
 Safety:
 

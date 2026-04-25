@@ -8,14 +8,16 @@ This workstream proves the core track claim: Sentinel can understand a guard in 
 
 ## Main Goal
 
-Build the voice loop using Gradium and ai-coustics, interpret guard commands, and create review or error records with enough context for human review.
+Build the voice loop using telli and ai-coustics, interpret guard commands, and create review or error records with enough context for human review.
+
+The audio path is intentionally minimal: mic → ai-coustics → telli. This keeps ai-coustics as the single variable in the before/after metric, which is what the telli + ai-coustics track rewards.
 
 ## Core Tasks
 
 1. Play or speak the earpiece alert from a visual event.
 2. Capture the guard's spoken command.
 3. Run noisy audio through ai-coustics enhancement.
-4. Use Gradium for the realtime voice interaction path.
+4. Use telli for the realtime voice interaction path.
 5. Produce raw and enhanced transcript attempts.
 6. Interpret the command into a small command set.
 7. Return command confidence.
@@ -119,13 +121,20 @@ Minimum useful Entire payload:
 
 ## Audio Metric
 
-Own one simple track metric:
+Primary track metric: **isolated before/after ai-coustics on the same telli pipeline**.
 
-- transcript confidence before and after ai-coustics
-- command recognition before and after ai-coustics
+Run the same noisy guard clip through the pipeline twice with only ai-coustics toggled:
+
+- Without ai-coustics: noisy mic → telli → transcript + confidence + interpreted command
+- With ai-coustics: noisy mic → ai-coustics → telli → transcript + confidence + interpreted command
+
+Report the delta on at least one of:
+
+- transcript confidence before vs. after ai-coustics
+- command recognition accuracy before vs. after ai-coustics
 - task completion under noisy supermarket audio
 
-The metric should be visible in the frontend or easy to mention in the demo video.
+The metric should be visible in the frontend or easy to mention in the demo video. Keeping ai-coustics as the only variable is the point: it makes the track value obvious.
 
 ## Safety Requirements
 

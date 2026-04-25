@@ -4,4 +4,4 @@ Sentinel is a voice-first retail security copilot for the telli + ai-coustics tr
 
 It watches CCTV, alerts a guard through an earpiece, understands noisy spoken commands, opens the relevant video, and logs review/error reports with video + voice context.
 
-Side challenge focus: Gradium for voice, Entire for review/error workflow, Aikido if quick.
+Voice runtime: telli (track host). Side challenge focus: Entire for review/error workflow, Aikido if quick.

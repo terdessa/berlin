@@ -25,5 +25,7 @@ Define schemas for visual event, voice command, action result, and error report.
 
 Side challenge focus:
 
-- Gradium and Entire are the main implementation targets.
+- Entire is the main side-challenge implementation target.
 - Aikido is worth doing if setup is quick.
+
+Voice runtime: telli (track host). The audio path is mic → ai-coustics → telli, kept deliberately minimal so ai-coustics is the single variable in the before/after metric.
