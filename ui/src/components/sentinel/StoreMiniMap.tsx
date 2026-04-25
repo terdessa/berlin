@@ -6,25 +6,23 @@ type Props = {
 
 export function StoreMiniMap({ alertCameraId }: Props) {
   return (
-    <div className="rounded-md border border-border bg-panel/60 p-3 backdrop-blur-sm">
+    <div className="flex h-full flex-col rounded-md border border-border bg-panel/60 p-2.5 backdrop-blur-sm">
       <div className="mono mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-muted-foreground/80">
         <span>store · floor plan</span>
         <span>store 042 · kreuzberg</span>
       </div>
       <div
-        className="relative h-32 w-full overflow-hidden rounded border border-border/80 bg-background/60"
+        className="relative min-h-0 flex-1 overflow-hidden rounded border border-border/80 bg-background/60"
         style={{
           backgroundImage:
             "linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px)",
           backgroundSize: "16px 16px",
         }}
       >
-        {/* Aisle lanes */}
         <div className="absolute inset-x-4 top-[18%] h-[1px] bg-border/80" />
         <div className="absolute inset-x-4 top-[26%] h-[1px] bg-border/60" />
         <div className="absolute inset-x-4 bottom-[18%] h-[1px] bg-border/80" />
 
-        {/* Camera dots */}
         {floorPlan.map((dot) => {
           const isAlert = dot.id === alertCameraId;
           return (

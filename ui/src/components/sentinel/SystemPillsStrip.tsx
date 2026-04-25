@@ -1,4 +1,4 @@
-import { Headphones, Mic, Radio, Wifi, Clock, Cpu } from "lucide-react";
+import { Headphones, Mic, Radio, Cpu } from "lucide-react";
 
 type Pill = {
   icon: React.ReactNode;
@@ -17,39 +17,27 @@ export function SystemPillsStrip({ voiceLatencyMs, earpieceBattery, alerting }: 
   const pills: Pill[] = [
     {
       icon: <Cpu className="h-3 w-3" />,
-      label: "Cameras",
-      value: "10/10 · live",
+      label: "cams",
+      value: "10/10",
       tone: "ok",
     },
     {
       icon: <Headphones className="h-3 w-3" />,
-      label: "Earpiece phone",
-      value: `linked · ${earpieceBattery}%`,
+      label: "earpiece",
+      value: `${earpieceBattery}%`,
       tone: "ok",
     },
     {
       icon: <Mic className="h-3 w-3" />,
       label: "ai-coustics",
-      value: alerting ? "active · enhancing" : "standby",
+      value: alerting ? "active" : "standby",
       tone: alerting ? "ok" : "muted",
     },
     {
       icon: <Radio className="h-3 w-3" />,
-      label: "Voice latency",
+      label: "latency",
       value: `${voiceLatencyMs}ms`,
       tone: voiceLatencyMs < 250 ? "ok" : "warn",
-    },
-    {
-      icon: <Wifi className="h-3 w-3" />,
-      label: "Network",
-      value: "stable",
-      tone: "ok",
-    },
-    {
-      icon: <Clock className="h-3 w-3" />,
-      label: "Store hours",
-      value: "open · 09–22",
-      tone: "muted",
     },
   ];
 
@@ -61,14 +49,14 @@ export function SystemPillsStrip({ voiceLatencyMs, earpieceBattery, alerting }: 
         : "text-muted-foreground";
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-1">
       {pills.map((p) => (
         <span
           key={p.label}
-          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-panel/60 px-2 py-1 text-[10px] backdrop-blur-sm"
+          className="inline-flex items-center gap-1 rounded-full border border-border bg-panel/60 px-1.5 py-0.5 text-[10px] backdrop-blur-sm"
         >
           <span className={toneClass(p.tone)}>{p.icon}</span>
-          <span className="mono uppercase tracking-[0.16em] text-muted-foreground">
+          <span className="mono uppercase tracking-[0.14em] text-muted-foreground">
             {p.label}
           </span>
           <span className={["mono", toneClass(p.tone)].join(" ")}>{p.value}</span>
