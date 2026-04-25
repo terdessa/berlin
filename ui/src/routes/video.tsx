@@ -24,6 +24,56 @@ export const Route = createFileRoute("/video")({
 
 const DEFAULT_ROOM = "sentinel-live";
 
+// Open the main (1x wide-angle) rear camera.
+//
+// `facingMode: "environment"` alone is not enough on multi-lens phones: iOS and
+// Android may give the telephoto lens instead of the main wide lens. The strategy:
+//  1. Open any environment-facing camera to get the media permission.
+//  2. Read the track label. If it looks like a telephoto / zoom lens, enumerate
+//     all video inputs (labels are only populated after permission is granted) and
+//     swap to the wide camera by deviceId.
+async function openMainBackCamera(): Promise<MediaStream> {
+  const initial = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 } },
+    audio: false,
+  });
+
+  const firstTrack = initial.getVideoTracks()[0];
+  const label = firstTrack?.label ?? "";
+
+  // Telephoto lens labels on iOS: "Back Telephoto Camera", "5x", "3x", etc.
+  // We also skip "Ultra Wide" (0.5x) and prefer the plain Wide (1x).
+  const isNotWide = /(telephoto|\bultra\s*wide\b|\b[2-9]x\b|\b\d+\.?\dx\b)/i.test(label);
+  if (!isNotWide) return initial; // already on the wide camera
+
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoInputs = devices.filter((d) => d.kind === "videoinput" && d.deviceId);
+
+    // Prefer a device explicitly labelled "wide" without "ultra"
+    const wide =
+      videoInputs.find((d) => /wide/i.test(d.label) && !/ultra/i.test(d.label)) ??
+      // Fall back: any rear camera that isn't telephoto or ultra-wide
+      videoInputs.find(
+        (d) =>
+          /(back|rear)/i.test(d.label) &&
+          !/(telephoto|ultra\s*wide|ultra|\b[2-9]x\b)/i.test(d.label),
+      );
+
+    if (wide) {
+      initial.getTracks().forEach((t) => t.stop());
+      return navigator.mediaDevices.getUserMedia({
+        video: { deviceId: { exact: wide.deviceId }, width: { ideal: 1280 } },
+        audio: false,
+      });
+    }
+  } catch {
+    // Enumeration failed - the initial stream is as good as we can get.
+  }
+
+  return initial;
+}
+
 type Status =
   | { state: "idle" }
   | { state: "media-error"; message: string }
@@ -93,10 +143,7 @@ function VideoPageInner() {
       // 1. Local preview first - usable even if LiveKit isn't configured.
       let stream: MediaStream;
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 } },
-          audio: false,
-        });
+        stream = await openMainBackCamera();
       } catch (err) {
         if (cancelled) return;
         const message = err instanceof Error ? err.message : String(err);
