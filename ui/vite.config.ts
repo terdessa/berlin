@@ -142,54 +142,9 @@ function printSentinelLinksPlugin(): Plugin {
             out.push("  won't reappear on restart unless you wipe node_modules.");
           }
 
-          const lkUrl = process.env.LIVEKIT_URL;
-          const lkKey = process.env.LIVEKIT_API_KEY;
-          const lkSecret = process.env.LIVEKIT_API_SECRET;
-          // Mirror the placeholder check in src/lib/livekit-token.ts so the
-          // banner doesn't claim "configured" while the token mint refuses.
-          const lkPlaceholder =
-            lkUrl === "wss://your-project.livekit.cloud" ||
-            lkKey === "APIxxxxxxxxxxxx" ||
-            lkSecret === "replace-with-the-long-secret-from-livekit-cloud" ||
-            (lkKey?.startsWith("APIxxx") ?? false) ||
-            (lkSecret?.startsWith("replace-with") ?? false);
-          const liveKitOk = !!lkUrl && !!lkKey && !!lkSecret && !lkPlaceholder;
-          if (!liveKitOk) {
-            out.push("");
-            out.push(
-              "  ! LiveKit not configured - /audio and dashboard visual alerts will be local only.",
-            );
-            out.push(
-              "    Sign up free at https://cloud.livekit.io and put real values in the repo root .env:",
-            );
-            out.push("       LIVEKIT_URL=wss://your-project.livekit.cloud");
-            out.push("       LIVEKIT_API_KEY=APIxxxxxxxx");
-            out.push("       LIVEKIT_API_SECRET=...");
-            if (lkPlaceholder) {
-              out.push(
-                "    (the repo root .env currently still contains example placeholder values)",
-              );
-            }
-          } else {
-            out.push("");
-            out.push("  LiveKit voice/data configured: " + lkUrl);
-          }
-
-          const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-          const geminiPlaceholder =
-            geminiKey === "replace-with-your-gemini-api-key" ||
-            geminiKey === "AIzaSy..." ||
-            (geminiKey?.startsWith("replace-with") ?? false);
-          const geminiOk = !!geminiKey && !geminiPlaceholder;
-          if (!geminiOk) {
-            out.push("");
-            out.push("  ! Gemini not configured - the CAM-03 analyzer on the dashboard needs");
-            out.push("    GEMINI_API_KEY in the repo root .env.");
-          } else {
-            out.push("");
-            out.push("  Gemini configured for CAM-03 analyzer: gemini-2.5-flash-lite");
-          }
-
+          out.push("");
+          out.push("  Backend wiring (LiveKit voice + Gemini analysis) is intentionally absent.");
+          out.push("  The dashboard renders cameras and the metrics page only.");
           out.push("");
           // server.config.logger.info preserves Vite's formatting/clearing behaviour.
           server.config.logger.info(out.join("\n"));

@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, RefreshCcw } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import { CAMERA_CLIPS, CAMERA_WALL_ORDER, DASHBOARD_CAMERAS } from "@/lib/camera-config";
-import { analyzeCameraFrame } from "@/lib/gemini-camera-analysis";
 import type { AlertEvent, AlertStatus, Camera, Phase } from "@/lib/sentinel-data";
-import { useSentinelRoom } from "@/lib/use-sentinel-room";
 import { AlertVideoPanel } from "./AlertVideoPanel";
 import { AudioMetricPill } from "./AudioMetricBadge";
 import { CameraTile } from "./CameraTile";
@@ -11,13 +9,14 @@ import { DashboardEvidencePanel } from "./DashboardEvidencePanel";
 import { PoweredByFooter } from "./PoweredByFooter";
 import { ReviewLogPanel } from "./ReviewLogPanel";
 
+// NOTE: the voice/LiveKit/Gemini backend has been removed pending a clean
+// rewrite. This dashboard is intentionally UI-only — cameras render, the
+// review log sits in its idle state, and the metrics evidence panel still
+// reads its bundled JSON. There is no live alert source, no microphone
+// publish, and no CV analysis loop wired up here.
+
 type TickerEntry = { id: number; at: string; text: string };
 type Cam3SourceKind = "camera" | "display";
-
-const CAM3_ANALYSIS_PROMPT =
-  "Watch CAM-03 for an open palm shown to the camera (a flat, open hand with fingers visible, deliberately presented as a stop/attention gesture). The palm is the only trigger. Ignore everything else.";
-const CAM3_ANALYSIS_INTERVAL_MS = 1_500;
-const CAM3_ALERT_COOLDOWN_MS = 30_000;
 
 async function listVideoInputs() {
   const devices = await navigator.mediaDevices.enumerateDevices();
@@ -29,11 +28,10 @@ function cameraLabel(device: MediaDeviceInfo, index: number) {
 }
 
 export function SentinelDashboard() {
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [status, setStatus] = useState<AlertStatus>("Awaiting human review");
+  const [phase] = useState<Phase>("idle");
+  const [status] = useState<AlertStatus>("Awaiting human review");
   const [selected, setSelected] = useState<string | null>(null);
   const [latestEvent, setLatestEvent] = useState<TickerEntry | null>(null);
-  const [liveAlert, setLiveAlert] = useState<AlertEvent | null>(null);
   const [cam3Stream, setCam3Stream] = useState<MediaStream | null>(null);
   const [cam3Status, setCam3Status] = useState<"starting" | "ready" | "error">("starting");
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
@@ -44,33 +42,19 @@ export function SentinelDashboard() {
 
   const tickerIdRef = useRef(0);
   const cam3VideoRef = useRef<HTMLVideoElement | null>(null);
-  const cam3CanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const cam3BusyRef = useRef(false);
-  const lastCam3AlertAtRef = useRef(0);
 
-  const sentinel = useSentinelRoom();
-  const alert: AlertEvent | null = liveAlert;
-  const displayedRevealUpTo = alert?.conversation.length ?? 0;
-  const isAlerting = phase !== "idle" && phase !== "resolved";
+  // No live alert source — review log will render its idle state.
+  const alert: AlertEvent | null = null;
+  const displayedRevealUpTo = 0;
+  const isAlerting = false;
 
   const cameras = useMemo(() => {
-    const base =
-      !alert || DASHBOARD_CAMERAS.some((camera) => camera.id === alert.cameraId)
-        ? DASHBOARD_CAMERAS
-        : [
-            {
-              id: alert.cameraId,
-              zone: alert.zone,
-            } satisfies Camera,
-            ...DASHBOARD_CAMERAS.slice(1),
-          ];
-
-    return [...base].sort((a, b) => {
+    return [...DASHBOARD_CAMERAS].sort((a, b) => {
       const ai = CAMERA_WALL_ORDER.indexOf(a.id);
       const bi = CAMERA_WALL_ORDER.indexOf(b.id);
       return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
     });
-  }, [alert]);
+  }, []);
 
   const cameraById = useMemo(() => {
     const map = new Map<string, Camera>();
@@ -78,15 +62,7 @@ export function SentinelDashboard() {
     return map;
   }, [cameras]);
 
-  const selectedCamera: Camera | null = selected
-    ? (cameraById.get(selected) ??
-      (alert?.cameraId === selected
-        ? {
-            id: alert.cameraId,
-            zone: alert.zone,
-          }
-        : null))
-    : null;
+  const selectedCamera: Camera | null = selected ? (cameraById.get(selected) ?? null) : null;
 
   const activeDeviceLabel = useMemo(() => {
     if (cam3Status === "error") return "camera blocked";
@@ -99,7 +75,7 @@ export function SentinelDashboard() {
 
   const cam3StatusLabel =
     cam3Status === "ready"
-      ? "live analysis"
+      ? "live preview"
       : cam3Status === "starting"
         ? "connecting"
         : "camera blocked";
@@ -113,124 +89,10 @@ export function SentinelDashboard() {
     setLatestEvent({ id: tickerIdRef.current++, at, text });
   }, []);
 
-  const captureCam3SmallFrame = useCallback(() => {
-    const video = cam3VideoRef.current;
-    const canvas = cam3CanvasRef.current;
-    if (!video || !canvas || video.videoWidth === 0 || video.videoHeight === 0) return null;
-    const width = Math.min(360, video.videoWidth);
-    const height = Math.round((width / video.videoWidth) * video.videoHeight);
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext("2d");
-    if (!context) return null;
-    context.drawImage(video, 0, 0, width, height);
-    return canvas.toDataURL("image/jpeg", 0.55);
-  }, []);
-
-  const publishCam3Alert = useCallback(
-    async (summary: string) => {
-      // Bucket the id by the cooldown window so two analysis loops (e.g. a
-      // React StrictMode double-mount in dev, or two dashboard tabs) emitting
-      // PALM in the same window publish the SAME id, letting the agent's
-      // spoken_visual_event_ids set actually deduplicate.
-      const bucket = Math.floor(Date.now() / CAM3_ALERT_COOLDOWN_MS);
-      const eventId = `event-cam-03-palm-${bucket}`;
-      const alertEvent: AlertEvent = {
-        cameraId: "CAM-03",
-        zone: "Moving camera",
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        }),
-        sceneSummary: summary,
-        visualConfidence: 0.82,
-        assistantMessage: `Moving camera requires review. ${summary}`,
-        conversation: [],
-        actionTaken: "Awaiting human review",
-      };
-
-      setLiveAlert(alertEvent);
-      setSelected("CAM-03");
-      setStatus("Awaiting human review");
-      setPhase("flagged");
-      pushTicker(`CAM-03 · visual alert · ${summary}`);
-
-      const frameDataUrl = captureCam3SmallFrame();
-
-      const published = await sentinel.publishVisualAlert({
-        eventId,
-        cameraId: "CAM-03",
-        zone: "Moving camera",
-        summary,
-        confidence: alertEvent.visualConfidence,
-        frameBase64: frameDataUrl ?? undefined,
-        frameMimeType: "image/jpeg",
-      });
-
-      if (!published.ok) {
-        pushTicker(`CAM-03 · walkie-talkie alert failed · ${published.message}`);
-      }
-    },
-    [captureCam3SmallFrame, pushTicker, sentinel],
-  );
-
-  const captureCam3Frame = useCallback(() => {
-    const video = cam3VideoRef.current;
-    const canvas = cam3CanvasRef.current;
-    if (!video || !canvas || video.videoWidth === 0 || video.videoHeight === 0) return null;
-
-    // Keep palm-watch payloads tiny: anything past ~80 KB JSON has been
-    // tripping the dev server's body parse and breaking analysis end-to-end.
-    const width = Math.min(480, video.videoWidth);
-    const height = Math.round((width / video.videoWidth) * video.videoHeight);
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext("2d");
-    if (!context) return null;
-    context.drawImage(video, 0, 0, width, height);
-    return canvas.toDataURL("image/jpeg", 0.5);
-  }, []);
-
-  const analyzeCam3 = useCallback(async () => {
-    if (cam3BusyRef.current || cam3Status !== "ready") return;
-    cam3BusyRef.current = true;
-
-    try {
-      const frame = captureCam3Frame();
-      if (!frame) return;
-
-      const result = await analyzeCameraFrame({
-        data: {
-          imageBase64: frame,
-          prompt: CAM3_ANALYSIS_PROMPT,
-          mode: "palm-watch",
-        },
-      }).catch((err: unknown) => ({
-        ok: false as const,
-        message: err instanceof Error ? err.message : "CAM-03 analysis failed before Gemini ran.",
-      }));
-
-      if (!result.ok) {
-        pushTicker(`CAM-03 · analysis unavailable · ${result.message}`);
-        return;
-      }
-
-      if (!/^\s*PALM\b/i.test(result.text)) return;
-
-      const now = Date.now();
-      if (now - lastCam3AlertAtRef.current < CAM3_ALERT_COOLDOWN_MS) return;
-      lastCam3AlertAtRef.current = now;
-
-      // Placeholder framing: the visible trigger is still a palm gesture, but
-      // the alert is presented to the guard as a shelf-pickup event so the
-      // demo flow reads as "item taken → walkie-talkie alert → human review".
-      await publishCam3Alert("item appears taken from shelf");
-    } finally {
-      cam3BusyRef.current = false;
-    }
-  }, [cam3Status, captureCam3Frame, publishCam3Alert, pushTicker]);
-
+  // CAM-03 passive webcam preview. No frame capture, no analysis — the
+  // upstream CV pipeline is gone. We keep the device picker so the demo
+  // still has a "moving camera" tile that shows the laptop webcam or an
+  // attached/Continuity camera.
   useEffect(() => {
     let cancelled = false;
     let openedStream: MediaStream | null = null;
@@ -239,9 +101,7 @@ export function SentinelDashboard() {
     const openStream =
       cam3SourceKind === "display"
         ? navigator.mediaDevices.getDisplayMedia({
-            video: {
-              frameRate: { ideal: 24, max: 30 },
-            },
+            video: { frameRate: { ideal: 24, max: 30 } },
             audio: false,
           })
         : navigator.mediaDevices.getUserMedia({
@@ -318,24 +178,6 @@ export function SentinelDashboard() {
     };
   }, [cam3Stream]);
 
-  useEffect(() => {
-    if (cam3Status !== "ready") return;
-    void analyzeCam3();
-    const id = window.setInterval(() => {
-      void analyzeCam3();
-    }, CAM3_ANALYSIS_INTERVAL_MS);
-    return () => window.clearInterval(id);
-  }, [analyzeCam3, cam3Status]);
-
-  useEffect(() => {
-    if (!sentinel.latestAlert) return;
-    setLiveAlert(sentinel.latestAlert);
-    setSelected(sentinel.latestAlert.cameraId);
-    setStatus(sentinel.latestAlert.actionTaken);
-    setPhase(resolveLivePhase(sentinel.latestAlert));
-    pushTicker(sentinel.latestTicker ?? "live voice · interaction received");
-  }, [sentinel.latestAlert, sentinel.latestTicker, pushTicker]);
-
   const handleCameraClick = (cameraId: string) => {
     setSelected(cameraId);
     pushTicker(`feed · ${cameraId} · selected`);
@@ -345,7 +187,7 @@ export function SentinelDashboard() {
     <CameraTile
       key={camera.id}
       camera={camera}
-      isAlert={alert?.cameraId === camera.id}
+      isAlert={false}
       isSelected={selected === camera.id}
       stream={camera.id === "CAM-03" ? cam3Stream : null}
       videoSrc={CAMERA_CLIPS[camera.id]}
@@ -375,21 +217,9 @@ export function SentinelDashboard() {
                 isAlerting ? "bg-alert animate-alert-pulse" : "bg-ok animate-soft-pulse",
               ].join(" ")}
             />
-            <span className="mono uppercase tracking-[0.18em] text-[10px]">
-              {isAlerting && alert ? `flagged ${alert.cameraId} · review` : "sentinel ops"}
-            </span>
+            <span className="mono uppercase tracking-[0.18em] text-[10px]">sentinel ops</span>
           </div>
           <AudioMetricPill />
-          <WalkieTalkieButton sentinel={sentinel} />
-          {sentinel.needsPlaybackUnlock && (
-            <button
-              type="button"
-              onClick={() => void sentinel.unlockPlayback()}
-              className="mono rounded-md border border-amber-400/60 bg-amber-500/15 px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-amber-200 transition hover:bg-amber-500/25"
-            >
-              tap to hear sentinel
-            </button>
-          )}
         </div>
 
         <div className="flex min-w-0 items-center justify-end gap-2">
@@ -450,7 +280,7 @@ export function SentinelDashboard() {
                 camera wall
               </div>
               <div className="mt-0.5 text-[11px] text-muted-foreground">
-                8 feeds · CAM-03 enlarged · Gemini analysis active
+                8 feeds · CAM-03 enlarged · backend pending rewrite
               </div>
             </div>
             <div className="mono text-right text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -509,79 +339,6 @@ export function SentinelDashboard() {
         aria-hidden="true"
         className="pointer-events-none fixed -left-[9999px] top-0 h-px w-px opacity-0"
       />
-      <canvas ref={cam3CanvasRef} className="hidden" />
     </main>
-  );
-}
-
-function resolveLivePhase(alert: AlertEvent): Phase {
-  if (alert.actionTaken !== "Awaiting human review") return "resolved";
-  if (alert.conversation.some((message) => message.speaker === "guard")) return "interpreted";
-  return "flagged";
-}
-
-type WalkieTalkieButtonProps = {
-  sentinel: ReturnType<typeof useSentinelRoom>;
-};
-
-function WalkieTalkieButton({ sentinel }: WalkieTalkieButtonProps) {
-  const ready = sentinel.status.state === "connected";
-  const label = (() => {
-    switch (sentinel.status.state) {
-      case "idle":
-      case "connecting":
-        return "connecting…";
-      case "media-error":
-        return "mic blocked";
-      case "error":
-        return "voice offline";
-      case "connected":
-        return sentinel.micOn ? "release to send" : "hold to talk";
-    }
-  })();
-
-  return (
-    <button
-      type="button"
-      disabled={!ready}
-      onPointerDown={(event) => {
-        if (!ready) return;
-        event.preventDefault();
-        event.currentTarget.setPointerCapture(event.pointerId);
-        sentinel.startTalking();
-      }}
-      onPointerUp={(event) => {
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-          event.currentTarget.releasePointerCapture(event.pointerId);
-        }
-        sentinel.stopTalking();
-      }}
-      onPointerCancel={() => sentinel.stopTalking()}
-      onPointerLeave={(event) => {
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) return;
-        sentinel.stopTalking();
-      }}
-      onKeyDown={(event) => {
-        if (event.repeat || (event.key !== " " && event.key !== "Enter")) return;
-        event.preventDefault();
-        sentinel.startTalking();
-      }}
-      onKeyUp={(event) => {
-        if (event.key !== " " && event.key !== "Enter") return;
-        event.preventDefault();
-        sentinel.stopTalking();
-      }}
-      className={[
-        "mono inline-flex select-none items-center gap-1.5 rounded-md border px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] transition disabled:cursor-not-allowed disabled:opacity-50",
-        sentinel.micOn
-          ? "border-alert/60 bg-alert/15 text-alert shadow-[0_0_0_1px_rgba(255,80,80,0.25)]"
-          : "border-border bg-panel/70 text-foreground/90 hover:border-primary/50",
-      ].join(" ")}
-      title="Hold to speak to Sentinel"
-      aria-pressed={sentinel.micOn}
-    >
-      <Mic className="h-3 w-3" />
-      {label}
-    </button>
   );
 }
