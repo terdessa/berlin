@@ -20,7 +20,7 @@ Prove Sentinel is a real-time voice interface that works in noisy retail environ
    - "Send floor associate and create report."
 10. Sentinel acts and writes the interaction record.
 11. A deliberately ambiguous follow-up command produces an error record with classification, explanation, and a suggested clarification — instead of a risky action.
-12. Run the rest of the scripted scenario set so the corpus has varied data, then show the resulting `submission/interactions.json` and the per-scenario NISQA / recognition table.
+12. Run the rest of the scripted scenario set so the corpus has varied data, then show the resulting `apps/voice/submission/interactions.json` and the per-scenario NISQA / recognition table.
 
 ## Scenario Set (Drives The Corpus)
 
@@ -47,7 +47,7 @@ At least six scripted scenarios so the corpus looks like a dataset rather than o
 
 ## Interaction Record Contents
 
-See `docs/person-3-voice-error-logging.md` for the full schema. Every record includes:
+Every interaction record includes:
 
 - triggering video clip and frame
 - camera ID and store zone
@@ -65,20 +65,20 @@ See `docs/person-3-voice-error-logging.md` for the full schema. Every record inc
 
 ## Track Metric
 
-Primary: NISQA MOS uplift from raw to enhanced, averaged across the scenario set, with per-scenario breakdown.
+Primary: SAIS, shown across raw audio, ai-coustics-enhanced audio, and ai-coustics plus Sentinel context validation.
 
-Secondary: command recognition rate with vs without ai-coustics on the same scenario set.
+Secondary: dangerous error rate, WER, NISQA/DNSMOS uplift, and retry/safe recovery rate.
 
 Both metrics are computed from `interactions.json` so the judges can reproduce them from the corpus alone.
 
 ## Final Submission Artifact
 
-A `submission/` folder containing:
+An `apps/voice/submission/` folder containing:
 
 - `interactions.json` — the corpus
 - `audio/raw/` and `audio/enhanced/` — paired audio files referenced by the corpus
 - `frames/` and `clips/` — the visual context referenced by the corpus
-- a short `README.md` explaining the failure-mode classifications
+- audio intelligence result JSON files for the reproducible benchmark
 
 This is what we hand to the ai-coustics team after the demo.
 

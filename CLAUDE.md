@@ -1,140 +1,142 @@
 # CLAUDE.md
 
-Guidance for AI coding agents working in this repository.
+Guidance for Claude working in this repository.
 
-## What this is
+## Source Of Truth
 
-**Sentinel** — a voice-first retail security copilot. The default page (`/`) is the **dashboard UI** with a mock review flow plus LiveKit-backed camera and voice surfaces for hardware testing.
+Use these docs only:
 
-There are two **direct-link-only** utility pages (not linked from the dashboard) used to test real device capture against a LiveKit room:
+- `docs/agent-context.md` — canonical product and architecture context
+- `docs/demo-plan.md` — demo flow
+- `docs/sentinel-audio-intelligence-metric.md` — SAIS and audio evidence
 
-- `/video` — publishes the device camera, subscribes to other publishers in the same room.
-- `/audio` — publishes the device microphone as the guard mic, subscribes to other publishers in the same room.
+Do not add timestamped planning notes or resurrect deleted `knowledge/`, role/person, or scratch docs.
 
-These two routes are intentionally not referenced anywhere in the dashboard UI; they're reachable only by typing the URL. The server prints them in the terminal at startup.
+## Project
 
-One-line pitch: *Sentinel helps retail security teams hear, review, and respond to camera events hands-free, even in noisy supermarkets.*
+**Sentinel** is a voice-first retail security copilot for the **telli + ai-coustics** track.
 
-Built for the **telli + ai-coustics** track of Big Berlin Hack. Originally scaffolded in Lovable.
+It watches local camera feeds, sends only CAM-03 frames to Gemini, speaks review alerts to a guard through the LiveKit walkie-talkie path, hears the guard through `/audio`, enhances noisy speech with ai-coustics, interprets commands, and writes structured interaction records.
 
-## Stack
+One-line pitch:
+
+> Sentinel helps retail security teams hear, review, and respond to camera events hands-free, even in noisy supermarkets.
+
+## Current Architecture
+
+- Dashboard route: `/`
+- Camera/Gemini test route: `/gemini-preview`
+- Walkie-talkie mic route: `/audio`
+- Metrics route: `/metrics`
+- LiveKit is **voice/data only**. Do not reintroduce LiveKit video streaming.
+- Dashboard cameras are video-only. The dashboard never opens a microphone.
+- CAM-01, CAM-02, CAM-04, CAM-05, CAM-06, CAM-07, and CAM-08 loop local clips from `ui/public/cams`.
+- CAM-03 opens the selected local browser camera, including iPhone Continuity Camera when macOS exposes it.
+- Gemini analyzes only CAM-03 from the dashboard.
+- Gemini visual alerts publish `sentinel.visual-alert` data packets into the LiveKit voice room.
+- The Python voice agent publishes `sentinel.voice` packets for dashboard review-log updates.
+
+## Environment
+
+Use a single root `.env`. There is no `ui/.env`.
+
+The UI dev server loads the parent `.env` through `ui/vite.config.ts`.
+
+Required runtime keys:
+
+- `LIVEKIT_URL`
+- `LIVEKIT_API_KEY`
+- `LIVEKIT_API_SECRET`
+- `AICOUSTICS_API_KEY`
+- `GEMINI_API_KEY`
+- `OPENAI_API_KEY` or the telli/Gradium credentials currently in use
+
+Never commit real secrets.
+
+## UI Stack
 
 - Vite + React + TypeScript
 - Tailwind CSS
-- shadcn/ui (Radix primitives) — see `components.json`
-- Bun for install / dev / build (`bun install`, `bun run dev`)
-- Cloudflare Workers deploy via `@cloudflare/vite-plugin` and `wrangler.jsonc`
+- TanStack Start
+- Bun or npm
+- Cloudflare Workers deploy target
 
-## Pipeline this UI represents
+Run UI commands from `ui/`:
 
-1. An AI agent continuously analyzes every camera feed.
-2. On a review-worthy event, the dashboard flags the camera and Sentinel speaks an alert to the guard's earpiece.
-3. The guard replies by voice through a **separate earpiece/mic device** — not via the cameras.
-4. ai-coustics enhances the guard audio.
-5. The voice layer interprets the command.
-6. Sentinel opens the evidence video, routes the action, or creates an error report.
-7. The two-way voice channel stays open for follow-ups.
+```bash
+bun install
+bun run dev
+bun run lint
+bun run build
+```
 
-## Hard rules — non-accusatory language
+The dev server runs over HTTPS so phones and Continuity Camera workflows can use `getUserMedia`.
 
-This is a **human-review** tool, not an accusation system. Anywhere user-visible text is written or generated:
+## Voice Service
 
-- ✅ "requires review", "observable shelf-to-pocket sequence", "possible loss-prevention review", "voice command unclear", "clarification needed"
-- ❌ "thief", "criminal", "stealing", "guilty", any identity claim, any intent claim
+Run from repo root or `apps/voice` as documented in `apps/voice/README.md`.
 
-Show confidence scores, not verdicts. No facial recognition, no identity tracking, no automated enforcement language anywhere in the UI.
+Core commands:
 
-## Architectural rules
+```bash
+cd apps/voice
+source .venv/bin/activate
+python -m src.agent dev
+python -m src.dispatch_agent
+```
 
-- **Cameras are video-only.** Never render mic icons on camera tiles. Never imply the cameras hear anything. Audio comes from the separate earpiece device.
-- **Every camera tile shows a continuous-analysis indicator.** The agent watches *all* feeds, not only the alerted one — the UI must reflect that.
-- **Dashboard review state is local.** Mock alert events and action states remain hardcoded/local, but the dashboard may subscribe to LiveKit for live camera feeds and voice-agent data packets. Do not add auth or broad backend resource clients under `src/components/sentinel/`.
-- **LiveKit in the dashboard is viewer-only.** `SentinelDashboard` uses `useLivekitFeeds("sentinel-live")` to subscribe to live camera tracks and render them in the camera grid tiles. It never publishes. All `livekit-client` usage inside the dashboard goes through `use-livekit-feeds.ts` (dynamic import inside `useEffect`). Do not static-import `livekit-client` anywhere.
-- **Voice events are data-only in the dashboard.** `SentinelDashboard` uses `useSentinelVoiceEvents()` to listen for `sentinel.voice` LiveKit data packets from the Python agent and render text turns in the review log. Audio capture still comes only from `/audio`; the dashboard never opens a microphone.
-- **`/video` and `/audio` are the publisher endpoints.** Those pages handle camera/mic acquisition, `getUserMedia`, camera switching, and publishing. The dashboard only subscribes.
+The default room is `sentinel-live`; the default guard mic identity is `sentinel-guard-mic`.
 
-## Layout
+## Safety Language
 
-Single page, dark theme, security-ops aesthetic — deep slate background, monospaced numerals, amber/red for alerts, teal for normal.
+Sentinel is a human-review tool, not an accusation or enforcement system.
 
-- **No top bar.** A small ambient "🟢 Sentinel is watching" pill in a corner is the only persistent status. It shifts to "🟠 Sentinel flagged CAM-XX — requires review" when an alert is active.
-- **Camera grid** (top region, ~40% viewport): 6 small live tiles. Connected LiveKit camera publishers fill tiles from left to right; missing feeds show placeholders. Each tile shows camera ID + zone label, live dot, and an analyzing indicator. The active alert tile pulses amber.
-- **Alert video panel** (below the grid, ~50% width): large playback of the flagged camera. Includes non-accusatory scene summary overlay, scrubber, replay-last-10s, watch-live, and a visual-model confidence bar.
-- **Right-side log panel** (other ~50% width): collapsed by default. Slides in only when an alert is active. Closes when the alert is resolved.
-- **Demo toggle** (small corner button) simulates an alert on CAM-05 for the demo flow.
+Use:
 
-## Review record / log panel
+- "requires review"
+- "possible loss-prevention review"
+- "observable shelf-to-pocket sequence"
+- "human review recommended"
+- "voice command unclear"
 
-- **Text-only conversation history** between Sentinel and the guard. No audio waveforms, no play buttons, no raw audio UI anywhere.
-- Two speakers, visually distinct:
-  - **Sentinel** — left, teal accent, shield icon
-  - **Guard · earpiece** — right, amber accent, headset icon
-- Each message: speaker label, text, timestamp (HH:MM:SS); guard messages include a confidence chip.
-- Low-confidence guard messages render with a dashed border and inline "voice command unclear — clarification requested" note. Show the interpreted text, not raw garbled transcript.
-- A "live" pulse at the top of the panel while the channel is open; "channel closed" once resolved.
-- Below the conversation: status badges ("Awaiting human review", "Floor associate dispatched", "Marked false alarm", "Error report created") and footer actions (Send floor associate, Mark false alarm, Create report).
+Avoid:
 
-## Mock data conventions
+- "thief"
+- "criminal"
+- "stealing"
+- "guilty"
+- identity claims
+- intent claims
 
-- 10 cameras across zones (Entrance, Aisle 1–5, Checkout, Storage, Back exit).
-- One pre-built alert event for CAM-05 with the full review-record payload.
-- Mock conversation for CAM-05:
-  1. Sentinel — "Aisle 5 requires review. Item appears to move from shelf to pocket. Human review recommended." — 14:22:08
-  2. Guard — "Open aisle five." — 14:22:14 — confidence 0.91
-  3. Sentinel — "Opening Aisle 5 evidence video now." — 14:22:15
-  4. Guard — "Send floor associate and create report." — 14:22:31 — confidence 0.88
-  5. Sentinel — "Floor associate dispatched. Review record created." — 14:22:33
+No facial recognition, identity tracking, automated accusation, detention, punishment, or enforcement.
 
-## Side-challenge integrations the UI should be ready to display
+## File Layout
 
-- **ai-coustics**: surfaced via the confidence delta between raw and enhanced transcripts (in mock data; the UI just shows the result).
-- **Gradium**: realtime voice loop — the conversation panel represents this.
-- **Entire**: review tasks and error reports — the status badges and footer actions are the surface.
+- `docs/` — only active project markdown
+- `ui/src/components/sentinel/` — dashboard UI components
+- `ui/src/lib/camera-config.ts` — camera labels, order, clip paths
+- `ui/src/lib/gemini-camera-analysis.ts` — Gemini server function
+- `ui/src/lib/livekit-token.ts` — LiveKit token server function
+- `ui/src/lib/publish-visual-alert.ts` — Gemini alert publisher
+- `ui/src/lib/use-sentinel-voice-events.ts` — dashboard LiveKit data subscriber
+- `apps/voice/src/` — Python voice worker, interpretation, logging, metrics
+- `apps/voice/tools/` — utility scripts
+- `apps/voice/submission/` — generated corpus/results
 
-## Accessibility
+## Validation
 
-- Visible focus rings on all interactive controls.
-- `role="alert"` on the live alert region only when an alert is active.
-- Responsive down to 1280px; mobile is not required.
+Before handing off UI changes, run:
 
-## Live-stream pages (`/video`, `/audio`)
+```bash
+cd ui
+npm run lint
+npm run build
+```
 
-Direct-link-only utility pages that publish the device camera/mic into a shared LiveKit room. Built for hardware-capture testing during the hackathon. They share these conventions:
+For Python voice changes, run focused compile/tests, for example:
 
-- Default room name: `sentinel-live` (override with `?room=...`).
-- `/video` identities are generated client-side as `<platform>-<random6>`.
-- `/audio` defaults to identity `sentinel-guard-mic`, matching the Python agent's default `LIVEKIT_MIC_IDENTITY`; override with `?identity=...` only when both sides match.
-- Local capture works even without LiveKit credentials (the page falls back to "local preview only" with a banner).
-- All `livekit-client` usage goes through dynamic `import("livekit-client")` inside `useEffect`. Type-only imports at module level are fine. Do **not** static-import `livekit-client` — it is not SSR-safe.
-- Token issuance lives in `src/lib/livekit-token.ts` (`issueLivekitToken` server function). It accepts `{ room, identity, viewerOnly? }`. `viewerOnly: true` issues a subscribe-only token (used by the dashboard). It reads `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` from `process.env`, hoisted from `ui/.env` by `vite.config.ts` at startup.
+```bash
+python -m py_compile apps/voice/src/agent.py apps/voice/src/interpret.py
+```
 
-When you need credentials, sign up at [https://cloud.livekit.io](https://cloud.livekit.io) and copy the values into a local `.env` (see `.env.example`). `.env` is gitignored.
-
-## Camera publisher page (`/video`) specifics
-
-- **Camera switcher**: after `getUserMedia` grants permission, all video inputs are enumerated and shown as buttons. Tapping a button calls `onSwitchCamera(deviceId)` which opens a new stream and hot-swaps the track in the LiveKit publication via `LocalVideoTrack.replaceTrack()` — the room connection stays alive.
-- **Capture settings**: 1280×720 @ 30 fps, 2.5 Mbps cap, `simulcast: false`. Constants `CAM_WIDTH`, `CAM_HEIGHT`, `CAM_FPS`, `CAM_MAX_BITRATE` are at the top of `src/routes/video.tsx` — adjust there if needed.
-- **Stats panel**: `useLivekitStats` polls `RTCPeerConnection.getStats()` every second and surfaces kbps, fps, actual resolution, codec, packet loss, and `qualityLimitationReason` per track.
-
-## Dashboard live camera grid
-
-`SentinelDashboard` calls `useLivekitFeeds("sentinel-live")` which connects as a viewer-only subscriber. The hook returns `LiveFeed[]` in insertion order (first publisher → index 0). The camera grid maps `liveFeeds[i]` to `cameras[i]`, so the first connected device fills CAM-01, the second fills CAM-02, and so on. Tiles without a corresponding feed keep their placeholder animation. The hook returns `[]` during SSR and when LiveKit is not configured — tiles are always rendered, only the content differs.
-
-## Dashboard live voice log
-
-`SentinelDashboard` calls `useSentinelVoiceEvents()` which joins `sentinel-live` as a subscriber and listens for `sentinel.voice` data packets from `apps/voice/src/agent.py`. The Python agent publishes `visual_event`, `assistant_turn`, `guard_turn`, and `interaction_record` packets. The dashboard converts those packets into the existing `AlertEvent`/conversation model so live Guard and Sentinel text appears in the same review log as mock scenarios.
-
-## SSR / hydration rules
-
-- `SentinelDashboard` renders on the server. `useLivekitFeeds` returns `[]` on the server (all effects are client-only), so tiles always start as placeholders — no hydration mismatch.
-- `CameraTile` uses a fixed initial `microConf` value (`0.65`) for SSR; `useEffect` randomises it on mount. This prevents the confidence-bar width from differing between server and client HTML.
-- `InferenceCounter` uses `suppressHydrationWarning` on the formatted-number span because `toLocaleString()` can differ between the Node SSR locale and the browser's locale.
-- `/video` and `/audio` use an outer `VideoPage`/`AudioPage` wrapper that renders `<LivePageSkeleton>` during SSR and only mounts the interactive inner component after hydration.
-
-## Dev server
-
-`bun run dev` (or `npm run dev`) starts Vite over **HTTPS** with a self-signed cert cached in `node_modules/.cache/sentinel-dev-cert/`. HTTPS is required so phones (any non-localhost origin) can use `getUserMedia()`. The startup banner prints `https://localhost:<port>/...` and `https://<lan-ip>:<port>/...` URLs for `/`, `/video`, and `/audio`, and warns when LiveKit env vars are missing. Phones must accept the self-signed cert once.
-
-## Out of scope for this repo
-
-Real video pipeline for the dashboard, persistent storage, auth, protected routing, server-side audio enhancement. The LiveKit pieces above are the only "real backend" surface; everything else stays presentational.
+The old shadcn scaffold has been removed; keep new UI code local to the Sentinel components unless a shared primitive is clearly needed.

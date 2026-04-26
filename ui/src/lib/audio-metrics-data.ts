@@ -1,14 +1,5 @@
 import bundledAudioResults from "./audio-metrics-generated.json";
 
-export const PUBLIC_AUDIO_RESULTS_PATH = "/data/audio_dataset_results.json";
-
-export type MetricCard = {
-  label: string;
-  value: string;
-  detail: string;
-  tone: "primary" | "ok" | "warn" | "alert" | "neutral";
-};
-
 export type ComparisonRow = {
   id: string;
   version: string;
@@ -79,8 +70,6 @@ export type InteractionOutcome = {
 export type AudioMetricsDashboard = {
   source: string;
   warnings: string[];
-  technologyLabels: Array<{ label: string; detail: string }>;
-  metricCards: MetricCard[];
   conditionComparison: ComparisonRow[];
   systemComparison: ComparisonRow[];
   failureBreakdown: FailureBreakdown[];
@@ -89,7 +78,6 @@ export type AudioMetricsDashboard = {
   pipelineStages: PipelineStage[];
   stressCoverage: Array<{ label: string; value: string; detail: string }>;
   outcomes: InteractionOutcome[];
-  recentOutcomes: InteractionOutcome[];
 };
 
 type SummaryBlock = {
@@ -154,14 +142,6 @@ export const audioMetricsDashboard = buildAudioMetricsDashboard(
   "bundled generated benchmark",
 );
 
-export function parseAudioBenchmarkJson(text: string): BenchmarkPayload {
-  const parsed = JSON.parse(text) as unknown;
-  if (!parsed || typeof parsed !== "object") {
-    throw new Error("Audio benchmark JSON must be an object.");
-  }
-  return parsed as BenchmarkPayload;
-}
-
 export function buildAudioMetricsDashboard(
   payload: BenchmarkPayload,
   source: string,
@@ -194,75 +174,6 @@ export function buildAudioMetricsDashboard(
           `${missing} of ${totalClips} clips still need Gradium transcripts before the benchmark is complete.`,
         ]
       : [],
-    technologyLabels: [
-      {
-        label: "LiveKit",
-        detail: "Realtime room, camera/mic publishing, and dashboard data events",
-      },
-      { label: "ai-coustics", detail: "Noise enhancement layer before transcription" },
-      {
-        label: "Gradium STT",
-        detail: "Configured voice-to-text provider for batch and live voice paths",
-      },
-      { label: "Gradium TTS", detail: "Configured earpiece speech synthesis provider" },
-      {
-        label: "Sentinel validation",
-        detail: "Command parsing, target checks, and SAIS decision scoring",
-      },
-    ],
-    metricCards: [
-      card("SAIS", formatPct(overall.sais), "correct actions plus safe recoveries", "primary"),
-      card(
-        "MOS",
-        formatScore(overall.avgUsabilityScore),
-        "non-intrusive usability proxy",
-        mosTone(overall.avgUsabilityScore),
-      ),
-      card(
-        "clips",
-        `${transcribedClips}/${totalClips}`,
-        missing ? "one Gradium VAD/STT miss" : "all clips scored",
-        missing ? "warn" : "ok",
-      ),
-      card(
-        "clean",
-        `${clean.transcribedClips ?? 0}/${clean.clips ?? 0}`,
-        "clean command clips",
-        missing ? "warn" : "ok",
-      ),
-      card(
-        "noisy",
-        `${noisy.transcribedClips ?? 0}/${noisy.clips ?? 0}`,
-        "supermarket-noise clips",
-        missing ? "warn" : "ok",
-      ),
-      card("correct", formatPct(overall.correctActionRate), "direct action matches", "ok"),
-      card(
-        "recovery",
-        formatPct(overall.safeRecoveryRate),
-        "safe clarifications or refusals",
-        "warn",
-      ),
-      card(
-        "danger",
-        formatPct(overall.dangerousErrorRate ?? overall.unsafeActionRate),
-        "wrong actions executed",
-        "alert",
-      ),
-      card("WER", formatPct(overall.wer), "word error rate", "neutral"),
-      card(
-        "VAD miss",
-        formatPct(vadMissRate),
-        "speech not transcribed",
-        vadMissRate && vadMissRate > 0.05 ? "alert" : "ok",
-      ),
-      card(
-        "level",
-        formatDb(overall.avgRmsDbfs),
-        "input loudness proxy",
-        levelTone(overall.avgRmsDbfs),
-      ),
-    ],
     conditionComparison: [
       comparison(
         "overall",
@@ -306,7 +217,6 @@ export function buildAudioMetricsDashboard(
       },
     ],
     outcomes,
-    recentOutcomes: outcomes.slice(-8).reverse(),
   };
 }
 
@@ -540,10 +450,6 @@ function comparison(id: string, label: string, block: SummaryBlock, note: string
   };
 }
 
-function card(label: string, value: string, detail: string, tone: MetricCard["tone"]): MetricCard {
-  return { label, value, detail, tone };
-}
-
 function avg(values: Array<number | null | undefined>) {
   const clean = values.filter((value): value is number => typeof value === "number");
   if (!clean.length) return null;
@@ -590,19 +496,9 @@ function mosStatus(value: number | null | undefined): QualitySignal["status"] {
   return "warn";
 }
 
-function mosTone(value: number | null | undefined): MetricCard["tone"] {
-  const status = mosStatus(value);
-  return status === "pass" ? "ok" : status === "fail" ? "alert" : "warn";
-}
-
 function levelStatus(value: number | null | undefined): QualitySignal["status"] {
   if (value == null || Number.isNaN(value)) return "warn";
   if (value >= -27 && value <= -16) return "pass";
   if (value < -35 || value > -8) return "fail";
   return "warn";
-}
-
-function levelTone(value: number | null | undefined): MetricCard["tone"] {
-  const status = levelStatus(value);
-  return status === "pass" ? "ok" : status === "fail" ? "alert" : "warn";
 }

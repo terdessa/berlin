@@ -55,6 +55,8 @@ _PATTERNS: list[tuple[Command, list[str]]] = [
     ]),
     ("what_happened_there", [
         r"what\s+happened\s+there", r"what\s+happened", r"explain\s+(that|this)",
+        r"what\s+do\s+you\s+see", r"what'?s\s+on\s+camera", r"camera\s+three",
+        r"camera\s+3", r"what'?s\s+the\s+situation", r"current\s+situation",
     ]),
     ("open_camera", [
         r"open\s+aisle", r"open\s+camera", r"show\s+aisle", r"show\s+camera",

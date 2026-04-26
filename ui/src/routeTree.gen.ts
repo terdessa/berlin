@@ -9,17 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VideoRouteImport } from './routes/video'
 import { Route as MetricsRouteImport } from './routes/metrics'
 import { Route as GeminiPreviewRouteImport } from './routes/gemini-preview'
 import { Route as AudioRouteImport } from './routes/audio'
 import { Route as IndexRouteImport } from './routes/index'
 
-const VideoRoute = VideoRouteImport.update({
-  id: '/video',
-  path: '/video',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MetricsRoute = MetricsRouteImport.update({
   id: '/metrics',
   path: '/metrics',
@@ -46,14 +40,12 @@ export interface FileRoutesByFullPath {
   '/audio': typeof AudioRoute
   '/gemini-preview': typeof GeminiPreviewRoute
   '/metrics': typeof MetricsRoute
-  '/video': typeof VideoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/audio': typeof AudioRoute
   '/gemini-preview': typeof GeminiPreviewRoute
   '/metrics': typeof MetricsRoute
-  '/video': typeof VideoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,14 +53,13 @@ export interface FileRoutesById {
   '/audio': typeof AudioRoute
   '/gemini-preview': typeof GeminiPreviewRoute
   '/metrics': typeof MetricsRoute
-  '/video': typeof VideoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/audio' | '/gemini-preview' | '/metrics' | '/video'
+  fullPaths: '/' | '/audio' | '/gemini-preview' | '/metrics'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/audio' | '/gemini-preview' | '/metrics' | '/video'
-  id: '__root__' | '/' | '/audio' | '/gemini-preview' | '/metrics' | '/video'
+  to: '/' | '/audio' | '/gemini-preview' | '/metrics'
+  id: '__root__' | '/' | '/audio' | '/gemini-preview' | '/metrics'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,18 +67,10 @@ export interface RootRouteChildren {
   AudioRoute: typeof AudioRoute
   GeminiPreviewRoute: typeof GeminiPreviewRoute
   MetricsRoute: typeof MetricsRoute
-  VideoRoute: typeof VideoRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/video': {
-      id: '/video'
-      path: '/video'
-      fullPath: '/video'
-      preLoaderRoute: typeof VideoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/metrics': {
       id: '/metrics'
       path: '/metrics'
@@ -124,7 +107,6 @@ const rootRouteChildren: RootRouteChildren = {
   AudioRoute: AudioRoute,
   GeminiPreviewRoute: GeminiPreviewRoute,
   MetricsRoute: MetricsRoute,
-  VideoRoute: VideoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

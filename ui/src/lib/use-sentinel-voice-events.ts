@@ -46,6 +46,7 @@ type InteractionRecord = {
 };
 
 type VisualEventPayload = {
+  id?: string;
   cameraId?: string;
   zone?: string;
   summary?: string;
@@ -69,6 +70,7 @@ export function useSentinelVoiceEvents(roomName = "sentinel-live") {
   const [latestTicker, setLatestTicker] = useState<string | null>(null);
   const conversationRef = useRef<ConversationMessage[]>([]);
   const visualRef = useRef<VisualEventPayload | null>(null);
+  const visualEventIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,7 +78,9 @@ export function useSentinelVoiceEvents(roomName = "sentinel-live") {
 
     (async () => {
       setStatus("connecting");
-      const tokenResult = await issueLivekitToken({ data: { room: roomName, identity } });
+      const tokenResult = await issueLivekitToken({
+        data: { room: roomName, identity, viewerOnly: true },
+      });
       if (cancelled) return;
       if (!tokenResult.ok) {
         setStatus("error");
@@ -98,18 +102,29 @@ export function useSentinelVoiceEvents(roomName = "sentinel-live") {
           const text = new TextDecoder().decode(payload);
           envelope = JSON.parse(text) as VoiceEventEnvelope;
         } catch {
-          if (topic === "sentinel.voice") {
+          if (topic === "sentinel.voice" || topic === "sentinel.visual-alert") {
             setLatestTicker("live voice · ignored malformed data packet");
           }
           return;
         }
 
-        if (topic !== "sentinel.voice" && envelope.source !== "sentinel-voice-agent") return;
+        const isSentinelTopic = topic === "sentinel.voice" || topic === "sentinel.visual-alert";
+        if (!isSentinelTopic && envelope.source !== "sentinel-voice-agent") return;
 
         if (envelope.kind === "visual_event") {
-          visualRef.current = envelope.payload as VisualEventPayload;
+          const visual = envelope.payload as VisualEventPayload;
+          const nextVisualId = visual.id ?? null;
+          if (nextVisualId && nextVisualId !== visualEventIdRef.current) {
+            conversationRef.current = [];
+            visualEventIdRef.current = nextVisualId;
+          }
+          visualRef.current = visual;
           setLatestAlert(makeLiveAlert(visualRef.current, conversationRef.current));
-          setLatestTicker("live voice · visual event received");
+          setLatestTicker(
+            topic === "sentinel.visual-alert"
+              ? "gemini preview · visual alert sent to walkie-talkie"
+              : "live voice · visual event received",
+          );
           return;
         }
 
@@ -156,6 +171,7 @@ export function useSentinelVoiceEvents(roomName = "sentinel-live") {
           const alert = recordToAlert(record);
           conversationRef.current = alert.conversation;
           visualRef.current = {
+            id: record.id,
             cameraId: record.visualEvent.cameraId,
             zone: record.visualEvent.zone,
             summary: record.visualEvent.summary,
@@ -303,13 +319,21 @@ function recordToAlert(record: InteractionRecord): AlertEvent {
     visualConfidence: record.visualEvent.confidence,
     assistantMessage: record.conversation.find((t) => t.speaker === "assistant")?.text ?? "",
     conversation,
-    actionTaken: record.outcome === "error" ? "Error report created" : "Floor associate dispatched",
+    actionTaken: actionStatusFromRecord(record),
   };
 }
 
 function normalizeCameraId(id: string) {
   if (id === "camera-aisle-5") return "CAM-05";
   return id.toUpperCase();
+}
+
+function actionStatusFromRecord(record: InteractionRecord): AlertEvent["actionTaken"] {
+  if (record.outcome === "error") return "Error report created";
+  if (record.actionTaken === "dispatched_associate") return "Floor associate dispatched";
+  if (record.actionTaken === "marked_false_alarm") return "Marked false alarm";
+  if (record.actionTaken === "created_report") return "Error report created";
+  return "Awaiting human review";
 }
 
 function nowStamp() {

@@ -9,7 +9,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Sentinel is a calm, human-in-the-loop retail security console: live camera grid, flagged-moment review, and earpiece audio enhancement.",
+          "Sentinel is a calm, human-in-the-loop retail security console: local Gemini camera analysis, flagged-moment review, and earpiece audio enhancement.",
       },
     ],
   }),

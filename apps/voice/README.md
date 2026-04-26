@@ -6,10 +6,13 @@ Person 3 workstream. Python voice agent using LiveKit + ai-coustics + telli.
 
 ```bash
 cd apps/voice
-python -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+If `python3.12` is not installed on your machine, use the available Python 3.12+
+interpreter name instead.
 
 ## Credentials
 
@@ -28,8 +31,9 @@ Copy `.env.example` at the repo root to `.env` and fill in:
 ## Run the agent
 
 ```bash
-# From repo root (so .env is found)
-apps/voice/.venv/bin/python -m apps.voice.src.agent dev
+cd apps/voice
+source .venv/bin/activate
+python -m src.agent dev
 ```
 
 This starts a LiveKit worker that connects to a room and runs the Sentinel
@@ -44,8 +48,8 @@ In a second terminal:
 
 ```bash
 cd apps/voice
-SSL_CERT_FILE=.venv/lib/python3.14/site-packages/certifi/cacert.pem \
-  .venv/bin/python3 -m src.dispatch_agent
+source .venv/bin/activate
+python -m src.dispatch_agent
 ```
 
 You should then see an `agent-...` participant in the LiveKit room.

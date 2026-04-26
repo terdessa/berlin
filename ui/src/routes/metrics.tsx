@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   Activity,
@@ -15,10 +15,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import {
-  PUBLIC_AUDIO_RESULTS_PATH,
   audioMetricsDashboard,
-  buildAudioMetricsDashboard,
-  parseAudioBenchmarkJson,
   type AudioMetricsDashboard,
   type CommandPerformance,
   type ComparisonRow,
@@ -43,38 +40,7 @@ export const Route = createFileRoute("/metrics")({
 });
 
 function MetricsPage() {
-  const [dashboard, setDashboard] = useState<AudioMetricsDashboard>(audioMetricsDashboard);
-  const [loadState, setLoadState] = useState<"bundled" | "public" | "missing" | "invalid">(
-    "bundled",
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-
-    fetch(PUBLIC_AUDIO_RESULTS_PATH, { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) {
-          if (!cancelled) setLoadState("missing");
-          return;
-        }
-
-        const text = await response.text();
-        const payload = parseAudioBenchmarkJson(text);
-
-        if (!cancelled) {
-          setDashboard(buildAudioMetricsDashboard(payload, PUBLIC_AUDIO_RESULTS_PATH));
-          setLoadState("public");
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setLoadState("invalid");
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
+  const dashboard = audioMetricsDashboard;
   const model = useMemo(() => buildSubmissionModel(dashboard), [dashboard]);
 
   return (
@@ -94,7 +60,7 @@ function MetricsPage() {
               <span className="mono rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-primary">
                 telli + ai-coustics submission
               </span>
-              <SourceBadge source={dashboard.source} loadState={loadState} />
+              <SourceBadge source={dashboard.source} />
             </div>
             <h1 className="mt-3 max-w-4xl text-3xl font-semibold leading-tight text-foreground">
               Sentinel Audio Intelligence Score
@@ -108,7 +74,7 @@ function MetricsPage() {
 
           <div className="grid min-w-[280px] gap-2 sm:grid-cols-2 lg:grid-cols-1">
             <SubmissionStatus model={model} />
-            <SourceSummary source={dashboard.source} loadState={loadState} />
+            <SourceSummary source={dashboard.source} />
           </div>
         </header>
 
@@ -187,26 +153,13 @@ function buildSubmissionModel(dashboard: AudioMetricsDashboard) {
   };
 }
 
-function SourceBadge({
-  source,
-  loadState,
-}: {
-  source: string;
-  loadState: "bundled" | "public" | "missing" | "invalid";
-}) {
-  const label =
-    loadState === "public"
-      ? "public JSON"
-      : loadState === "invalid"
-        ? "bundled JSON"
-        : "bundled JSON";
-
+function SourceBadge({ source }: { source: string }) {
   return (
     <span
       className="mono rounded-full border border-border bg-panel/70 px-2.5 py-1 text-[9px] uppercase tracking-[0.14em] text-muted-foreground"
       title={source}
     >
-      {label}
+      bundled JSON
     </span>
   );
 }
@@ -238,13 +191,7 @@ function SubmissionStatus({ model }: { model: ReturnType<typeof buildSubmissionM
   );
 }
 
-function SourceSummary({
-  source,
-  loadState,
-}: {
-  source: string;
-  loadState: "bundled" | "public" | "missing" | "invalid";
-}) {
+function SourceSummary({ source }: { source: string }) {
   return (
     <div className="rounded-md border border-border bg-panel/70 px-3 py-2">
       <div className="flex items-center gap-2">
@@ -256,11 +203,6 @@ function SourceSummary({
       <div className="mt-1 truncate text-[11px] text-foreground" title={source}>
         {source}
       </div>
-      {loadState === "missing" || loadState === "invalid" ? (
-        <div className="mt-1 text-[10px] text-amber-200">
-          Public result unavailable; bundled generated benchmark is shown.
-        </div>
-      ) : null}
     </div>
   );
 }

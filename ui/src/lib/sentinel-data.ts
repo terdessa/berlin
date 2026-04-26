@@ -1,10 +1,6 @@
-export type DeviceKind = "live-phone" | "live-video";
-
 export type Camera = {
   id: string;
   zone: string;
-  lastMotion: string;
-  device: DeviceKind;
 };
 
 export type ConversationMessage =

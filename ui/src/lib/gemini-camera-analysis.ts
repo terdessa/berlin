@@ -7,9 +7,12 @@ export type GeminiCameraMessage = {
 
 export type GeminiCameraInput = {
   imageBase64: string;
+  imageFramesBase64?: string[];
   prompt: string;
   history?: GeminiCameraMessage[];
-  mode?: "question" | "commentary";
+  mode?: "question" | "commentary" | "loss-scan" | "object-watch" | "event-watch";
+  audioBase64?: string;
+  audioMimeType?: string;
 };
 
 export type GeminiCameraResult =
@@ -24,8 +27,8 @@ export type GeminiCameraResult =
       message: string;
     };
 
-const DEFAULT_MODEL = "gemini-3.1-pro-preview";
-const DEFAULT_FALLBACK_MODEL = "gemini-2.5-flash-lite";
+const DEFAULT_MODEL = "gemini-2.5-flash-lite";
+const DEFAULT_FALLBACK_MODEL = "gemini-3.1-pro-preview";
 const MAX_HISTORY_TURNS = 8;
 
 export const analyzeCameraFrame = createServerFn({ method: "POST" })
@@ -49,12 +52,35 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
           )
           .slice(-MAX_HISTORY_TURNS)
       : [];
+    const audioBase64 =
+      typeof data.audioBase64 === "string" && data.audioBase64.length > 100
+        ? stripDataUrlPrefix(data.audioBase64)
+        : undefined;
+    const audioMimeType =
+      audioBase64 && typeof data.audioMimeType === "string" && data.audioMimeType.trim()
+        ? data.audioMimeType.trim().split(";")[0]
+        : undefined;
+    const imageFramesBase64 = Array.isArray(data.imageFramesBase64)
+      ? data.imageFramesBase64
+          .filter((frame): frame is string => typeof frame === "string" && frame.length > 100)
+          .slice(0, 12)
+          .map(stripDataUrlPrefix)
+      : [];
 
     return {
       imageBase64: stripDataUrlPrefix(data.imageBase64),
+      imageFramesBase64,
       prompt: data.prompt.trim().slice(0, 2000),
       history,
-      mode: data.mode === "commentary" ? "commentary" : "question",
+      mode:
+        data.mode === "commentary" ||
+        data.mode === "loss-scan" ||
+        data.mode === "object-watch" ||
+        data.mode === "event-watch"
+          ? data.mode
+          : "question",
+      audioBase64,
+      audioMimeType,
     };
   })
   .handler(async ({ data }): Promise<GeminiCameraResult> => {
@@ -67,14 +93,59 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
         ok: false,
         reason: "not-configured",
         message:
-          "Gemini is not configured. Add GEMINI_API_KEY to ui/.env and restart the dev server.",
+          "Gemini is not configured. Add GEMINI_API_KEY to the repo root .env and restart the dev server.",
       };
     }
 
+    const hasAudio = !!data.audioBase64;
+    const frameBase64s =
+      data.imageFramesBase64.length > 0 ? data.imageFramesBase64 : [data.imageBase64];
     const systemInstruction =
-      data.mode === "commentary"
-        ? "You are Sentinel's live visual analyst. Comment on the current camera frame in 2-4 concise sentences. Describe observable details only. Do not identify people, infer protected traits, or accuse anyone of wrongdoing. Mention uncertainty when relevant."
-        : "You are Sentinel's live visual analyst. Answer the user's question using the current camera frame and recent chat context. Be concise, practical, and careful. Describe observable details only. Do not identify people, infer protected traits, or accuse anyone of wrongdoing.";
+      data.mode === "loss-scan"
+        ? "You are Sentinel's live retail camera analyst. Review the ordered frame sequence for observable loss-prevention concerns such as shelf-to-bag, shelf-to-pocket, concealment-like movement, repeated scanning of surroundings, or item handling that needs human review. Do not accuse anyone, identify people, infer intent, or mention protected traits. If nothing review-worthy is visible, say that clearly. If review is warranted, use cautious language like 'requires review' and cite the frame-to-frame observation."
+        : data.mode === "event-watch"
+          ? "You are Sentinel's CAM-03 live camera analyst. Analyze only the ordered CAM-03 frames provided. Use cautious, non-accusatory language. Reply exactly CLEAR if nothing review-worthy is visible. Reply exactly ALERT: followed by one concise observable summary if the frames show a person entering the monitored area, a reviewed item disappearing, concealment-like item movement, unusual handling, or another situation a human guard should review. Do not infer intent or identity."
+          : data.mode === "object-watch"
+            ? "You are a precise visual detector. Look only for whether the watched object is visible anywhere in the image. Reply exactly with ITEM_VISIBLE if the watched object is visible, otherwise reply exactly with ITEM_GONE."
+            : data.mode === "commentary"
+              ? "You are Sentinel's live visual analyst. Comment on the current camera frame in 2-4 concise sentences. Describe observable details only. Do not identify people, infer protected traits, or accuse anyone of wrongdoing. Mention uncertainty when relevant."
+              : hasAudio
+                ? "You are Sentinel's live camera-and-voice analyst. Use the current camera frame, recent chat context, and the attached microphone audio together. Treat the audio as the user's spoken request; briefly reflect the request only when useful, then answer it using observable visual details. Be concise, practical, and careful. Do not identify people, infer protected traits, or accuse anyone of wrongdoing."
+                : "You are Sentinel's live visual analyst. Answer the user's question using the current camera frame and recent chat context. Be concise, practical, and careful. Describe observable details only. Do not identify people, infer protected traits, or accuse anyone of wrongdoing.";
+    const userParts: GeminiPart[] = [
+      {
+        text:
+          data.mode === "loss-scan"
+            ? `${data.prompt}\n\nThe following ${frameBase64s.length} images are ordered oldest to newest. Compare them as a short video-like sequence and return: status, confidence, key observation, and recommended next human-review action.`
+            : data.mode === "event-watch"
+              ? `${data.prompt}\n\nThe following ${frameBase64s.length} images are ordered oldest to newest from CAM-03. Reply exactly CLEAR or ALERT: <summary>.`
+              : data.mode === "object-watch"
+                ? data.prompt
+                : hasAudio
+                  ? `${data.prompt}\n\nThe attached audio is the user's spoken request. Analyze it together with the current camera frame.`
+                  : data.prompt,
+      },
+    ];
+    frameBase64s.forEach((frame, index) => {
+      if (frameBase64s.length > 1) {
+        userParts.push({ text: `Frame ${index + 1} of ${frameBase64s.length}` });
+      }
+      userParts.push({
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: frame,
+        },
+      });
+    });
+    const audioBase64 = data.audioBase64;
+    if (audioBase64) {
+      userParts.push({
+        inlineData: {
+          mimeType: data.audioMimeType || "audio/wav",
+          data: audioBase64,
+        },
+      });
+    }
 
     const contents = [
       ...data.history.map((message) => ({
@@ -83,15 +154,7 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
       })),
       {
         role: "user",
-        parts: [
-          { text: data.prompt },
-          {
-            inlineData: {
-              mimeType: "image/jpeg",
-              data: data.imageBase64,
-            },
-          },
-        ],
+        parts: userParts,
       },
     ];
 
@@ -129,23 +192,24 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
     return { ok: false, reason: "api-error", message: primary.message };
   });
 
+type GeminiPart =
+  | { text: string }
+  | {
+      inlineData: {
+        mimeType: string;
+        data: string;
+      };
+    };
+
 type GeminiRequestInput = {
   apiKey: string;
   model: string;
   systemInstruction: string;
   contents: Array<{
     role: string;
-    parts: Array<
-      | { text: string }
-      | {
-          inlineData: {
-            mimeType: string;
-            data: string;
-          };
-        }
-    >;
+    parts: GeminiPart[];
   }>;
-  mode?: "question" | "commentary";
+  mode?: "question" | "commentary" | "loss-scan" | "object-watch" | "event-watch";
 };
 
 type GeminiRequestResult =
@@ -184,8 +248,17 @@ async function requestGemini({
           },
           contents,
           generationConfig: {
-            temperature: mode === "commentary" ? 0.5 : 0.35,
-            maxOutputTokens: mode === "commentary" ? 220 : 420,
+            temperature: mode === "commentary" ? 0.5 : 0.1,
+            maxOutputTokens:
+              mode === "object-watch"
+                ? 8
+                : mode === "event-watch"
+                  ? 80
+                  : mode === "commentary"
+                    ? 220
+                    : mode === "loss-scan"
+                      ? 320
+                      : 420,
           },
         }),
       },
@@ -217,11 +290,19 @@ async function requestGemini({
       model,
     };
   } catch (err) {
+    const cause =
+      err instanceof Error &&
+      "cause" in err &&
+      err.cause &&
+      typeof err.cause === "object" &&
+      "message" in err.cause
+        ? String(err.cause.message)
+        : "";
     const message = err instanceof Error ? err.message : String(err);
-    return { ok: false, message };
+    return { ok: false, message: cause ? `${message}: ${cause}` : message };
   }
 }
 
 function stripDataUrlPrefix(value: string) {
-  return value.replace(/^data:image\/[a-z0-9.+-]+;base64,/i, "");
+  return value.replace(/^data:[^;]+;base64,/i, "");
 }

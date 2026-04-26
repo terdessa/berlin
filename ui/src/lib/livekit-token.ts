@@ -59,7 +59,7 @@ export const issueLivekitToken = createServerFn({ method: "POST" })
         ok: false,
         reason: "not-configured",
         message:
-          "LiveKit is not configured. Replace the placeholder values in ui/.env with credentials from https://cloud.livekit.io (LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET) and restart `npm run dev`.",
+          "LiveKit is not configured. Replace the placeholder values in the repo root .env with credentials from https://cloud.livekit.io (LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET) and restart `npm run dev`.",
       };
     }
 

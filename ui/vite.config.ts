@@ -11,15 +11,23 @@ import selfsigned from "selfsigned";
 import { loadEnv, type Plugin, type ViteDevServer } from "vite";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(__dirname, "..");
 
-// Hoist .env values into process.env so server functions (e.g.
+// Hoist the repository-root .env into process.env so server functions (e.g.
 // `src/lib/livekit-token.ts`) can read LIVEKIT_* secrets at request time.
 // Vite's loadEnv normally only exposes VITE_-prefixed values to the client;
 // here we keep them server-side by writing them straight to process.env.
 {
   const mode = process.env.NODE_ENV ?? "development";
-  const env = loadEnv(mode, process.cwd(), "");
+  const env = loadEnv(mode, repoRoot, "");
+  const nodeTlsEnvKeys = new Set([
+    "NODE_EXTRA_CA_CERTS",
+    "NODE_TLS_REJECT_UNAUTHORIZED",
+    "SSL_CERT_FILE",
+    "SSL_CERT_DIR",
+  ]);
   for (const [key, value] of Object.entries(env)) {
+    if (nodeTlsEnvKeys.has(key)) continue;
     if (process.env[key] === undefined) process.env[key] = value;
   }
 }
@@ -77,9 +85,8 @@ function printSentinelLinksPlugin(): Plugin {
           const lan = getLanIPv4Addrs();
           const sections = [
             { name: "HOME (dashboard)", path: "/" },
-            { name: "VIDEO (camera publisher)", path: "/video" },
-            { name: "AUDIO (mic publisher)", path: "/audio" },
             { name: "GEMINI (camera analyst)", path: "/gemini-preview" },
+            { name: "AUDIO (walkie-talkie)", path: "/audio" },
           ];
 
           type Line = { who: string; url: string; label: string };
@@ -151,20 +158,22 @@ function printSentinelLinksPlugin(): Plugin {
           if (!liveKitOk) {
             out.push("");
             out.push(
-              "  ! LiveKit not configured - /video and /audio will show local preview only.",
+              "  ! LiveKit not configured - /audio and Gemini walkie-talkie alerts will be local only.",
             );
             out.push(
-              "    Sign up free at https://cloud.livekit.io and put real values in ui/.env:",
+              "    Sign up free at https://cloud.livekit.io and put real values in the repo root .env:",
             );
             out.push("       LIVEKIT_URL=wss://your-project.livekit.cloud");
             out.push("       LIVEKIT_API_KEY=APIxxxxxxxx");
             out.push("       LIVEKIT_API_SECRET=...");
             if (lkPlaceholder) {
-              out.push("    (ui/.env currently still contains the example placeholder values)");
+              out.push(
+                "    (the repo root .env currently still contains example placeholder values)",
+              );
             }
           } else {
             out.push("");
-            out.push("  LiveKit configured: " + lkUrl);
+            out.push("  LiveKit voice/data configured: " + lkUrl);
           }
 
           const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -178,12 +187,12 @@ function printSentinelLinksPlugin(): Plugin {
             out.push(
               "  ! Gemini not configured - /gemini-preview will show the camera, but analysis",
             );
-            out.push("    needs GEMINI_API_KEY in ui/.env.");
+            out.push("    needs GEMINI_API_KEY in the repo root .env.");
           } else {
             out.push("");
             out.push(
               "  Gemini configured for /gemini-preview: " +
-                (process.env.GEMINI_CAMERA_MODEL || "gemini-3.1-pro-preview"),
+                (process.env.GEMINI_CAMERA_MODEL || "gemini-2.5-flash-lite"),
             );
           }
 
@@ -199,6 +208,7 @@ function printSentinelLinksPlugin(): Plugin {
 export default defineConfig({
   plugins: [printSentinelLinksPlugin()],
   vite: {
+    envDir: repoRoot,
     server: {
       // HTTPS is required for navigator.mediaDevices.getUserMedia() on phones
       // when accessed via LAN IP (any non-localhost origin).

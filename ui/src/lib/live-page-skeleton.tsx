@@ -1,7 +1,7 @@
 // Stable skeleton rendered during SSR and before client mount for the
 // live-stream pages. Keeping this minimal markup lets React hydration match
 // what the server emitted, while the real interactive page swaps in only
-// after `mounted` flips on the client (see /video and /audio routes).
+// after `mounted` flips on the client (see /audio and /gemini-preview routes).
 export function LivePageSkeleton({ title }: { title: string }) {
   return (
     <main className="min-h-screen px-6 py-5">

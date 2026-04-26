@@ -31,8 +31,8 @@ Fallback:
 
 ## Product Loop
 
-1. CCTV/live camera feed shows a review-worthy retail event.
-2. Vision model analyzes the clip and produces a non-accusatory scene summary.
+1. A local Mac/iPhone Continuity Camera feed shows a review-worthy retail event.
+2. Gemini analyzes local browser frames and produces a non-accusatory scene summary.
 3. Sentinel alerts the guard through an earpiece.
 4. Guard responds by voice in noisy store audio.
 5. ai-coustics enhances the audio.
@@ -84,9 +84,7 @@ Failure classifications used in the corpus:
 - `out_of_vocabulary` — clean audio, clear words, no supported command
 - `multi_cause` — combination
 
-Updated metric direction: SAIS is the headline metric. It measures `(correct actions + safe recoveries) / total commands`, so a context-target mismatch that triggers clarification is a success, while opening the wrong camera is a dangerous error. NISQA/DNSMOS and WER remain supporting metrics. See `docs/sentinel-audio-intelligence-metric.md`.
-
-To make the corpus look like a dataset rather than one demo clip, the demo runs at least six scripted scenarios with varied noise types and outcomes (see `docs/person-3-voice-error-logging.md`).
+SAIS is the headline metric. It measures `(correct actions + safe recoveries) / total commands`, so a context-target mismatch that triggers clarification is a success, while opening the wrong camera is a dangerous error. NISQA/DNSMOS and WER remain supporting metrics. See `docs/sentinel-audio-intelligence-metric.md`.
 
 ## Safety Guardrails
 
@@ -127,7 +125,7 @@ Show:
 - command confidence and candidates considered
 - opened evidence video on a successful command
 - a richly diagnosed error record (with failure classification and suggested clarification) when a command is unclear
-- a `submission/` folder with `interactions.json` + audio files we can hand to the judges
+- `apps/voice/submission/` with `interactions.json` + audio files we can hand to the judges
 
 Primary metric: SAIS, shown across raw audio, ai-coustics-enhanced audio, and ai-coustics plus Sentinel context validation.
 
@@ -153,44 +151,38 @@ Side challenge focus:
 - Entire: pursue through review tasks, action tracking, and error-report workflow.
 - Aikido: pursue if setup is quick by connecting the public repo and submitting the security report screenshot.
 
-Optional product additions:
-
-- Tavily: store policy/review guidance
-
-Note:
-
 Aikido is a side challenge only and does not count toward the 3 required partner technologies.
 
 ## UI Implementation
 
 The dashboard UI lives at `ui/` in this repo:
 
-- Stack: Vite + React + TypeScript + Tailwind + shadcn/ui + TanStack Start (SSR) + Bun, Cloudflare deploy target
+- Stack: Vite + React + TypeScript + Tailwind + TanStack Start (SSR) + Bun, Cloudflare deploy target
 - Dev server runs over **HTTPS** (self-signed cert) — required for `getUserMedia` on non-localhost devices
 - Originally scaffolded in Lovable, now developed directly
 
 ### UI Architecture Decisions
 
 - **Cameras are video-only.** They do not capture audio. The guard's voice comes from a separate earpiece/mic device that connects to the backend independently.
-- **AI agent continuously analyzes all camera feeds.** Tiles show a subtle "analyzing" indicator on every camera.
+- **Gemini analyzes only CAM-03.** Other dashboard cameras are local looping demo clips.
 - **Two-way voice channel.** Agent → guard (TTS to earpiece), guard → agent (speech with ai-coustics enhancement). Both directions are surfaced in the UI.
-- **Live camera grid.** The dashboard subscribes to the `sentinel-live` LiveKit room as a viewer. Connected publisher devices (phone, laptop camera) fill the camera tiles from left to right. Tiles without a live feed show a placeholder animation. The live feed integration is purely additive — the mock alert/demo flow is unaffected.
+- **Local camera analysis.** LiveKit is no longer used for video transport. The dashboard has eight camera tiles: CAM-01, CAM-02, CAM-04, CAM-05, CAM-06, CAM-07, and CAM-08 loop local demo clips from `ui/public/cams`; CAM-03 opens the local MacBook/Continuity Camera and is the only feed sampled by Gemini. Structured visual alerts go into the voice room as data packets.
 - **Live voice bridge.** The `/audio` route publishes the guard microphone to `sentinel-live` as `sentinel-guard-mic` by default. The Python voice agent listens to that participant, runs ai-coustics + OpenAI STT/TTS with Silero VAD, and publishes Sentinel/Guard turns plus interaction records on the `sentinel.voice` LiveKit data topic. The dashboard consumes those packets through `useSentinelVoiceEvents` and updates the review log in real time.
 
 ### Live Utility Pages
 
 Two direct-link-only routes (not referenced from the dashboard) exist for hardware testing:
 
-- **`/video`** — opens the device camera, publishes to `sentinel-live`. Includes a multi-lens switcher (enumerates all video inputs after permission, hot-swaps via `LocalVideoTrack.replaceTrack`). Capture: 1280×720 @ 30 fps, 2.5 Mbps, no simulcast. Shows a real-time stats panel (kbps, fps, resolution, codec, quality-limitation reason).
-- **`/audio`** — opens the device microphone, publishes to `sentinel-live` as `sentinel-guard-mic` by default. Shows equivalent audio stats. Use `?identity=...` only when `LIVEKIT_MIC_IDENTITY` on the Python agent is set to the same value.
+- **`/audio`** — opens the device microphone, publishes to `sentinel-live` as `sentinel-guard-mic` by default, plays Sentinel/agent replies from the same room, and uses a press-and-hold talk button for the guard reply. Use `?identity=...` only when `LIVEKIT_MIC_IDENTITY` on the Python agent is set to the same value.
+- **`/gemini-preview`** — opens the local browser camera/microphone, supports camera selection, sends frames/audio to Gemini, and publishes `sentinel.visual-alert` packets when the watched object disappears.
 
-The dev server prints LAN + localhost URLs for all three routes (`/`, `/video`, `/audio`) at startup.
+The dev server prints LAN + localhost URLs for `/`, `/audio`, and `/gemini-preview` at startup.
 
 ### UI Layout
 
 - Single page, dark theme, security-ops aesthetic. Deep slate background, monospaced numerals, amber/red accents for alerts, teal for normal state.
-- **No top bar.** Ambient "Sentinel is watching" pill in a corner is the only persistent status.
-- **Camera grid** (top ~40% viewport): 6 tiles (3×2). Live feeds from connected devices replace placeholders in left-to-right order.
+- Compact operations header with Sentinel status, audio metric, CAM-03 input selector, and current recording state.
+- **Camera grid** (top region): 8 tiles. Seven tiles loop local placeholder videos; CAM-03 shows the live device camera and is analyzed by Gemini.
 - **Alert video panel** (below grid, ~50% width): flagged camera playback with scene summary overlay.
 - **Right-side log panel** (other ~50% width): slides in only when an alert is active.
 
@@ -200,12 +192,13 @@ The dev server prints LAN + localhost URLs for all three routes (`/`, `/video`, 
 - Guard messages show a confidence chip. Low-confidence messages render with dashed border and "voice command unclear" note.
 - Status badges and footer actions (Send floor associate, Mark false alarm, Create report) sit below the conversation.
 
-## Open State
+## Current Implementation
 
 - ai-coustics credentials: in hand ✅
 - LiveKit cloud: connected ✅ (`wss://berlin-vc00ggsm.livekit.cloud`)
 - OpenAI STT/TTS: wired as voice runtime (telli-swappable in two lines)
 - `interactions.json` corpus: written per session by `apps/voice/src/logger.py`
-- Dashboard live camera grid: working ✅ — phones and laptops publish via `/video`; dashboard subscribes via `useLivekitFeeds`
-- Camera-lens switcher on `/video`: working ✅ — enumerates all video inputs, hot-swaps without dropping the LiveKit connection
+- Dashboard camera grid: local/Gemini analysis placeholders ✅ — no LiveKit video transport
+- Camera selector on `/gemini-preview`: working ✅ — enumerates local cameras, including iPhone Continuity Camera when macOS exposes it
 - Dashboard live voice log: working ✅ — `apps/voice` emits `sentinel.voice` data packets and the dashboard subscribes via `useSentinelVoiceEvents`
+- Gemini visual alerts: wired ✅ — `/gemini-preview` publishes `sentinel.visual-alert`; the voice agent speaks the alert through the LiveKit walkie-talkie path
