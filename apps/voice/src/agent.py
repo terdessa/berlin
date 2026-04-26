@@ -20,6 +20,7 @@ integration) and pushed to the plugin at runtime — it is not read from .env.
 from __future__ import annotations
 
 import asyncio
+import collections
 import datetime
 import json
 import logging
@@ -276,11 +277,12 @@ class SentinelSession:
     ):
         audio, _ = self.consume_audio_snapshot()
         nisqa = audio.nisqa
+        delta_mos = nisqa.delta.mos if nisqa else 0.0
         explanation = failure_explanation(
             result,
             raw_transcript,
             enhanced_transcript,
-            nisqa_delta=nisqa.delta.mos,
+            nisqa_delta=delta_mos,
         )
         acoustic_note = (
             f"NISQA: raw {nisqa.raw.mos:.1f} → enhanced {nisqa.enhanced.mos:.1f} "
@@ -339,6 +341,11 @@ async def entrypoint(ctx: JobContext):
 
     agent_session = _build_agent_session()
 
+    # Strong refs for fire-and-forget publish tasks. Without this, asyncio may
+    # GC an in-flight task before it sends, dropping data packets to the
+    # dashboard at random.
+    pending_publishes: set[asyncio.Task] = set()
+
     def publish_event(kind: str, payload: dict):
         message = {
             "source": "sentinel-voice-agent",
@@ -353,8 +360,10 @@ async def entrypoint(ctx: JobContext):
             )
 
         task = asyncio.create_task(_publish())
+        pending_publishes.add(task)
 
         def _log_publish_failure(done: asyncio.Task):
+            pending_publishes.discard(done)
             try:
                 done.result()
             except Exception:
@@ -488,12 +497,17 @@ async def entrypoint(ctx: JobContext):
             utterance_flush_task.cancel()
         utterance_flush_task = asyncio.create_task(_flush_utterance())
 
-    spoken_visual_event_ids: set[str] = set()
+    # Bounded dedupe — prevents memory growth across many alerts in a long
+    # session while still catching duplicate ids in normal demo windows.
+    spoken_visual_event_ids: collections.OrderedDict[str, None] = collections.OrderedDict()
+    SPOKEN_VISUAL_IDS_MAX = 256
     last_spoken_at_per_camera: dict[str, float] = {}
-    # Backstop only — the dashboard now sends a stable eventId per page-load
-    # so the per-id dedupe above is the primary gate. Set high enough that a
-    # second dashboard tab or a re-publish won't accidentally re-trigger.
-    CAMERA_ALERT_COOLDOWN_S = 3600.0
+    # Short debounce only — the per-page eventId already dedupes within a
+    # session. A long cooldown (formerly 1h) blocks legitimate alerts from a
+    # *new* dashboard session that happens to be the same camera, which
+    # silently breaks the demo after a page refresh. 5s is enough to absorb
+    # a burst of duplicate publishes from a single dashboard tab.
+    CAMERA_ALERT_COOLDOWN_S = 5.0
 
     def handle_visual_alert(payload: dict):
         visual_event = _visual_event_from_payload(payload)
@@ -503,7 +517,9 @@ async def entrypoint(ctx: JobContext):
 
         if visual_event.id in spoken_visual_event_ids:
             return
-        spoken_visual_event_ids.add(visual_event.id)
+        spoken_visual_event_ids[visual_event.id] = None
+        while len(spoken_visual_event_ids) > SPOKEN_VISUAL_IDS_MAX:
+            spoken_visual_event_ids.popitem(last=False)
 
         now = time.monotonic()
         last_at = last_spoken_at_per_camera.get(visual_event.camera_id, 0.0)
@@ -637,6 +653,25 @@ async def entrypoint(ctx: JobContext):
     # Wire ai-coustics noise cancellation on the incoming guard audio.
     mic_identity = os.getenv("LIVEKIT_MIC_IDENTITY", "").strip() or "sentinel-guard-mic"
     log.info("entrypoint: about to call agent_session.start(mic_identity=%s)", mic_identity)
+
+    # When the phone alone refreshes, the dashboard remains in the room so the
+    # job never ends naturally. The AgentSession would then stay bound to the
+    # *old* (now-dead) phone audio track and miss the rejoined phone's new
+    # track. End the job explicitly when the guard mic disconnects so the
+    # shutdown callback re-arms the dispatch and the next phone reconnect
+    # gets a fresh session that binds to the new audio track.
+    @ctx.room.on("participant_disconnected")
+    def _on_participant_disconnected(participant):
+        identity = getattr(participant, "identity", None)
+        if identity == mic_identity:
+            log.info(
+                "entrypoint: guard mic %r disconnected, requesting job shutdown to re-arm",
+                identity,
+            )
+            try:
+                ctx.shutdown(reason="guard-mic-disconnected")
+            except Exception:
+                log.exception("entrypoint: ctx.shutdown() raised on guard disconnect")
     await agent_session.start(
         agent,
         room=ctx.room,
@@ -654,11 +689,52 @@ async def entrypoint(ctx: JobContext):
         getattr(agent_session, "_started", "?"),
         "set" if getattr(agent_session, "_activity", None) is not None else "None",
     )
-    # Block forever — entrypoint must not return until the framework signals shutdown,
-    # otherwise once we drop out of this coroutine the AgentSession's job-shutdown
-    # callback fires (`_aclose_impl` clears `_activity`), which causes any later
-    # `say()` from a data_received handler to raise "AgentSession isn't running".
-    await asyncio.Future()
+    # Wait for the framework's shutdown signal, NOT forever. Blocking on an
+    # unresolvable future leaves the worker flagged as "busy with this job"
+    # even after LiveKit has decided the job is done — so the next dispatch
+    # (e.g. when the phone reloads /voice) hits AssignmentTimeoutError because
+    # the worker can never ACK a new assignment. Waiting on a shutdown event
+    # lets us exit cleanly when the framework cancels the job, freeing the
+    # worker to accept the next one.
+    shutdown_event = asyncio.Event()
+
+    async def _on_shutdown() -> None:
+        shutdown_event.set()
+        # Re-arm the dispatch slot in a background thread so the framework's
+        # shutdown chain doesn't wait on it. Awaiting _self_dispatch_once here
+        # blocks ~15s while LiveKit HTTP calls run, and during that window the
+        # rejoined phone attaches to this still-shutting-down job — its next
+        # visual_event lands in stale state and gets silently dropped.
+        room_name = os.getenv("LIVEKIT_ROOM", "sentinel-live")
+        url = os.getenv("LIVEKIT_URL")
+        key = os.getenv("LIVEKIT_API_KEY")
+        secret = os.getenv("LIVEKIT_API_SECRET")
+        if not (url and key and secret):
+            return
+
+        def _redispatch_in_thread() -> None:
+            try:
+                asyncio.run(
+                    _self_dispatch_once(
+                        url=url,
+                        key=key,
+                        secret=secret,
+                        room=room_name,
+                        evict_agents=False,
+                    )
+                )
+            except Exception:
+                log.exception("entrypoint: re-dispatch thread failed")
+
+        threading.Thread(
+            target=_redispatch_in_thread,
+            name="sentinel-redispatch",
+            daemon=False,
+        ).start()
+
+    ctx.add_shutdown_callback(_on_shutdown)
+    await shutdown_event.wait()
+    log.info("entrypoint: shutdown signal received, returning")
 
 
 def _visual_event_from_payload(payload: dict) -> VisualEvent | None:
@@ -865,6 +941,87 @@ async def _gemini_reply(transcript: str, session: "SentinelSession") -> str:
     return text
 
 
+async def _self_dispatch_once(
+    *,
+    url: str,
+    key: str,
+    secret: str,
+    room: str,
+    evict_agents: bool,
+) -> None:
+    """Create a fresh agent_dispatch in `room`. Idempotent and safe to call
+    repeatedly (e.g. on every job-shutdown to re-arm the dispatch slot)."""
+    client: lk_api.LiveKitAPI | None = None
+    try:
+        client = lk_api.LiveKitAPI(url, key, secret)
+        try:
+            await client.room.create_room(
+                lk_api.CreateRoomRequest(name=room, empty_timeout=24 * 60 * 60)
+            )
+            log.info("self-dispatch: ensured room exists name=%s", room)
+        except Exception:
+            log.warning("self-dispatch: create_room failed (continuing)", exc_info=True)
+
+        if evict_agents:
+            try:
+                parts = await client.room.list_participants(
+                    lk_api.ListParticipantsRequest(room=room)
+                )
+                for p in parts.participants:
+                    if p.identity.startswith("agent-"):
+                        try:
+                            await client.room.remove_participant(
+                                lk_api.RoomParticipantIdentity(
+                                    room=room, identity=p.identity
+                                )
+                            )
+                            log.info(
+                                "self-dispatch: evicted stale agent participant identity=%s",
+                                p.identity,
+                            )
+                        except Exception:
+                            log.warning(
+                                "self-dispatch: failed to evict participant %s",
+                                p.identity,
+                                exc_info=True,
+                            )
+            except Exception:
+                log.warning(
+                    "self-dispatch: list_participants failed (continuing)",
+                    exc_info=True,
+                )
+
+        existing = await client.agent_dispatch.list_dispatch(room_name=room)
+        for d in existing:
+            try:
+                await client.agent_dispatch.delete_dispatch(d.id, room)
+                log.info(
+                    "self-dispatch: dropped existing dispatch id=%s agent_name=%r",
+                    d.id,
+                    d.agent_name,
+                )
+            except Exception:
+                log.warning(
+                    "self-dispatch: failed to drop dispatch id=%s",
+                    d.id,
+                    exc_info=True,
+                )
+        dispatch = await client.agent_dispatch.create_dispatch(
+            lk_api.CreateAgentDispatchRequest(room=room, agent_name=AGENT_NAME)
+        )
+        log.info(
+            "self-dispatched agent into room=%s id=%s agent_name=%r",
+            room,
+            dispatch.id,
+            AGENT_NAME,
+        )
+    except Exception:
+        log.warning("self-dispatch failed", exc_info=True)
+    finally:
+        if client is not None:
+            await client.aclose()
+
+
 def _start_self_dispatch_thread() -> None:
     """
     Fire a one-shot agent dispatch into LIVEKIT_ROOM after the worker registers,
@@ -882,55 +1039,12 @@ def _start_self_dispatch_thread() -> None:
     def _runner() -> None:
         time.sleep(3)
 
-        async def _dispatch() -> None:
-            client = lk_api.LiveKitAPI(url, key, secret)
-            try:
-                # Ensure the room exists — list_dispatch / create_dispatch both
-                # 404 if no participant has joined yet. CreateRoom is idempotent.
-                try:
-                    await client.room.create_room(
-                        lk_api.CreateRoomRequest(name=room, empty_timeout=24 * 60 * 60)
-                    )
-                    log.info("self-dispatch: ensured room exists name=%s", room)
-                except Exception:
-                    log.warning("self-dispatch: create_room failed (continuing)", exc_info=True)
-                existing = await client.agent_dispatch.list_dispatch(room_name=room)
-                # Drop ALL existing dispatches in this room — including ones
-                # with our agent_name. A reused dispatch from a prior process
-                # is bound to a now-dead worker and won't route jobs to us.
-                for d in existing:
-                    try:
-                        await client.agent_dispatch.delete_dispatch(d.id, room)
-                        log.info(
-                            "self-dispatch: dropped existing dispatch id=%s agent_name=%r",
-                            d.id,
-                            d.agent_name,
-                        )
-                    except Exception:
-                        log.warning(
-                            "self-dispatch: failed to drop dispatch id=%s",
-                            d.id,
-                            exc_info=True,
-                        )
-                dispatch = await client.agent_dispatch.create_dispatch(
-                    lk_api.CreateAgentDispatchRequest(room=room, agent_name=AGENT_NAME)
-                )
-                log.info(
-                    "self-dispatched agent into room=%s id=%s agent_name=%r",
-                    room,
-                    dispatch.id,
-                    AGENT_NAME,
-                )
-            except Exception:
-                log.warning(
-                    "self-dispatch failed",
-                    exc_info=True,
-                )
-            finally:
-                await client.aclose()
-
         try:
-            asyncio.run(_dispatch())
+            asyncio.run(
+                _self_dispatch_once(
+                    url=url, key=key, secret=secret, room=room, evict_agents=True
+                )
+            )
         except Exception:
             log.exception("self-dispatch thread crashed")
 
@@ -973,5 +1087,12 @@ if __name__ == "__main__":
         WorkerOptions(
             entrypoint_fnc=entrypoint,
             agent_name=AGENT_NAME,
+            # Loading the ai-coustics WASM model + Gradium plugin in a fresh
+            # `spawn` subprocess can comfortably take >10s on a cold cache.
+            # The default 10s init timeout causes the supervisor to kill the
+            # subprocess (exit -30 / SIGUSR1) and retry, producing the
+            # "process did not ack shutdown in time" cascade.
+            initialize_process_timeout=60.0,
+            shutdown_process_timeout=30.0,
         )
     )

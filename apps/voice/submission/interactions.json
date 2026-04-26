@@ -12315,5 +12315,938 @@
       "expectedCommand": null
     },
     "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-26T08:46:23.251912Z-CAM-03",
+    "timestamp": "2026-04-26T08:46:23.251924Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-cam-03-hold-812b0551-5407-4574-85ae-d7857c6d3cbc-1777193182942",
+      "cameraId": "CAM-03",
+      "zone": "Moving camera",
+      "summary": "item appears taken from shelf",
+      "confidence": 0.82,
+      "frameUrl": null,
+      "clipUrl": null
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-26T08-50-29-994421Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-26T08-50-29-994421Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.904,
+          "noisiness": 4.962,
+          "coloration": 2.981,
+          "discontinuity": 1.0,
+          "loudness": 1.147
+        },
+        "enhanced": {
+          "mos": 2.905,
+          "noisiness": 4.965,
+          "coloration": 2.983,
+          "discontinuity": 1.0,
+          "loudness": 1.145
+        },
+        "delta": {
+          "mos": 0.001
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Alert. An item appears taken from shelf on CAM-03. Please review.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "How he looks like, how he looks like.",
+        "enhancedTranscript": "How he looks like, how he looks like.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "Person in a dark grey long-sleeved shirt. They are reaching toward the item on the table.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'How he looks like, how he looks like.', enhanced: 'How he looks like, how he looks like.') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Moving camera?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.9 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-26T08:46:23.251912Z-CAM-03",
+    "timestamp": "2026-04-26T08:46:23.251924Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-cam-03-hold-812b0551-5407-4574-85ae-d7857c6d3cbc-1777193182942",
+      "cameraId": "CAM-03",
+      "zone": "Moving camera",
+      "summary": "item appears taken from shelf",
+      "confidence": 0.82,
+      "frameUrl": null,
+      "clipUrl": null
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-26T08-50-56-479492Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-26T08-50-56-479492Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.884,
+          "noisiness": 4.81,
+          "coloration": 2.905,
+          "discontinuity": 1.0,
+          "loudness": 1.498
+        },
+        "enhanced": {
+          "mos": 2.883,
+          "noisiness": 4.812,
+          "coloration": 2.906,
+          "discontinuity": 1.0,
+          "loudness": 1.479
+        },
+        "delta": {
+          "mos": -0.001
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Alert. An item appears taken from shelf on CAM-03. Please review.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "How he looks like, how he looks like.",
+        "enhancedTranscript": "How he looks like, how he looks like.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "Person in a dark grey long-sleeved shirt. They are reaching toward the item on the table.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "How he looks like, how he looks",
+        "enhancedTranscript": "How he looks like, how he looks",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "like.",
+        "enhancedTranscript": "like.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "Person in a dark grey long-sleeved shirt. They are reaching toward the item on the table.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'How he looks like, how he looks', enhanced: 'How he looks like, how he looks') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Moving camera?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.9 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-26T08:46:23.251912Z-CAM-03",
+    "timestamp": "2026-04-26T08:46:23.251924Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-cam-03-hold-812b0551-5407-4574-85ae-d7857c6d3cbc-1777193182942",
+      "cameraId": "CAM-03",
+      "zone": "Moving camera",
+      "summary": "item appears taken from shelf",
+      "confidence": 0.82,
+      "frameUrl": null,
+      "clipUrl": null
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-26T08-50-58-994167Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-26T08-50-58-994167Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 4.4,
+          "noisiness": 5.0,
+          "coloration": 5.0,
+          "discontinuity": 5.0,
+          "loudness": 1.0
+        },
+        "enhanced": {
+          "mos": 4.4,
+          "noisiness": 5.0,
+          "coloration": 5.0,
+          "discontinuity": 5.0,
+          "loudness": 1.0
+        },
+        "delta": {
+          "mos": 0.0
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Alert. An item appears taken from shelf on CAM-03. Please review.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "How he looks like, how he looks like.",
+        "enhancedTranscript": "How he looks like, how he looks like.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "Person in a dark grey long-sleeved shirt. They are reaching toward the item on the table.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "How he looks like, how he looks",
+        "enhancedTranscript": "How he looks like, how he looks",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "like.",
+        "enhancedTranscript": "like.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "Person in a dark grey long-sleeved shirt. They are reaching toward the item on the table.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "assistant",
+        "text": "Person in a dark grey long-sleeved shirt. They are reaching toward the item on the table.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "none",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "max_clarifications_reached",
+      "explanation": "The guard's utterance (raw: 'like.', enhanced: 'like.') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Moving camera?",
+      "acousticNote": "NISQA: raw 4.4 → enhanced 4.4 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-26T09:19:03.306176Z-CAM-03",
+    "timestamp": "2026-04-26T09:19:03.306186Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-cam-03-hold-cbec4499-f64f-4ac9-a629-ccbe3863fb15-1777195143258",
+      "cameraId": "CAM-03",
+      "zone": "Moving camera",
+      "summary": "item appears taken from shelf",
+      "confidence": 0.82,
+      "frameUrl": null,
+      "clipUrl": null
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-26T09-19-13-255452Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-26T09-19-13-255452Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.875,
+          "noisiness": 4.701,
+          "coloration": 2.851,
+          "discontinuity": 1.0,
+          "loudness": 1.783
+        },
+        "enhanced": {
+          "mos": 2.92,
+          "noisiness": 4.802,
+          "coloration": 2.901,
+          "discontinuity": 1.0,
+          "loudness": 1.761
+        },
+        "delta": {
+          "mos": 0.045
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Alert. An item appears taken from shelf on CAM-03. Please review.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Describe this person.",
+        "enhancedTranscript": "Describe this person.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "Person in a grey t-shirt is standing at the counter. They appear to be holding a blue bottle.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Describe this person.', enhanced: 'Describe this person.') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Moving camera?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.9 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-26T09:23:09.634208Z-CAM-03",
+    "timestamp": "2026-04-26T09:23:09.634218Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-cam-03-hold-9f367106-c1a3-45ba-b95b-1db8fdb74ce3-1777195389455",
+      "cameraId": "CAM-03",
+      "zone": "Moving camera",
+      "summary": "item appears taken from shelf",
+      "confidence": 0.82,
+      "frameUrl": null,
+      "clipUrl": null
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-26T09-23-19-956679Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-26T09-23-19-956679Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.909,
+          "noisiness": 4.904,
+          "coloration": 2.952,
+          "discontinuity": 1.0,
+          "loudness": 1.363
+        },
+        "enhanced": {
+          "mos": 2.909,
+          "noisiness": 4.904,
+          "coloration": 2.952,
+          "discontinuity": 1.0,
+          "loudness": 1.362
+        },
+        "delta": {
+          "mos": 0.0
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Alert. An item appears taken from shelf on CAM-03. Please review.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "This crimes this person.",
+        "enhancedTranscript": "This crimes this person.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "A person in a dark shirt is holding an item. They are standing near the center of the frame.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'This crimes this person.', enhanced: 'This crimes this person.') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Moving camera?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.9 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-26T09:28:26.396537Z-CAM-03",
+    "timestamp": "2026-04-26T09:28:26.396543Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-cam-03-hold-0cef09c6-eb14-4047-bd7d-65e609bde060-1777195706303",
+      "cameraId": "CAM-03",
+      "zone": "Moving camera",
+      "summary": "item appears taken from shelf",
+      "confidence": 0.82,
+      "frameUrl": null,
+      "clipUrl": null
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-26T09-28-36-455475Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-26T09-28-36-455475Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.847,
+          "noisiness": 4.728,
+          "coloration": 2.864,
+          "discontinuity": 1.0,
+          "loudness": 1.507
+        },
+        "enhanced": {
+          "mos": 2.86,
+          "noisiness": 4.76,
+          "coloration": 2.88,
+          "discontinuity": 1.0,
+          "loudness": 1.493
+        },
+        "delta": {
+          "mos": 0.013
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Alert. An item appears taken from shelf on CAM-03. Please review.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Describe the person.",
+        "enhancedTranscript": "Describe the person.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "A person in a light blue shirt is holding a white object. They are standing near the shelves.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Describe the person.', enhanced: 'Describe the person.') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Moving camera?",
+      "acousticNote": "NISQA: raw 2.8 → enhanced 2.9 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-26T09:35:24.528797Z-CAM-03",
+    "timestamp": "2026-04-26T09:35:24.528802Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-cam-03-hold-4315dd56-344c-4b72-a10f-bba4894414b1-1777196124482",
+      "cameraId": "CAM-03",
+      "zone": "Moving camera",
+      "summary": "item appears taken from shelf",
+      "confidence": 0.82,
+      "frameUrl": null,
+      "clipUrl": null
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-26T09-35-34-603898Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-26T09-35-34-603898Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.897,
+          "noisiness": 4.74,
+          "coloration": 2.87,
+          "discontinuity": 1.0,
+          "loudness": 1.805
+        },
+        "enhanced": {
+          "mos": 2.901,
+          "noisiness": 4.753,
+          "coloration": 2.876,
+          "discontinuity": 1.0,
+          "loudness": 1.791
+        },
+        "delta": {
+          "mos": 0.004
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Alert. An item appears taken from shelf on CAM-03. Please review.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Describe the person.",
+        "enhancedTranscript": "Describe the person.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "A person in a dark shirt is holding a white object. They are standing near the counter.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Describe the person.', enhanced: 'Describe the person.') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Moving camera?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.9 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-26T09:36:44.428769Z-CAM-03",
+    "timestamp": "2026-04-26T09:36:44.428807Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-cam-03-hold-d00086d2-f824-4817-8fee-fb7c51544675-1777196204380",
+      "cameraId": "CAM-03",
+      "zone": "Moving camera",
+      "summary": "item appears taken from shelf",
+      "confidence": 0.82,
+      "frameUrl": null,
+      "clipUrl": null
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-26T09-37-12-921951Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-26T09-37-12-921951Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.948,
+          "noisiness": 4.934,
+          "coloration": 2.967,
+          "discontinuity": 1.0,
+          "loudness": 1.53
+        },
+        "enhanced": {
+          "mos": 2.946,
+          "noisiness": 4.933,
+          "coloration": 2.967,
+          "discontinuity": 1.0,
+          "loudness": 1.518
+        },
+        "delta": {
+          "mos": -0.002
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Alert. An item appears taken from shelf on CAM-03. Please review.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Describes the person.",
+        "enhancedTranscript": "Describes the person.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "A person in a dark shirt is reaching for an item on the counter. They are wearing a blue bracelet on their left wrist.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Describes the person.', enhanced: 'Describes the person.') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Moving camera?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.9 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-26T09:37:02.237537Z-CAM-03",
+    "timestamp": "2026-04-26T09:37:02.237543Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-cam-03-hold-fefa8832-4e78-476f-96de-883869ba5812-1777196222199",
+      "cameraId": "CAM-03",
+      "zone": "Moving camera",
+      "summary": "item appears taken from shelf",
+      "confidence": 0.82,
+      "frameUrl": null,
+      "clipUrl": null
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-26T09-37-13-093350Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-26T09-37-13-093350Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.954,
+          "noisiness": 4.798,
+          "coloration": 2.913,
+          "discontinuity": 1.028,
+          "loudness": 1.93
+        },
+        "enhanced": {
+          "mos": 2.941,
+          "noisiness": 4.796,
+          "coloration": 2.898,
+          "discontinuity": 1.0,
+          "loudness": 1.917
+        },
+        "delta": {
+          "mos": -0.013
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Alert. An item appears taken from shelf on CAM-03. Please review.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Describes the person.",
+        "enhancedTranscript": "Describes the person.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "Person is wearing a dark t-shirt and dark pants. They have a blue wristband on their left arm.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Describes the person.', enhanced: 'Describes the person.') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Moving camera?",
+      "acousticNote": "NISQA: raw 3.0 → enhanced 2.9 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-26T09:54:37.098821Z-CAM-03",
+    "timestamp": "2026-04-26T09:54:37.098833Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-cam-03-hold-cb09dfd1-2634-433c-b19e-7e806eff2192-1777197277014",
+      "cameraId": "CAM-03",
+      "zone": "Moving camera",
+      "summary": "item appears taken from shelf",
+      "confidence": 0.82,
+      "frameUrl": null,
+      "clipUrl": null
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-26T09-54-46-660216Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-26T09-54-46-660216Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.826,
+          "noisiness": 4.664,
+          "coloration": 2.832,
+          "discontinuity": 1.0,
+          "loudness": 1.569
+        },
+        "enhanced": {
+          "mos": 2.855,
+          "noisiness": 4.727,
+          "coloration": 2.864,
+          "discontinuity": 1.0,
+          "loudness": 1.564
+        },
+        "delta": {
+          "mos": 0.029
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Alert. An item appears taken from shelf on CAM-03. Please review.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "Can you describe a person?",
+        "enhancedTranscript": "Can you describe a person?",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "A person in a dark shirt is at a table. They are wearing a watch and rings.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'Can you describe a person?', enhanced: 'Can you describe a person?') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Moving camera?",
+      "acousticNote": "NISQA: raw 2.8 → enhanced 2.9 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-26T09:54:51.938304Z-CAM-03",
+    "timestamp": "2026-04-26T09:54:51.938326Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-none",
+      "cameraId": "CAM-03",
+      "zone": "Moving camera",
+      "summary": "No active visual alert yet.",
+      "confidence": 0.0,
+      "frameUrl": null,
+      "clipUrl": null
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-26T09-55-17-205209Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-26T09-55-17-205209Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.933,
+          "noisiness": 4.906,
+          "coloration": 2.953,
+          "discontinuity": 1.0,
+          "loudness": 1.515
+        },
+        "enhanced": {
+          "mos": 2.91,
+          "noisiness": 4.906,
+          "coloration": 2.953,
+          "discontinuity": 1.0,
+          "loudness": 1.363
+        },
+        "delta": {
+          "mos": -0.023
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "El Describe a person.",
+        "enhancedTranscript": "El Describe a person.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "No active visual alert. The dashboard has not triggered anything yet.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'El Describe a person.', enhanced: 'El Describe a person.') did not match any supported command. NISQA improvement: +-0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Moving camera?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.9 (+-0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
   }
 ]
