@@ -10,23 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as MetricsRouteImport } from './routes/metrics'
-import { Route as GeminiPreviewRouteImport } from './routes/gemini-preview'
-import { Route as AudioRouteImport } from './routes/audio'
 import { Route as IndexRouteImport } from './routes/index'
 
 const MetricsRoute = MetricsRouteImport.update({
   id: '/metrics',
   path: '/metrics',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GeminiPreviewRoute = GeminiPreviewRouteImport.update({
-  id: '/gemini-preview',
-  path: '/gemini-preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AudioRoute = AudioRouteImport.update({
-  id: '/audio',
-  path: '/audio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,35 +25,27 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/audio': typeof AudioRoute
-  '/gemini-preview': typeof GeminiPreviewRoute
   '/metrics': typeof MetricsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/audio': typeof AudioRoute
-  '/gemini-preview': typeof GeminiPreviewRoute
   '/metrics': typeof MetricsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/audio': typeof AudioRoute
-  '/gemini-preview': typeof GeminiPreviewRoute
   '/metrics': typeof MetricsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/audio' | '/gemini-preview' | '/metrics'
+  fullPaths: '/' | '/metrics'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/audio' | '/gemini-preview' | '/metrics'
-  id: '__root__' | '/' | '/audio' | '/gemini-preview' | '/metrics'
+  to: '/' | '/metrics'
+  id: '__root__' | '/' | '/metrics'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AudioRoute: typeof AudioRoute
-  GeminiPreviewRoute: typeof GeminiPreviewRoute
   MetricsRoute: typeof MetricsRoute
 }
 
@@ -76,20 +56,6 @@ declare module '@tanstack/react-router' {
       path: '/metrics'
       fullPath: '/metrics'
       preLoaderRoute: typeof MetricsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/gemini-preview': {
-      id: '/gemini-preview'
-      path: '/gemini-preview'
-      fullPath: '/gemini-preview'
-      preLoaderRoute: typeof GeminiPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/audio': {
-      id: '/audio'
-      path: '/audio'
-      fullPath: '/audio'
-      preLoaderRoute: typeof AudioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -104,8 +70,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AudioRoute: AudioRoute,
-  GeminiPreviewRoute: GeminiPreviewRoute,
   MetricsRoute: MetricsRoute,
 }
 export const routeTree = rootRouteImport

@@ -8,12 +8,11 @@ Built with Vite + React + TypeScript + Tailwind + TanStack Start (SSR). Original
 
 ## What lives here
 
-| Route             | Description                                                                                                                                                                                                                          |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/`               | Security ops dashboard. Eight camera tiles: CAM-01, 02, 04, 05, 06, 07, and 08 loop local demo clips; CAM-03 is the live MacBook/Continuity Camera analyzed by Gemini.                                                               |
-| `/audio`          | Direct-link walkie-talkie page. Publishes the guard microphone to LiveKit as `sentinel-guard-mic` while the talk button is held; Sentinel voice replies play back through the same room.                                             |
-| `/gemini-preview` | Direct-link local camera + voice analyst. Opens the Mac/iPhone Continuity Camera and mic, sends frames/audio through the server-side Gemini bridge, and publishes visual alerts as LiveKit data packets for the walkie-talkie agent. |
-| `/metrics`        | Submission metrics dashboard for SAIS, WER, safe recovery, and dangerous-error evidence.                                                                                                                                             |
+| Route      | Description                                                                                                                                                                              |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`        | Security ops dashboard. Eight camera tiles: CAM-01, 02, 04, 05, 06, 07, and 08 loop local demo clips; CAM-03 is the live MacBook/Continuity Camera analyzed by Gemini.                   |
+| `/audio`   | Direct-link walkie-talkie page. Publishes the guard microphone to LiveKit as `sentinel-guard-mic` while the talk button is held; Sentinel voice replies play back through the same room. |
+| `/metrics` | Submission metrics dashboard for SAIS, WER, safe recovery, and dangerous-error evidence.                                                                                                 |
 
 The dashboard and utility pages all share the same Vite dev server (single process, single port).
 
@@ -31,7 +30,7 @@ bun install
 bun run dev
 ```
 
-The server starts on **HTTPS** with a self-signed certificate (required so phones on the LAN can use `getUserMedia`). At startup it prints access URLs for `/`, `/audio`, and `/gemini-preview` for both localhost and your LAN IP. Phones need to accept the self-signed cert warning once.
+The server starts on **HTTPS** with a self-signed certificate (required so phones on the LAN can use `getUserMedia`). At startup it prints access URLs for `/`, `/audio`, and `/metrics` for both localhost and your LAN IP. Phones need to accept the self-signed cert warning once.
 
 Other scripts:
 
@@ -62,18 +61,17 @@ LIVEKIT_API_KEY=APIxxxxxxxxxxxx
 LIVEKIT_API_SECRET=your-secret
 ```
 
-Without credentials the dashboard, Gemini preview, and `/audio` still open locally, but walkie-talkie voice/data packets cannot leave the browser.
+Without credentials the dashboard and `/audio` still open locally, but walkie-talkie voice/data packets cannot leave the browser.
 
-## Gemini setup (for `/gemini-preview`)
+## Gemini setup (for the dashboard CAM-03 analyzer)
 
 Add a server-side Gemini key to the root `.env`:
 
 ```
 GEMINI_API_KEY=your-gemini-api-key
-GEMINI_CAMERA_MODEL=gemini-2.5-flash-lite
 ```
 
-`/gemini-preview` and the dashboard CAM-03 analyzer keep the key on the server via `src/lib/gemini-camera-analysis.ts`. The default model is Gemini 2.5 Flash Lite for fast frame-based visual checks. Voice questions are recorded as short WAV clips and sent with the current frame. The dashboard analyzes only CAM-03, using short ordered frame bursts from the live MacBook camera; if it sees a review-worthy change, it publishes a `sentinel.visual-alert` data packet into the LiveKit voice room. You can override `GEMINI_CAMERA_MODEL` if your account exposes another model.
+The dashboard CAM-03 analyzer keeps the key on the server via `src/lib/gemini-camera-analysis.ts`. The model is pinned to Gemini 2.5 Flash Lite for fast frame-based visual checks at multiple frames per second. The dashboard analyzes only CAM-03, using short ordered frame bursts from the live MacBook camera; if it sees a review-worthy change, it publishes a `sentinel.visual-alert` data packet into the LiveKit voice room.
 
 ## Camera analysis
 
@@ -81,7 +79,7 @@ LiveKit is no longer used for video. Demo clips live in `public/cams/` for CAM-0
 
 ## Live voice log
 
-The dashboard joins `sentinel-live` as a subscriber for voice-agent data packets on topic `sentinel.voice` and Gemini visual alerts on `sentinel.visual-alert`. The Python agent in `../apps/voice` listens to the `/audio` participant, transcribes guard speech, interprets commands, speaks visual alerts from Gemini, and publishes `assistant_turn`, `guard_turn`, and `interaction_record` packets. Those packets update the review log in real time.
+The dashboard joins `sentinel-live` as a subscriber for voice-agent data packets on topic `sentinel.voice` and dashboard visual alerts on `sentinel.visual-alert`. The Python agent in `../apps/voice` listens to the `/audio` participant, transcribes guard speech, interprets commands, speaks visual alerts from the dashboard's CAM-03 analyzer, and publishes `assistant_turn`, `guard_turn`, and `interaction_record` packets. Those packets update the review log in real time.
 
 To test the voice path, run the Python voice worker and dispatch it into `sentinel-live`, then open `/audio` and hold the talk button while speaking. Use `/audio?identity=...` only if the agent's `LIVEKIT_MIC_IDENTITY` is set to the same value.
 
@@ -92,15 +90,15 @@ src/
   routes/
     index.tsx              # Dashboard (/)
     audio.tsx              # Walkie-talkie mic publisher (/audio)
-    gemini-preview.tsx     # Local camera + Gemini visual chat (/gemini-preview)
+    metrics.tsx            # SAIS metrics dashboard (/metrics)
   components/sentinel/     # Dashboard UI components
   lib/
     camera-config.ts       # Dashboard camera names, ordering, and demo clip paths
     livekit-token.ts       # TanStack Start server fn — mints LiveKit JWTs
     gemini-camera-analysis.ts # TanStack Start server fn — Gemini frame analysis
-    publish-visual-alert.ts # Publishes Gemini visual alerts into LiveKit data
+    publish-visual-alert.ts # Publishes CAM-03 visual alerts into LiveKit data
     use-sentinel-voice-events.ts # Hook — subscribes to voice-agent data packets
-    live-page-skeleton.tsx # SSR-safe skeleton for camera/mic pages
+    live-page-skeleton.tsx # SSR-safe skeleton for the /audio page
 vite.config.ts             # HTTPS cert, root env loading, startup URL banner
 wrangler.jsonc             # Cloudflare Workers deploy config
 ```

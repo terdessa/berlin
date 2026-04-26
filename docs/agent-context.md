@@ -2,7 +2,7 @@
 
 ## Current Idea
 
-Sentinel is a **voice-first retail security copilot** for the **telli + ai-coustics** track.
+Sentinel is a **voice-first retail security copilot** using LiveKit, Gradium, ai-coustics, and Gemini.
 
 It watches live CCTV/store camera feeds, flags review-worthy activity, speaks concise alerts to a security guard through an earpiece, understands the guard's spoken response in noisy store conditions, and — when it cannot be sure what the guard said — produces a richly diagnosed error record that ai-coustics can use as evaluation/training data for their model. The full session ships as a structured JSON corpus alongside the demo.
 
@@ -14,7 +14,7 @@ One-line pitch:
 
 Primary track:
 
-- **telli + ai-coustics: Voice AI that works in the wild**
+- **Voice AI that works in the wild**
 
 Why it fits:
 
@@ -23,7 +23,7 @@ Why it fits:
 - ai-coustics improves the audio path so the agent can hear commands reliably.
 - The demo shows a measurable Sentinel Audio Intelligence Score (SAIS), raw/enhanced audio evidence, and a corpus of labeled failure cases — all directly answer the track's "audio intelligence metric" requirement.
 
-Voice runtime stack: **LiveKit** as the agent framework (using the official [livekit/plugins-ai-coustics-python](https://github.com/livekit/plugins-ai-coustics-python) plugin), **telli** for STT + TTS + realtime conversation, **ai-coustics** for audio enhancement in front of telli. We deliberately do not stack any third-party voice runtime on top of telli, so ai-coustics stays the single variable in the before/after metric.
+Voice runtime stack: **LiveKit** as the agent framework, **Gradium** for STT + TTS, and **ai-coustics** for audio enhancement.
 
 Fallback:
 
@@ -141,7 +141,7 @@ Core implementation stack:
 
 - ai-coustics: noisy audio enhancement, integrated via the official `livekit/plugins-ai-coustics-python` plugin
 - LiveKit: voice agent framework that hosts the ai-coustics plugin
-- telli: realtime voice interaction (track host runtime)
+- Gradium: realtime STT/TTS voice runtime
 - Google DeepMind: video/scene understanding
 - Entire: human review and error-report workflow
 - NISQA v2 (`gabrielmittag/NISQA`): objective audio quality metric for raw vs enhanced
@@ -167,16 +167,15 @@ The dashboard UI lives at `ui/` in this repo:
 - **Gemini analyzes only CAM-03.** Other dashboard cameras are local looping demo clips.
 - **Two-way voice channel.** Agent → guard (TTS to earpiece), guard → agent (speech with ai-coustics enhancement). Both directions are surfaced in the UI.
 - **Local camera analysis.** LiveKit is no longer used for video transport. The dashboard has eight camera tiles: CAM-01, CAM-02, CAM-04, CAM-05, CAM-06, CAM-07, and CAM-08 loop local demo clips from `ui/public/cams`; CAM-03 opens the local MacBook/Continuity Camera and is the only feed sampled by Gemini. Structured visual alerts go into the voice room as data packets.
-- **Live voice bridge.** The `/audio` route publishes the guard microphone to `sentinel-live` as `sentinel-guard-mic` by default. The Python voice agent listens to that participant, runs ai-coustics + OpenAI STT/TTS with Silero VAD, and publishes Sentinel/Guard turns plus interaction records on the `sentinel.voice` LiveKit data topic. The dashboard consumes those packets through `useSentinelVoiceEvents` and updates the review log in real time.
+- **Live voice bridge.** The `/audio` route publishes the guard microphone to `sentinel-live` as `sentinel-guard-mic` by default. The Python voice agent listens to that participant, runs ai-coustics + Gradium STT/TTS, and publishes Sentinel/Guard turns plus interaction records on the `sentinel.voice` LiveKit data topic. The dashboard consumes those packets through `useSentinelVoiceEvents` and updates the review log in real time.
 
 ### Live Utility Pages
 
-Two direct-link-only routes (not referenced from the dashboard) exist for hardware testing:
+One direct-link-only route (not referenced from the dashboard) exists for hardware testing:
 
 - **`/audio`** — opens the device microphone, publishes to `sentinel-live` as `sentinel-guard-mic` by default, plays Sentinel/agent replies from the same room, and uses a press-and-hold talk button for the guard reply. Use `?identity=...` only when `LIVEKIT_MIC_IDENTITY` on the Python agent is set to the same value.
-- **`/gemini-preview`** — opens the local browser camera/microphone, supports camera selection, sends frames/audio to Gemini, and publishes `sentinel.visual-alert` packets when the watched object disappears.
 
-The dev server prints LAN + localhost URLs for `/`, `/audio`, and `/gemini-preview` at startup.
+The dev server prints LAN + localhost URLs for `/`, `/audio`, and `/metrics` at startup.
 
 ### UI Layout
 
@@ -196,9 +195,8 @@ The dev server prints LAN + localhost URLs for `/`, `/audio`, and `/gemini-previ
 
 - ai-coustics credentials: in hand ✅
 - LiveKit cloud: connected ✅ (`wss://berlin-vc00ggsm.livekit.cloud`)
-- OpenAI STT/TTS: wired as voice runtime (telli-swappable in two lines)
+- Gradium STT/TTS: wired as the voice runtime
 - `interactions.json` corpus: written per session by `apps/voice/src/logger.py`
 - Dashboard camera grid: local/Gemini analysis placeholders ✅ — no LiveKit video transport
-- Camera selector on `/gemini-preview`: working ✅ — enumerates local cameras, including iPhone Continuity Camera when macOS exposes it
 - Dashboard live voice log: working ✅ — `apps/voice` emits `sentinel.voice` data packets and the dashboard subscribes via `useSentinelVoiceEvents`
-- Gemini visual alerts: wired ✅ — `/gemini-preview` publishes `sentinel.visual-alert`; the voice agent speaks the alert through the LiveKit walkie-talkie path
+- Visual alerts from CAM-03: wired ✅ — the dashboard publishes `sentinel.visual-alert`; the voice agent speaks the alert through the LiveKit walkie-talkie path

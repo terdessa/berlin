@@ -33,21 +33,17 @@ class GradiumVoiceProvider:
     """
     Thin adapter over the official Gradium Python SDK.
 
-    The SDK reads GRADIUM_API_KEY when api_key is omitted. TTS uses
-    GRADIUM_VOICE_ID when voice_id is omitted; if neither is set, Gradium's
-    service default is used by the LiveKit plugin, while direct SDK TTS raises
-    a clear error so batch tools do not silently produce the wrong voice.
+    The SDK reads GRADIUM_API_KEY when api_key is omitted. TTS uses the
+    provider's default voice.
     """
 
     def __init__(
         self,
         *,
         api_key: str | None = None,
-        voice_id: str | None = None,
         client: Any | None = None,
     ) -> None:
         self.api_key = api_key or _env("GRADIUM_API_KEY")
-        self.voice_id = voice_id or _env("GRADIUM_VOICE_ID")
         self._client = client
 
     @property
@@ -129,18 +125,12 @@ class GradiumVoiceProvider:
         text: str,
         *,
         output_path: str | Path | None = None,
-        voice_id: str | None = None,
         model_name: str = DEFAULT_GRADIUM_TTS_MODEL,
         output_format: str = "wav",
     ) -> GradiumSynthesis:
-        selected_voice_id = voice_id or self.voice_id
-        if not selected_voice_id:
-            raise RuntimeError("GRADIUM_VOICE_ID is required for direct Gradium SDK TTS synthesis.")
-
         result = await self.client.tts(
             setup={
                 "model_name": model_name,
-                "voice_id": selected_voice_id,
                 "output_format": output_format,
             },
             text=text,
@@ -166,7 +156,6 @@ class GradiumVoiceProvider:
         text: str,
         output_path: str | Path,
         *,
-        voice_id: str | None = None,
         model_name: str = DEFAULT_GRADIUM_TTS_MODEL,
         output_format: str = "wav",
     ) -> GradiumSynthesis:
@@ -174,7 +163,6 @@ class GradiumVoiceProvider:
             self.synthesize_tts(
                 text,
                 output_path=output_path,
-                voice_id=voice_id,
                 model_name=model_name,
                 output_format=output_format,
             )

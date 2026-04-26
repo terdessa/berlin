@@ -2,7 +2,18 @@
   "metric": {
     "name": "Sentinel Audio Intelligence Score",
     "shortName": "SAIS",
-    "definition": "correct safe actions / total test commands"
+    "version": "0.2",
+    "definition": "Task-conditioned composite metric: SAIS = 0.5\u00b7CommandFidelity + 0.3\u00b7TimeToCorrectAction + 0.2\u00b7SafeRecoveryRate. Each component is a per-record ratio in [0, 1] aggregated across the corpus. Generic audio quality (NISQA) is reported alongside as a reference signal.",
+    "components": {
+      "CF": "Command Fidelity = 1 \u2212 WER on the parsed transcript.",
+      "TTCA": "Time-to-Correct-Action = 1 if the action ran on the first try, 0.5 if a safe clarification recovered the turn, 0 otherwise.",
+      "SRR": "Safe Recovery Rate = safe_failures / total_failures (1.0 if no failures)."
+    },
+    "weights": {
+      "CF": 0.5,
+      "TTCA": 0.3,
+      "SRR": 0.2
+    }
   },
   "summary": {
     "raw_noisy": {
@@ -33,6 +44,115 @@
       "nisqaMos": 3.457
     }
   },
+  "byCondition": [
+    {
+      "id": "raw_noisy",
+      "CF": 0.72,
+      "TTCA": 0.464,
+      "SRR": 0.571,
+      "SAIS": 0.614,
+      "n": 14
+    },
+    {
+      "id": "aicoustics_only",
+      "CF": 0.851,
+      "TTCA": 0.679,
+      "SRR": 0.5,
+      "SAIS": 0.729,
+      "n": 14
+    },
+    {
+      "id": "aicoustics_plus_sentinel",
+      "CF": 0.875,
+      "TTCA": 0.75,
+      "SRR": 1.0,
+      "SAIS": 0.863,
+      "n": 14
+    }
+  ],
+  "bySnr": [
+    {
+      "noiseType": "artifact_introduced_by_enhancement",
+      "CF": 0.25,
+      "TTCA": 0.0,
+      "SRR": 1.0,
+      "SAIS": 0.325,
+      "n": 1
+    },
+    {
+      "noiseType": "background_music",
+      "CF": 1.0,
+      "TTCA": 1.0,
+      "SRR": 1.0,
+      "SAIS": 1.0,
+      "n": 2
+    },
+    {
+      "noiseType": "checkout_beeps",
+      "CF": 1.0,
+      "TTCA": 1.0,
+      "SRR": 1.0,
+      "SAIS": 1.0,
+      "n": 2
+    },
+    {
+      "noiseType": "clean_baseline",
+      "CF": 1.0,
+      "TTCA": 1.0,
+      "SRR": 1.0,
+      "SAIS": 1.0,
+      "n": 2
+    },
+    {
+      "noiseType": "cut_off_speech",
+      "CF": 0.667,
+      "TTCA": 0.5,
+      "SRR": 1.0,
+      "SAIS": 0.683,
+      "n": 1
+    },
+    {
+      "noiseType": "low_volume",
+      "CF": 1.0,
+      "TTCA": 1.0,
+      "SRR": 1.0,
+      "SAIS": 1.0,
+      "n": 1
+    },
+    {
+      "noiseType": "multi_talker_babble",
+      "CF": 1.0,
+      "TTCA": 0.75,
+      "SRR": 1.0,
+      "SAIS": 0.925,
+      "n": 2
+    },
+    {
+      "noiseType": "pa_announcement",
+      "CF": 0.667,
+      "TTCA": 0.0,
+      "SRR": 1.0,
+      "SAIS": 0.534,
+      "n": 1
+    },
+    {
+      "noiseType": "shopping_cart_noise",
+      "CF": 1.0,
+      "TTCA": 1.0,
+      "SRR": 1.0,
+      "SAIS": 1.0,
+      "n": 1
+    },
+    {
+      "noiseType": "voice_overlap",
+      "CF": 0.667,
+      "TTCA": 0.5,
+      "SRR": 1.0,
+      "SAIS": 0.683,
+      "n": 1
+    }
+  ],
+  "noiseRobustness": 0.325,
   "records": [
     {
       "case_id": "case-001",

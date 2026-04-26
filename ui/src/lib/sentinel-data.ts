@@ -13,11 +13,16 @@ export type ConversationMessage =
       speaker: "guard";
       text: string;
       timestamp: string;
-      confidenceRaw: number;
-      confidenceEnhanced: number;
       rawText?: string;
       enhancedText?: string;
-      unclear?: boolean;
+      // NISQA scores from the per-utterance audio snapshot. Headline metric
+      // is the delta — that's the ai-coustics contribution per turn.
+      nisqaRawMos?: number;
+      nisqaEnhancedMos?: number;
+      nisqaDeltaMos?: number;
+      // True when the dual-pass STT produced different text on raw vs.
+      // enhanced — i.e. the enhancement actually moved the words.
+      transcriptsDiffer?: boolean;
     };
 
 export type AlertStatus =

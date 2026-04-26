@@ -77,6 +77,13 @@ class EvaluationRecord:
     explanation: str
 
 
+SAIS_VERSION = "0.2"
+# Component weights for the composite SAIS score — task-conditioned, not
+# generic audio fidelity. CF dominates because the track judges whether
+# Sentinel does the right thing, and TTCA/SRR are downstream of CF.
+SAIS_WEIGHTS = {"CF": 0.5, "TTCA": 0.3, "SRR": 0.2}
+
+
 def main() -> None:
     scenarios = _load_scenarios()
     records = [
@@ -85,18 +92,41 @@ def main() -> None:
         for system in SYSTEMS
     ]
     summary = _summarize(records)
+    by_condition = _sais_by_condition(records)
+    by_noise = _sais_by_noise(records)
+    noise_robustness = _noise_robustness(by_noise)
+
     payload = {
         "metric": {
             "name": "Sentinel Audio Intelligence Score",
             "shortName": "SAIS",
-            "definition": "correct safe actions / total test commands",
+            "version": SAIS_VERSION,
+            "definition": (
+                "Task-conditioned composite metric: "
+                f"SAIS = {SAIS_WEIGHTS['CF']}·CommandFidelity "
+                f"+ {SAIS_WEIGHTS['TTCA']}·TimeToCorrectAction "
+                f"+ {SAIS_WEIGHTS['SRR']}·SafeRecoveryRate. "
+                "Each component is a per-record ratio in [0, 1] aggregated "
+                "across the corpus. Generic audio quality (NISQA) is "
+                "reported alongside as a reference signal."
+            ),
+            "components": {
+                "CF": "Command Fidelity = 1 − WER on the parsed transcript.",
+                "TTCA": "Time-to-Correct-Action = 1 if the action ran on the first try, "
+                        "0.5 if a safe clarification recovered the turn, 0 otherwise.",
+                "SRR": "Safe Recovery Rate = safe_failures / total_failures (1.0 if no failures).",
+            },
+            "weights": SAIS_WEIGHTS,
         },
         "summary": summary,
+        "byCondition": by_condition,
+        "bySnr": by_noise,
+        "noiseRobustness": noise_robustness,
         "records": [asdict(record) for record in records],
     }
     RESULTS_PATH.parent.mkdir(parents=True, exist_ok=True)
     RESULTS_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    _print_summary(summary)
+    _print_summary(summary, by_condition, noise_robustness)
     print(f"\nWrote {RESULTS_PATH}")
 
 
@@ -377,7 +407,98 @@ def _summarize(records: list[EvaluationRecord]) -> dict[str, dict[str, int | flo
     return summary
 
 
-def _print_summary(summary: dict[str, dict[str, float]]) -> None:
+def _per_record_components(record: EvaluationRecord) -> dict[str, float]:
+    """CF, TTCA, SRR for one evaluation record (each in [0, 1])."""
+    cf = max(0.0, 1.0 - record.wer)
+
+    if record.task_success and record.action_taken != "asked_clarification":
+        ttca = 1.0
+    elif record.action_taken == "asked_clarification":
+        # Safe clarification — recovered with one extra turn cost.
+        ttca = 0.5
+    else:
+        ttca = 0.0
+
+    return {"CF": round(cf, 3), "TTCA": round(ttca, 3)}
+
+
+def _sais_for_records(records: list[EvaluationRecord]) -> dict[str, float]:
+    if not records:
+        return {"CF": 0.0, "TTCA": 0.0, "SRR": 0.0, "SAIS": 0.0, "n": 0}
+
+    components = [_per_record_components(r) for r in records]
+    cf = sum(c["CF"] for c in components) / len(components)
+    ttca = sum(c["TTCA"] for c in components) / len(components)
+
+    failures = [r for r in records if not r.task_success]
+    if not failures:
+        srr = 1.0
+    else:
+        safe = sum(
+            1
+            for r in failures
+            if r.action_taken in {"asked_clarification", "rejected_unsupported_command"}
+        )
+        srr = safe / len(failures)
+
+    sais = (
+        SAIS_WEIGHTS["CF"] * cf
+        + SAIS_WEIGHTS["TTCA"] * ttca
+        + SAIS_WEIGHTS["SRR"] * srr
+    )
+    return {
+        "CF": round(cf, 3),
+        "TTCA": round(ttca, 3),
+        "SRR": round(srr, 3),
+        "SAIS": round(sais, 3),
+        "n": len(records),
+    }
+
+
+def _sais_by_condition(records: list[EvaluationRecord]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for system in SYSTEMS:
+        sys_records = [r for r in records if r.system == system]
+        scores = _sais_for_records(sys_records)
+        rows.append({"id": system, **scores})
+    return rows
+
+
+def _sais_by_noise(records: list[EvaluationRecord]) -> list[dict[str, Any]]:
+    """SAIS bucketed by noise type, evaluated only on the headline system
+    (aicoustics_plus_sentinel). This is the noise-robustness story."""
+    headline = [r for r in records if r.system == "aicoustics_plus_sentinel"]
+    by_noise: dict[str, list[EvaluationRecord]] = {}
+    for record in headline:
+        by_noise.setdefault(record.noise_type, []).append(record)
+    rows: list[dict[str, Any]] = []
+    for noise, items in sorted(by_noise.items()):
+        scores = _sais_for_records(items)
+        rows.append({"noiseType": noise, **scores})
+    return rows
+
+
+def _noise_robustness(by_noise: list[dict[str, Any]]) -> float:
+    """Ratio of the worst-noise SAIS to the best-noise SAIS. 1.0 means the
+    enhancement perfectly closes the noise gap; lower means residual
+    degradation under noise."""
+    if not by_noise:
+        return 0.0
+    sais_values = [row["SAIS"] for row in by_noise if row.get("n", 0) > 0]
+    if not sais_values:
+        return 0.0
+    best = max(sais_values)
+    worst = min(sais_values)
+    if best == 0.0:
+        return 0.0
+    return round(worst / best, 3)
+
+
+def _print_summary(
+    summary: dict[str, dict[str, float]],
+    by_condition: list[dict[str, Any]],
+    noise_robustness: float,
+) -> None:
     print("System                         WER     NISQA   SAIS    Unsafe")
     print("--------------------------------------------------------------")
     for system in SYSTEMS:
@@ -389,6 +510,21 @@ def _print_summary(summary: dict[str, dict[str, float]]) -> None:
             f"{values['sais']:<7.3f} "
             f"{values['unsafeActionRate']:<7.3f}"
         )
+
+    print("")
+    print("SAIS components (composite metric)")
+    print("System                         CF      TTCA    SRR     SAIS")
+    print("--------------------------------------------------------------")
+    for row in by_condition:
+        print(
+            f"{row['id']:<30} "
+            f"{row['CF']:<7.3f} "
+            f"{row['TTCA']:<7.3f} "
+            f"{row['SRR']:<7.3f} "
+            f"{row['SAIS']:<7.3f}"
+        )
+    print("")
+    print(f"Noise robustness (worst/best SAIS, headline system): {noise_robustness:.3f}")
 
 
 if __name__ == "__main__":

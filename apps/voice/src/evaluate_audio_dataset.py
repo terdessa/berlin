@@ -288,14 +288,14 @@ def main() -> None:
     )
     parser.add_argument(
         "--provider",
-        choices=("auto", "gradium", "openai"),
-        default=os.getenv("AUDIO_TRANSCRIBE_PROVIDER", "auto"),
-        help="ASR provider for --transcribe. auto prefers Gradium when GRADIUM_API_KEY is set.",
+        choices=("gradium",),
+        default="gradium",
+        help="ASR provider for --transcribe.",
     )
     parser.add_argument(
         "--model",
         default=None,
-        help="Transcription model. Defaults to Gradium 'default' or OpenAI OPENAI_TRANSCRIBE_MODEL/whisper-1.",
+        help="Transcription model. Defaults to Gradium 'default'.",
     )
     parser.add_argument(
         "--language",
@@ -454,61 +454,35 @@ def _write_transcripts(transcripts: dict[str, str]) -> None:
     TRANSCRIPTS_PATH.write_text(json.dumps(clean, indent=2), encoding="utf-8")
 
 
-def _resolve_transcribe_provider(provider: str) -> Literal["gradium", "openai"]:
-    if provider == "auto":
-        return "gradium" if os.getenv("GRADIUM_API_KEY") else "openai"
-    return provider  # type: ignore[return-value]
+def _resolve_transcribe_provider(provider: str) -> Literal["gradium"]:
+    return "gradium"
 
 
-def _default_model(provider: Literal["gradium", "openai"]) -> str:
-    if provider == "gradium":
-        return os.getenv("GRADIUM_STT_MODEL", "default")
-    return os.getenv("OPENAI_TRANSCRIBE_MODEL", "whisper-1")
+def _default_model(provider: Literal["gradium"]) -> str:
+    return os.getenv("GRADIUM_STT_MODEL", "default")
 
 
 def _build_transcript_provider(
-    provider: Literal["gradium", "openai"],
+    provider: Literal["gradium"],
     model: str,
     *,
     language: str | None = None,
     delay_in_frames: int | None = None,
 ) -> TranscriptProvider:
-    if provider == "gradium":
-        if not os.getenv("GRADIUM_API_KEY"):
-            raise RuntimeError("GRADIUM_API_KEY is required for --transcribe with the Gradium provider.")
-        gradium_provider = GradiumVoiceProvider()
-        selected_language = (language or "").strip() or None
+    if not os.getenv("GRADIUM_API_KEY"):
+        raise RuntimeError("GRADIUM_API_KEY is required for --transcribe.")
+    gradium_provider = GradiumVoiceProvider()
+    selected_language = (language or "").strip() or None
 
-        def transcribe_gradium(audio_path: Path) -> str:
-            return gradium_provider.transcribe_wav_file(
-                audio_path,
-                model_name=model,
-                language=selected_language,
-                delay_in_frames=delay_in_frames,
-            ).strip()
+    def transcribe_gradium(audio_path: Path) -> str:
+        return gradium_provider.transcribe_wav_file(
+            audio_path,
+            model_name=model,
+            language=selected_language,
+            delay_in_frames=delay_in_frames,
+        ).strip()
 
-        return transcribe_gradium
-
-    if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError("OPENAI_API_KEY is required for --transcribe with the OpenAI provider.")
-
-    from openai import OpenAI
-
-    client = OpenAI()
-    prompt = "Security guard voice commands: " + ", ".join(SUPPORTED_UTTERANCES) + "."
-
-    def transcribe(audio_path: Path) -> str:
-        with audio_path.open("rb") as audio_file:
-            result = client.audio.transcriptions.create(
-                model=model,
-                file=audio_file,
-                language="en",
-                prompt=prompt,
-                response_format="json",
-            )
-        return str(result.text).strip()
-
-    return transcribe
+    return transcribe_gradium
 
 
 def _transcribe_missing(

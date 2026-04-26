@@ -1,6 +1,6 @@
 # Sentinel Voice Service
 
-Person 3 workstream. Python voice agent using LiveKit + ai-coustics + telli.
+Python voice agent using LiveKit + ai-coustics + Gradium.
 
 ## Setup
 
@@ -20,13 +20,13 @@ Copy `.env.example` at the repo root to `.env` and fill in:
 
 | Variable | Where to get it |
 |---|---|
-| `AICOUSTICS_API_KEY` | ai-coustics booth / already set |
 | `LIVEKIT_URL` | LiveKit dashboard or local server |
 | `LIVEKIT_API_KEY` | LiveKit dashboard |
 | `LIVEKIT_API_SECRET` | LiveKit dashboard |
 | `LIVEKIT_MIC_IDENTITY` | Optional; defaults to `sentinel-guard-mic` |
-| `OPENAI_API_KEY` | OpenAI — used for STT/TTS until telli is wired |
-| `TELLI_API_KEY` | telli booth |
+| `GRADIUM_API_KEY` | Gradium voice runtime |
+
+The ai-coustics SDK key is configured inside LiveKit Cloud (project → ai-coustics integration). The LiveKit room token and server URL are forwarded to the plugin at runtime — there is no local ai-coustics env var.
 
 ## Run the agent
 
@@ -36,15 +36,11 @@ source .venv/bin/activate
 python -m src.agent dev
 ```
 
-This starts a LiveKit worker that connects to a room and runs the Sentinel
-voice loop with ai-coustics noise cancellation.
+This starts a LiveKit worker that registers and waits for a dispatch.
 
 ## Dispatch the agent into the demo room
 
-The worker must also be dispatched into `sentinel-live`; otherwise it is
-registered but not listening in the room.
-
-In a second terminal:
+In a second terminal, dispatch the worker into `sentinel-live`:
 
 ```bash
 cd apps/voice
@@ -52,14 +48,25 @@ source .venv/bin/activate
 python -m src.dispatch_agent
 ```
 
-You should then see an `agent-...` participant in the LiveKit room.
+The script is idempotent — if a dispatch already exists for `sentinel-live`, it prints the existing IDs and exits without creating a duplicate. Useful flags:
 
-Open the dashboard at `/` and the mic publisher at `/audio`; by default `/audio` joins as
-`sentinel-guard-mic`, which is the participant identity the agent listens to.
-Use `/audio?identity=...` only if `LIVEKIT_MIC_IDENTITY` is set to the same
-value. Speak a supported guard command such as `open aisle five`; the dashboard
-review log should show the Guard transcript, Sentinel response, and final
-interaction record.
+- `python -m src.dispatch_agent --status` — show active dispatches and participants.
+- `python -m src.dispatch_agent --reset` — delete every active dispatch and `agent-*` participant in the room, then create one fresh dispatch (recovery for stale state).
+
+Once dispatched you should see an `agent-…` participant in the LiveKit room.
+
+## Walkie-talkie path
+
+Open the dashboard at `/`. The "hold to talk" button in the dashboard header opens the laptop microphone and publishes audio into the LiveKit room as identity `sentinel-guard-mic` (the identity the agent listens to; override with `LIVEKIT_MIC_IDENTITY`).
+
+Hold the talk button, speak naturally:
+
+```
+laptop mic → ai-coustics enhancement → Gradium STT → Gemini 2.5 Flash Lite
+       (with active visual event + last frame attached) → Gradium TTS → dashboard speaker
+```
+
+When CAM-03 detects a palm, the dashboard publishes a `sentinel.visual-alert` packet that includes a small JPEG of the scene (presented to the guard as an "item appears taken from shelf" event). The agent caches that frame; any follow-up question from the guard ("what is happening", "what do you see", "is the customer still there?") goes to Gemini together with the frame, so it can describe the actual scene rather than guessing from the summary text. The dashboard review log shows the Guard transcript, Sentinel response, and final interaction record.
 
 ## Output
 
@@ -138,10 +145,10 @@ python -m apps.voice.src.evaluate_audio_dataset
 ```
 
 This computes audio stats immediately. WER and SAIS require ASR transcripts.
-To generate transcripts with OpenAI Whisper-compatible transcription:
+To generate transcripts with Gradium:
 
 ```bash
-OPENAI_API_KEY=... python -m apps.voice.src.evaluate_audio_dataset --transcribe
+python -m apps.voice.src.evaluate_audio_dataset --transcribe
 ```
 
 To refresh already cached transcripts after changing prompt or repair logic:
@@ -162,10 +169,12 @@ apps/voice/submission/audio_dataset_results.json
 ```
 guard mic
   └─ ai-coustics (LiveKit plugin, QUAIL_L model)
-       └─ telli STT  (currently: OpenAI STT placeholder + Silero VAD)
-            └─ interpret.py  (command classifier, ACTION_THRESHOLD=0.7)
-                 ├─ confidence ≥ 0.7  →  route command  →  success record → interactions.json
-                 └─ confidence < 0.7  →  clarify (max 3 attempts)  →  error record → interactions.json
+       └─ Gradium STT
+            ├─ Gemini 2.5 Flash Lite chat (system prompt + visual context + history)
+            │    └─ Gradium TTS  →  spoken reply on the LiveKit room
+            └─ interpret.py  (regex command classifier, ACTION_THRESHOLD=0.7)
+                 ├─ confidence ≥ 0.7  →  success record → interactions.json
+                 └─ confidence < 0.7  →  failure record (clarification or max-clarifications)
                       └─ LiveKit data topic `sentinel.voice` → dashboard review log
 ```
 

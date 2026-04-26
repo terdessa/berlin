@@ -11,9 +11,10 @@ Run:
 
 Credentials (set in .env at repo root):
   LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET
-  AICOUSTICS_API_KEY
-  GRADIUM_API_KEY, GRADIUM_VOICE_ID  (preferred STT/TTS runtime)
-  OPENAI_API_KEY  (fallback STT/TTS if Gradium plugin is unavailable)
+  GRADIUM_API_KEY
+
+The ai-coustics SDK key is configured in the LiveKit Cloud project (ai-coustics
+integration) and pushed to the plugin at runtime — it is not read from .env.
 """
 
 from __future__ import annotations
@@ -23,14 +24,16 @@ import datetime
 import json
 import logging
 import os
+import threading
+import time
 from pathlib import Path
 
+import aiohttp
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent.parent.parent / ".env")
-if not os.getenv("GRADIUM_API_KEY") and os.getenv("TELLI_API_KEY"):
-    os.environ["GRADIUM_API_KEY"] = os.environ["TELLI_API_KEY"]
 
+from livekit import api as lk_api
 from livekit.agents import (
     AgentSession,
     AutoSubscribe,
@@ -40,9 +43,7 @@ from livekit.agents import (
 )
 from livekit.agents.voice import Agent
 from livekit.agents.voice.room_io import RoomInputOptions
-from livekit.plugins import openai as lk_openai
 from livekit.plugins import ai_coustics
-from livekit.plugins import silero
 from livekit.plugins.ai_coustics import EnhancerModel
 
 try:
@@ -58,6 +59,7 @@ from .interpret import (
     failure_explanation,
     interpret,
 )
+from .providers.gradium import GradiumVoiceProvider
 from .schema import (
     AudioMeasurement,
     ConversationTurn,
@@ -70,6 +72,16 @@ from . import logger as corpus_logger
 from .nisqa import score_pair
 
 log = logging.getLogger("sentinel.voice")
+
+# The ai-coustics LiveKit plugin emits noisy ERROR/WARNING traces during
+# normal participant churn (transient WS frames, model warm-up). They scare
+# the demo audience without indicating a real failure, so silence them.
+logging.getLogger("livekit.plugins.ai_coustics").setLevel(logging.CRITICAL + 1)
+
+# Named dispatch: explicit-dispatch worker so the same agent process can be
+# joined via `lk_api.CreateAgentDispatchRequest(agent_name=AGENT_NAME, room=...)`
+# without LiveKit's auto-dispatch racing a stale anonymous dispatch.
+AGENT_NAME = "sentinel"
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -103,21 +115,36 @@ DEFAULT_VISUAL_EVENT = VisualEvent(
 
 SYSTEM_PROMPT = f"""
 You are Sentinel, a voice security copilot for a retail store guard.
-You speak through the guard's earpiece.
+You speak through the guard's earpiece on a walkie-talkie channel.
 
 Rules:
-- Be brief and clear. The guard is in a noisy store.
+- Be brief and clear. The guard is in a noisy store; replies are spoken aloud.
+  One or two short sentences, max ~30 words. No lists, no markdown, no apologies,
+  no preamble such as "Sure" or "Let me explain".
 - Never say "thief", "criminal", "stealing", or make identity claims.
-- Use language like "requires review", "item appears to move", "human review recommended".
-- When you don't understand the guard, ask for clarification. Never guess and act.
-- Supported commands you can execute: open camera, switch camera, watch live,
-  replay last 10 seconds, pause video, resume playback, zoom in, follow that
-  person, show previous alert, what happened there, flag suspicious, call backup, send floor
-  associate, mark false alarm, create report.
-- If the guard's command is unclear, say exactly:
-  "I didn't catch that clearly. Did you mean [your best guess]?"
-- Current state: no active visual alert yet. When a visual alert arrives, speak
-  it to the guard and answer follow-up questions using that latest camera context.
+- Use language like "requires review", "item appears to move", "human review
+  recommended". Describe only observable behavior.
+- The current ALERT FIRED line in the user message is the trigger that just
+  happened (typically: an item appears to have been taken from the shelf on
+  the indicated camera). When the guard asks "what happened", "what is going
+  on", "describe the scene", "what do you see", or any equivalent, you MUST:
+    1. State what triggered the alert in plain language (e.g. an item appears
+       taken from the shelf on CAM-03).
+    2. Add one short observation from the attached camera frame if a frame is
+       provided (a person, item, posture, or area). If the frame is unclear or
+       missing, say so honestly instead of inventing details.
+- For action commands (open camera, switch camera, watch live, replay last 10
+  seconds, pause video, resume playback, zoom in, follow that person, show
+  previous alert, flag suspicious, call backup, send floor associate, mark
+  false alarm, create report), reply with one short "done" style confirmation.
+- If the guard references a camera that doesn't match the active alert (e.g.
+  asks about CAM-02 while the alert is on CAM-03), assume the transcript may
+  have miscaptured and ask one short clarification question, e.g.
+  "Did you mean CAM-03, where the alert just fired?"
+- If the guard's command is otherwise unclear, ask one short clarification
+  question instead of guessing — never produce an "Error report" sentence.
+- Before any visual alert arrives, there is no active scene; if the guard
+  asks, say so calmly in one sentence.
 """.strip()
 
 # ---------------------------------------------------------------------------
@@ -132,6 +159,13 @@ class SentinelSession:
         self.clarification_count = 0
         self.interaction_id = f"interaction-{datetime.datetime.utcnow().isoformat()}Z-{visual_event.camera_id}"
         self.timestamp = datetime.datetime.utcnow().isoformat() + "Z"
+        self.current_frame_base64: str | None = None
+        self.current_frame_mime: str = "image/jpeg"
+        # Cached snapshot of the audio for the current utterance — populated by
+        # the dual-pass STT path so write_success/_failure don't re-snapshot
+        # (which would clear the PCM buffers and produce empty WAVs).
+        self._cached_audio: AudioMeasurement | None = None
+        self._cached_audio_paths: tuple[str, str] | None = None
 
     def add_assistant_turn(self, text: str):
         self.conversation.append(ConversationTurn(speaker="assistant", text=text))
@@ -144,12 +178,21 @@ class SentinelSession:
             asr_confidence=asr_confidence,
         ))
 
-    def replace_visual_event(self, visual_event: VisualEvent):
+    def replace_visual_event(
+        self,
+        visual_event: VisualEvent,
+        *,
+        frame_base64: str | None = None,
+        frame_mime: str = "image/jpeg",
+    ):
         self.visual_event = visual_event
         self.interaction_id = f"interaction-{datetime.datetime.utcnow().isoformat()}Z-{visual_event.camera_id}"
         self.timestamp = datetime.datetime.utcnow().isoformat() + "Z"
         self.conversation = []
         self.clarification_count = 0
+        if frame_base64:
+            self.current_frame_base64 = frame_base64
+            self.current_frame_mime = frame_mime or "image/jpeg"
 
     def save_audio(self) -> tuple[str, str, str, str]:
         ts = datetime.datetime.utcnow().isoformat().replace(":", "-").replace(".", "-") + "Z"
@@ -165,19 +208,45 @@ class SentinelSession:
             f"audio/enhanced/{enhanced_name}",
         )
 
-    def write_success(self, result: InterpretResult, action_taken: str):
+    def snapshot_audio_now(self) -> tuple[AudioMeasurement, tuple[str, str]]:
+        """
+        Snapshot raw + enhanced WAVs and score NISQA, caching the result for
+        write_success/_failure. Idempotent within a turn — calling twice
+        returns the same paths and the same NISQA scores instead of taking a
+        second (empty) snapshot.
+        """
+        if self._cached_audio is not None and self._cached_audio_paths is not None:
+            return self._cached_audio, self._cached_audio_paths
         raw_path, enhanced_path, raw_clip_path, enhanced_clip_path = self.save_audio()
         nisqa = score_pair(raw_path, enhanced_path)
+        measurement = AudioMeasurement(
+            raw_clip_path=raw_clip_path,
+            enhanced_clip_path=enhanced_clip_path,
+            nisqa=nisqa,
+        )
+        self._cached_audio = measurement
+        self._cached_audio_paths = (raw_path, enhanced_path)
+        return measurement, self._cached_audio_paths
+
+    def consume_audio_snapshot(self) -> tuple[AudioMeasurement, tuple[str, str]]:
+        """
+        Return the cached snapshot if present, else snapshot now. Resets the
+        cache so the *next* utterance gets a fresh measurement.
+        """
+        measurement, paths = self.snapshot_audio_now()
+        self._cached_audio = None
+        self._cached_audio_paths = None
+        return measurement, paths
+
+    def write_success(self, result: InterpretResult, action_taken: str):
+        audio, _ = self.consume_audio_snapshot()
+        nisqa = audio.nisqa
         record = InteractionRecord(
             id=self.interaction_id,
             timestamp=self.timestamp,
             outcome="success",
             visual_event=self.visual_event,
-            audio=AudioMeasurement(
-                raw_clip_path=raw_clip_path,
-                enhanced_clip_path=enhanced_clip_path,
-                nisqa=nisqa,
-            ),
+            audio=audio,
             conversation=self.conversation,
             interpretation=Interpretation(
                 interpreted_command=result.command,
@@ -199,8 +268,8 @@ class SentinelSession:
         reason: str,
         action_taken: str = "asked_for_clarification",
     ):
-        raw_path, enhanced_path, raw_clip_path, enhanced_clip_path = self.save_audio()
-        nisqa = score_pair(raw_path, enhanced_path)
+        audio, _ = self.consume_audio_snapshot()
+        nisqa = audio.nisqa
         explanation = failure_explanation(
             result,
             raw_transcript,
@@ -217,11 +286,7 @@ class SentinelSession:
             timestamp=self.timestamp,
             outcome="error",
             visual_event=self.visual_event,
-            audio=AudioMeasurement(
-                raw_clip_path=raw_clip_path,
-                enhanced_clip_path=enhanced_clip_path,
-                nisqa=nisqa,
-            ),
+            audio=audio,
             conversation=self.conversation,
             interpretation=Interpretation(
                 interpreted_command=result.command,
@@ -275,7 +340,7 @@ async def entrypoint(ctx: JobContext):
             "payload": payload,
         }
         async def _publish():
-            ctx.room.local_participant.publish_data(
+            await ctx.room.local_participant.publish_data(
                 json.dumps(message, ensure_ascii=False),
                 reliable=True,
                 topic="sentinel.voice",
@@ -292,10 +357,121 @@ async def entrypoint(ctx: JobContext):
         task.add_done_callback(_log_publish_failure)
 
     def say(text: str):
-        agent_session.say(text, allow_interruptions=True)
+        # The session may briefly be torn down (e.g. participant_disconnected
+        # while the phone reloads). Skip TTS in that window instead of raising
+        # — the dashboard still gets the assistant_turn data packet below.
+        activity = getattr(agent_session, "_activity", None)
+        if activity is None:
+            log.warning(
+                "sentinel say: skipping TTS, AgentSession not running yet — text=%r",
+                text,
+            )
+        else:
+            try:
+                agent_session.say(text, allow_interruptions=True)
+                log.info("sentinel say: %r", text)
+            except RuntimeError as err:
+                log.warning("agent_session.say() not ready: %s — text=%r", err, text)
+            except Exception:
+                log.exception("agent_session.say() failed for text=%r", text)
         publish_event("assistant_turn", {"text": text})
 
+    # ----- Trailing-silence debounce -----
+    # Gradium STT finalizes on every VAD-detected silence, so one press of
+    # the dashboard's "hold to talk" button can produce >1 guard turns. We
+    # buffer each final and flush them as a single utterance after a short
+    # window of silence (no client framing protocol required — the press
+    # itself just gates whether audio reaches STT).
+    SILENCE_FLUSH_S = float(os.getenv("SENTINEL_UTTERANCE_SILENCE_MS", "900")) / 1000.0
+    utterance_buffer: list[tuple[str, str, float]] = []  # (raw, enhanced, conf)
+    utterance_flush_task: asyncio.Task | None = None
+
+    gradium_voice = GradiumVoiceProvider()
+
+    async def _transcribe_raw_wav(path: str) -> str:
+        """
+        Run Gradium STT on the un-enhanced (pre-ai-coustics) WAV. This is the
+        second of the dual-pass: the agent's normal STT already got the
+        enhanced stream, so this gives us a raw-vs-enhanced text comparison
+        using the same vendor on the same audio range.
+        """
+        try:
+            transcription = await gradium_voice.transcribe_wav(path)
+            return transcription.text.strip()
+        except Exception:
+            log.exception("dual-pass: raw STT failed for %s", path)
+            return ""
+
+    async def _flush_utterance() -> None:
+        nonlocal utterance_buffer, utterance_flush_task
+        try:
+            await asyncio.sleep(SILENCE_FLUSH_S)
+        except asyncio.CancelledError:
+            return
+        finally:
+            utterance_flush_task = None
+        if not utterance_buffer:
+            return
+        enhanceds = [e for _, e, _ in utterance_buffer]
+        confs = [c for _, _, c in utterance_buffer]
+        utterance_buffer = []
+        merged_enhanced = " ".join(enhanceds).strip()
+        if not merged_enhanced:
+            return
+        merged_conf = min(confs) if confs else 1.0
+
+        # Snapshot raw + enhanced PCM to WAV NOW (before any STT call clears the
+        # buffers in a future turn) and run dual-pass STT on the raw clip.
+        audio_measurement, audio_paths = session.snapshot_audio_now()
+        raw_wav_path, _ = audio_paths
+        raw_transcript_task = asyncio.create_task(_transcribe_raw_wav(raw_wav_path))
+
+        # Wait briefly for raw STT — it's a small clip; bounded to avoid
+        # stalling the demo if Gradium is slow.
+        try:
+            merged_raw = await asyncio.wait_for(raw_transcript_task, timeout=4.0)
+        except asyncio.TimeoutError:
+            log.warning("dual-pass: raw STT timed out; falling back to enhanced text")
+            merged_raw = merged_enhanced
+        if not merged_raw:
+            merged_raw = merged_enhanced
+
+        delta_mos = round(audio_measurement.nisqa.delta.mos, 2)
+        log.info(
+            "utterance: flush — enhanced=%r raw=%r ΔMOS=%+.2f",
+            merged_enhanced,
+            merged_raw,
+            delta_mos,
+        )
+
+        session.add_guard_turn(merged_raw, merged_enhanced, merged_conf)
+        publish_event(
+            "guard_turn",
+            {
+                "rawTranscript": merged_raw,
+                "enhancedTranscript": merged_enhanced,
+                "asrConfidence": merged_conf,
+                "nisqaDeltaMos": delta_mos,
+                "nisqaRawMos": round(audio_measurement.nisqa.raw.mos, 2),
+                "nisqaEnhancedMos": round(audio_measurement.nisqa.enhanced.mos, 2),
+                "transcriptsDiffer": merged_raw.lower().strip()
+                != merged_enhanced.lower().strip(),
+            },
+        )
+        await _handle_guard_speech(merged_raw, merged_enhanced, merged_conf)
+
+    def _reschedule_flush() -> None:
+        nonlocal utterance_flush_task
+        if utterance_flush_task and not utterance_flush_task.done():
+            utterance_flush_task.cancel()
+        utterance_flush_task = asyncio.create_task(_flush_utterance())
+
     spoken_visual_event_ids: set[str] = set()
+    last_spoken_at_per_camera: dict[str, float] = {}
+    # Wall-clock seconds the same camera must wait between spoken alerts.
+    # Backstops the dashboard's 30 s cooldown when a different eventId still
+    # gets through (e.g. a second dashboard tab, a re-publish, or a clock skew).
+    CAMERA_ALERT_COOLDOWN_S = 15.0
 
     def handle_visual_alert(payload: dict):
         visual_event = _visual_event_from_payload(payload)
@@ -307,7 +483,24 @@ async def entrypoint(ctx: JobContext):
             return
         spoken_visual_event_ids.add(visual_event.id)
 
-        session.replace_visual_event(visual_event)
+        now = time.monotonic()
+        last_at = last_spoken_at_per_camera.get(visual_event.camera_id, 0.0)
+        if now - last_at < CAMERA_ALERT_COOLDOWN_S:
+            log.info(
+                "dropped duplicate alert within %.1fs cooldown for camera=%s id=%s",
+                CAMERA_ALERT_COOLDOWN_S,
+                visual_event.camera_id,
+                visual_event.id,
+            )
+            return
+        last_spoken_at_per_camera[visual_event.camera_id] = now
+
+        frame_base64, frame_mime = _frame_from_payload(payload)
+        session.replace_visual_event(
+            visual_event,
+            frame_base64=frame_base64,
+            frame_mime=frame_mime,
+        )
         alert_text = _alert_text_for_visual_event(visual_event)
         session.add_assistant_turn(alert_text)
         publish_event("visual_event", _visual_event_to_dict(visual_event))
@@ -315,7 +508,12 @@ async def entrypoint(ctx: JobContext):
 
     @ctx.room.on("data_received")
     def on_visual_alert_packet(data_packet):
-        if data_packet.topic not in {"sentinel.visual-alert", "sentinel.voice"}:
+        topic = getattr(data_packet, "topic", None)
+        sender = getattr(getattr(data_packet, "participant", None), "identity", None)
+        log.info("data_received: topic=%r sender=%r", topic, sender)
+
+        if topic not in {"sentinel.visual-alert", "sentinel.voice"}:
+            log.info("data_received: ignored — unexpected topic %r", topic)
             return
 
         try:
@@ -329,15 +527,65 @@ async def entrypoint(ctx: JobContext):
             log.exception("failed to parse LiveKit visual alert data packet")
             return
 
-        if envelope.get("source") == "sentinel-voice-agent":
+        source = envelope.get("source")
+        kind = envelope.get("kind")
+        if source == "sentinel-voice-agent":
             return
-        if envelope.get("kind") != "visual_event":
+
+        if kind != "visual_event":
+            log.info("data_received: ignored — kind=%r source=%r", kind, source)
             return
 
         payload = envelope.get("payload")
         if not isinstance(payload, dict):
+            log.warning("data_received: payload missing or not a dict: %r", payload)
             return
+
+        log.info(
+            "visual_event received: id=%s camera=%s zone=%s summary=%r confidence=%s frame=%s",
+            payload.get("id"),
+            payload.get("cameraId"),
+            payload.get("zone"),
+            payload.get("summary"),
+            payload.get("confidence"),
+            "yes" if payload.get("frameBase64") else "no",
+        )
         handle_visual_alert(payload)
+
+    async def _handle_guard_speech(raw_text: str, enhanced_text: str, asr_confidence: float):
+        result = interpret(enhanced_text, camera_id=session.visual_event.camera_id)
+
+        try:
+            reply = await _gemini_reply(enhanced_text, session)
+        except Exception:
+            log.exception("gemini reply failed; falling back to canned route response")
+            reply = _route_command(result, session.visual_event)["response"]
+
+        session.add_assistant_turn(reply)
+        say(reply)
+
+        if result.confidence >= ACTION_THRESHOLD:
+            action_taken = _route_command(result, session.visual_event)["action_taken"]
+            record = session.write_success(result, action_taken)
+        else:
+            session.clarification_count += 1
+            if session.clarification_count >= MAX_CLARIFICATIONS:
+                record = session.write_failure(
+                    result,
+                    raw_text,
+                    enhanced_text,
+                    reason="max_clarifications_reached",
+                    action_taken="none",
+                )
+            else:
+                record = session.write_failure(
+                    result,
+                    raw_text,
+                    enhanced_text,
+                    reason="voice_command_unclear",
+                    action_taken="asked_for_clarification",
+                )
+        publish_event("interaction_record", record.to_dict())
 
     @agent_session.on("user_input_transcribed")
     def on_guard_speech(event):
@@ -353,63 +601,42 @@ async def entrypoint(ctx: JobContext):
         if asr_confidence is None:
             asr_confidence = 1.0
 
-        session.add_guard_turn(raw_text, enhanced_text, asr_confidence)
-        publish_event(
-            "guard_turn",
-            {
-                "rawTranscript": raw_text,
-                "enhancedTranscript": enhanced_text,
-                "asrConfidence": asr_confidence,
-            },
+        # Buffer every final and flush after SILENCE_FLUSH_S of quiet — that's
+        # the canonical path. If the guard's release races the last STT final,
+        # the trailing final still lands inside the window and gets merged.
+        utterance_buffer.append((raw_text, enhanced_text, asr_confidence))
+        log.info(
+            "utterance: buffered final (now %d): %r",
+            len(utterance_buffer),
+            enhanced_text,
         )
-
-        result = interpret(enhanced_text, camera_id=session.visual_event.camera_id)
-
-        if result.confidence >= ACTION_THRESHOLD:
-            action = _route_command(result, session.visual_event)
-            session.add_assistant_turn(action["response"])
-            say(action["response"])
-            record = session.write_success(result, action["action_taken"])
-            publish_event("interaction_record", record.to_dict())
-        else:
-            session.clarification_count += 1
-            if session.clarification_count >= MAX_CLARIFICATIONS:
-                record = session.write_failure(
-                    result,
-                    raw_text,
-                    enhanced_text,
-                    reason="max_clarifications_reached",
-                    action_taken="none",
-                )
-                publish_event("interaction_record", record.to_dict())
-                return
-
-            clarification = (
-                f"I didn't catch that clearly. "
-                f"Did you mean {result.command.replace('_', ' ')} "
-                f"at {session.visual_event.zone}?"
-            )
-            session.add_assistant_turn(clarification)
-            say(clarification)
-            record = session.write_failure(
-                result,
-                raw_text,
-                enhanced_text,
-                reason="voice_command_unclear",
-                action_taken="asked_for_clarification",
-            )
-            publish_event("interaction_record", record.to_dict())
+        _reschedule_flush()
 
     # Wire ai-coustics noise cancellation on the incoming guard audio.
     mic_identity = os.getenv("LIVEKIT_MIC_IDENTITY", "").strip() or "sentinel-guard-mic"
+    log.info("entrypoint: about to call agent_session.start(mic_identity=%s)", mic_identity)
     await agent_session.start(
         agent,
         room=ctx.room,
         room_input_options=RoomInputOptions(
             participant_identity=mic_identity,
             noise_cancellation=audio_processor,
+            # Keep the session alive when the phone reloads /audio or briefly
+            # drops; otherwise the next visual-alert packet hits a torn-down
+            # session with "AgentSession isn't running".
+            close_on_disconnect=False,
         ),
     )
+    log.info(
+        "entrypoint: agent_session.start() returned. started=%s activity=%s",
+        getattr(agent_session, "_started", "?"),
+        "set" if getattr(agent_session, "_activity", None) is not None else "None",
+    )
+    # Block forever — entrypoint must not return until the framework signals shutdown,
+    # otherwise once we drop out of this coroutine the AgentSession's job-shutdown
+    # callback fires (`_aclose_impl` clears `_activity`), which causes any later
+    # `say()` from a data_received handler to raise "AgentSession isn't running".
+    await asyncio.Future()
 
 
 def _visual_event_from_payload(payload: dict) -> VisualEvent | None:
@@ -437,6 +664,23 @@ def _visual_event_from_payload(payload: dict) -> VisualEvent | None:
     )
 
 
+def _frame_from_payload(payload: dict) -> tuple[str | None, str]:
+    """Extract a base64 frame (and its MIME type) from a visual-alert payload."""
+    raw = payload.get("frameBase64") or payload.get("frame_base64")
+    if not isinstance(raw, str) or len(raw) < 200:
+        return None, "image/jpeg"
+    mime = "image/jpeg"
+    if raw.startswith("data:"):
+        head, _, tail = raw.partition(",")
+        if ";" in head:
+            mime = head[5 : head.index(";")] or mime
+        raw = tail
+    payload_mime = payload.get("frameMimeType") or payload.get("frame_mime_type")
+    if isinstance(payload_mime, str) and payload_mime.strip():
+        mime = payload_mime.strip().split(";")[0]
+    return raw, mime
+
+
 def _visual_event_to_dict(visual_event: VisualEvent) -> dict:
     return {
         "id": visual_event.id,
@@ -450,10 +694,12 @@ def _visual_event_to_dict(visual_event: VisualEvent) -> dict:
 
 
 def _alert_text_for_visual_event(visual_event: VisualEvent) -> str:
+    summary = (visual_event.summary or "").lower()
+    if "item" in summary or "shelf" in summary or "palm" in summary:
+        return f"Alert. An item appears taken from shelf on {visual_event.camera_id}. Please review."
     return (
-        f"Alert, alert. {visual_event.zone} requires review. "
-        f"I noticed something on camera: {visual_event.summary} "
-        "Human review recommended."
+        f"Alert. {visual_event.zone} requires review. "
+        f"{visual_event.summary} Human review recommended."
     )
 
 
@@ -497,38 +743,212 @@ def _route_command(result: InterpretResult, visual_event: VisualEvent | None = N
     return {"response": response, "action_taken": action_taken}
 
 
+def _trigger_description(summary: str) -> str:
+    """Translate the dashboard's terse summary into one plain-language trigger sentence."""
+    s = (summary or "").strip().lower()
+    if "palm" in s:
+        return "An open palm was deliberately shown to the camera (review trigger gesture)."
+    if not s:
+        return "Dashboard flagged a moment for review."
+    return summary.strip().rstrip(".") + "."
+
+
+GEMINI_MODEL = "gemini-2.5-flash-lite"
+GEMINI_ENDPOINT = (
+    f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+)
+_GEMINI_HISTORY_TURNS = 8
+
+
+async def _gemini_reply(transcript: str, session: "SentinelSession") -> str:
+    """Send the latest guard transcript to Gemini and return the spoken reply."""
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY is required for the Sentinel voice agent reply path.")
+
+    visual = session.visual_event
+    has_active_event = visual.id != "event-none" and bool(visual.summary)
+    if has_active_event:
+        trigger = _trigger_description(visual.summary)
+        frame_note = (
+            "A camera frame from the moment of the trigger is attached."
+            if session.current_frame_base64
+            else "No camera frame is attached for this trigger."
+        )
+        visual_context = (
+            f"ALERT FIRED: {trigger}\n"
+            f"- camera: {visual.camera_id}\n"
+            f"- zone: {visual.zone}\n"
+            f"- raw summary: {visual.summary}\n"
+            f"- confidence: {round(visual.confidence * 100)}%\n"
+            f"- {frame_note}"
+        )
+    else:
+        visual_context = "No active visual alert. The dashboard has not triggered anything yet."
+
+    contents: list[dict] = []
+    history_tail = session.conversation[-_GEMINI_HISTORY_TURNS:]
+    for turn in history_tail:
+        text = turn.text or turn.enhanced_transcript or turn.raw_transcript or ""
+        text = text.strip()
+        if not text:
+            continue
+        role = "model" if turn.speaker == "assistant" else "user"
+        contents.append({"role": role, "parts": [{"text": text}]})
+
+    user_parts: list[dict] = [
+        {"text": f"{visual_context}\n\nGuard said: {transcript}"},
+    ]
+    if session.current_frame_base64:
+        user_parts.append(
+            {
+                "inlineData": {
+                    "mimeType": session.current_frame_mime,
+                    "data": session.current_frame_base64,
+                }
+            }
+        )
+    contents.append({"role": "user", "parts": user_parts})
+
+    body = {
+        "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]},
+        "contents": contents,
+        "generationConfig": {
+            "temperature": 0.3,
+            "maxOutputTokens": 220,
+        },
+    }
+
+    timeout = aiohttp.ClientTimeout(total=15)
+    async with aiohttp.ClientSession(timeout=timeout) as http:
+        async with http.post(
+            GEMINI_ENDPOINT,
+            headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
+            json=body,
+        ) as resp:
+            payload = await resp.json()
+            if resp.status >= 400:
+                raise RuntimeError(
+                    f"gemini {resp.status}: {payload.get('error', {}).get('message', 'unknown error')}"
+                )
+
+    parts = (
+        payload.get("candidates", [{}])[0]
+        .get("content", {})
+        .get("parts", [])
+    )
+    text = "".join(p.get("text", "") for p in parts).strip()
+    if not text:
+        raise RuntimeError("gemini returned an empty response")
+    return text
+
+
+def _start_self_dispatch_thread() -> None:
+    """
+    Fire a one-shot agent dispatch into LIVEKIT_ROOM after the worker registers,
+    so opening /audio finds the agent already in the room without a second
+    terminal running `python -m src.dispatch_agent`.
+    """
+
+    room = os.getenv("LIVEKIT_ROOM", "sentinel-live")
+    url = os.getenv("LIVEKIT_URL")
+    key = os.getenv("LIVEKIT_API_KEY")
+    secret = os.getenv("LIVEKIT_API_SECRET")
+    if not (url and key and secret):
+        return
+
+    def _runner() -> None:
+        time.sleep(3)
+
+        async def _dispatch() -> None:
+            client = lk_api.LiveKitAPI(url, key, secret)
+            try:
+                existing = await client.agent_dispatch.list_dispatch(room_name=room)
+                # Stale dispatches from prior worker processes (or with a
+                # different/empty agent_name) won't route jobs to *this*
+                # worker. Drop them so the create below can target our name.
+                stale = [d for d in existing if d.agent_name != AGENT_NAME]
+                for d in stale:
+                    try:
+                        await client.agent_dispatch.delete_dispatch(d.id, room)
+                        log.info(
+                            "self-dispatch: dropped stale dispatch id=%s agent_name=%r",
+                            d.id,
+                            d.agent_name,
+                        )
+                    except Exception:
+                        log.warning(
+                            "self-dispatch: failed to drop stale dispatch id=%s",
+                            d.id,
+                            exc_info=True,
+                        )
+                already_mine = [d for d in existing if d.agent_name == AGENT_NAME]
+                if already_mine:
+                    log.info(
+                        "self-dispatch: %d active dispatch(es) for agent_name=%r already in room=%s; reusing",
+                        len(already_mine),
+                        AGENT_NAME,
+                        room,
+                    )
+                    return
+                dispatch = await client.agent_dispatch.create_dispatch(
+                    lk_api.CreateAgentDispatchRequest(room=room, agent_name=AGENT_NAME)
+                )
+                log.info(
+                    "self-dispatched agent into room=%s id=%s agent_name=%r",
+                    room,
+                    dispatch.id,
+                    AGENT_NAME,
+                )
+            except Exception:
+                log.warning(
+                    "self-dispatch failed",
+                    exc_info=True,
+                )
+            finally:
+                await client.aclose()
+
+        try:
+            asyncio.run(_dispatch())
+        except Exception:
+            log.exception("self-dispatch thread crashed")
+
+    threading.Thread(target=_runner, name="sentinel-self-dispatch", daemon=True).start()
+
+
 def _build_agent_session() -> AgentSession:
     """
-    Prefer Gradium STT/TTS when its LiveKit plugin is installed.
+    Build the Gradium STT/TTS session.
 
     ai-coustics stays in RoomInputOptions below, so the guard mic enhancement
-    path remains unchanged regardless of the voice runtime. The direct Gradium
-    SDK adapter used by batch evaluation lives in src/providers/gradium.py.
+    path remains separate from the voice runtime.
     """
 
-    if os.getenv("GRADIUM_API_KEY") and lk_gradium is not None:
-        voice_id = os.getenv("GRADIUM_VOICE_ID", "").strip()
-        try:
-            tts_kwargs = {"voice_id": voice_id} if voice_id else {}
-            return AgentSession(
-                stt=lk_gradium.STT(vad_threshold=0.6, vad_bucket=1),
-                tts=lk_gradium.TTS(**tts_kwargs),
-            )
-        except Exception:
-            log.exception("failed to initialize Gradium LiveKit voice runtime; falling back to OpenAI")
-
-    if os.getenv("GRADIUM_API_KEY") and lk_gradium is None:
-        log.warning(
-            "GRADIUM_API_KEY is set, but livekit.plugins.gradium is unavailable; "
-            "install livekit-agents[gradium] to enable Gradium in the live agent"
+    if not os.getenv("GRADIUM_API_KEY"):
+        raise RuntimeError("GRADIUM_API_KEY is required for the Sentinel voice agent.")
+    if lk_gradium is None:
+        raise RuntimeError(
+            "livekit.plugins.gradium is unavailable; install livekit-agents[gradium]."
         )
 
+    # `vad_bucket` is an INDEX into Gradium's per-step `data["vad"]` array
+    # (look-ahead window selector — higher = longer look-ahead = more
+    # conservative end-of-utterance). The plugin returns ~3 buckets, so
+    # anything > 2 raises IndexError. Bucket 2 with a stricter
+    # `vad_threshold` keeps "what do you see on the screen?" as one final
+    # utterance instead of splitting at the natural in-sentence pause that
+    # `vad_threshold=0.6, vad_bucket=1` was finalizing on.
     return AgentSession(
-        stt=lk_openai.STT(),
-        tts=lk_openai.TTS(),
-        vad=silero.VAD.load(),
+        stt=lk_gradium.STT(vad_threshold=0.85, vad_bucket=2),
+        tts=lk_gradium.TTS(),
     )
 
 
 if __name__ == "__main__":
-    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint))
+    _start_self_dispatch_thread()
+    cli.run_app(
+        WorkerOptions(
+            entrypoint_fnc=entrypoint,
+            agent_name=AGENT_NAME,
+        )
+    )

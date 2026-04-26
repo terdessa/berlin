@@ -118,7 +118,7 @@ The dashboard should make the before/after path visible without overwhelming the
 
 ## Speech-to-Text
 
-Use faster-whisper or OpenAI Whisper/OpenAI STT, depending on what is easiest for the running demo.
+Use Gradium STT for the running demo.
 
 Expected transcript output:
 
@@ -440,7 +440,7 @@ Run the real-audio benchmark:
 python -m apps.voice.src.evaluate_audio_dataset
 ```
 
-Refresh OpenAI transcription cache:
+Refresh Gradium transcription cache:
 
 ```bash
 python -m apps.voice.src.evaluate_audio_dataset --transcribe --force
@@ -508,8 +508,7 @@ Minimum winning stack:
 ```text
 ai-coustics       -> audio enhancement
 LiveKit           -> realtime room, mic routing, data events
-OpenAI STT/TTS    -> current fallback voice runtime
-faster-whisper    -> optional offline transcription path
+Gradium STT/TTS   -> voice runtime
 jiwer             -> WER calculation
 custom Python/JS  -> SAIS and dashboard metrics
 React/Vite        -> dashboard

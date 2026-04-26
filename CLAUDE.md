@@ -14,9 +14,9 @@ Do not add timestamped planning notes or resurrect deleted `knowledge/`, role/pe
 
 ## Project
 
-**Sentinel** is a voice-first retail security copilot for the **telli + ai-coustics** track.
+**Sentinel** is a voice-first retail security copilot using LiveKit, Gradium, ai-coustics, and Gemini.
 
-It watches local camera feeds, sends only CAM-03 frames to Gemini, speaks review alerts to a guard through the LiveKit walkie-talkie path, hears the guard through `/audio`, enhances noisy speech with ai-coustics, interprets commands, and writes structured interaction records.
+It watches local camera feeds, sends only CAM-03 frames to Gemini, speaks review alerts to a guard through the LiveKit walkie-talkie path, hears the guard through the in-dashboard hold-to-talk button, enhances noisy speech with ai-coustics, interprets commands, and writes structured interaction records.
 
 One-line pitch:
 
@@ -24,17 +24,16 @@ One-line pitch:
 
 ## Current Architecture
 
-- Dashboard route: `/`
-- Camera/Gemini test route: `/gemini-preview`
-- Walkie-talkie mic route: `/audio`
+- Dashboard route: `/` — owns cameras AND the hold-to-talk mic.
 - Metrics route: `/metrics`
 - LiveKit is **voice/data only**. Do not reintroduce LiveKit video streaming.
-- Dashboard cameras are video-only. The dashboard never opens a microphone.
+- The dashboard opens the laptop microphone but only unmutes the LiveKit track while the user is holding the in-dashboard "hold to talk" button.
 - CAM-01, CAM-02, CAM-04, CAM-05, CAM-06, CAM-07, and CAM-08 loop local clips from `ui/public/cams`.
 - CAM-03 opens the selected local browser camera, including iPhone Continuity Camera when macOS exposes it.
 - Gemini analyzes only CAM-03 from the dashboard.
 - Gemini visual alerts publish `sentinel.visual-alert` data packets into the LiveKit voice room.
 - The Python voice agent publishes `sentinel.voice` packets for dashboard review-log updates.
+- One LiveKit connection per dashboard tab — `ui/src/lib/use-sentinel-room.ts` owns mic publish, data publish, data subscribe, and remote-TTS playback.
 
 ## Environment
 
@@ -47,9 +46,10 @@ Required runtime keys:
 - `LIVEKIT_URL`
 - `LIVEKIT_API_KEY`
 - `LIVEKIT_API_SECRET`
-- `AICOUSTICS_API_KEY`
 - `GEMINI_API_KEY`
-- `OPENAI_API_KEY` or the telli/Gradium credentials currently in use
+- `GRADIUM_API_KEY`
+
+The ai-coustics SDK key is **not** a local env var. Configure it in the LiveKit Cloud project's ai-coustics integration; LiveKit Cloud forwards a short-lived credential to the `livekit-plugins-ai-coustics` plugin at runtime.
 
 Never commit real secrets.
 
@@ -76,16 +76,17 @@ The dev server runs over HTTPS so phones and Continuity Camera workflows can use
 
 Run from repo root or `apps/voice` as documented in `apps/voice/README.md`.
 
-Core commands:
-
 ```bash
 cd apps/voice
 source .venv/bin/activate
 python -m src.agent dev
-python -m src.dispatch_agent
 ```
 
-The default room is `sentinel-live`; the default guard mic identity is `sentinel-guard-mic`.
+The worker self-dispatches into `sentinel-live` on startup with `agent_name="sentinel"`. Use
+`python -m src.dispatch_agent --status` to inspect the room, or
+`python -m src.dispatch_agent --reset` to clear stale dispatches.
+
+The default room is `sentinel-live`; the dashboard publishes the guard mic on identity `sentinel-guard-mic` (override with `LIVEKIT_MIC_IDENTITY`).
 
 ## Safety Language
 
@@ -117,8 +118,7 @@ No facial recognition, identity tracking, automated accusation, detention, punis
 - `ui/src/lib/camera-config.ts` — camera labels, order, clip paths
 - `ui/src/lib/gemini-camera-analysis.ts` — Gemini server function
 - `ui/src/lib/livekit-token.ts` — LiveKit token server function
-- `ui/src/lib/publish-visual-alert.ts` — Gemini alert publisher
-- `ui/src/lib/use-sentinel-voice-events.ts` — dashboard LiveKit data subscriber
+- `ui/src/lib/use-sentinel-room.ts` — single dashboard LiveKit connection (mic + data + remote TTS)
 - `apps/voice/src/` — Python voice worker, interpretation, logging, metrics
 - `apps/voice/tools/` — utility scripts
 - `apps/voice/submission/` — generated corpus/results

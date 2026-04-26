@@ -84,9 +84,8 @@ function printSentinelLinksPlugin(): Plugin {
 
           const lan = getLanIPv4Addrs();
           const sections = [
-            { name: "HOME (dashboard)", path: "/" },
-            { name: "GEMINI (camera analyst)", path: "/gemini-preview" },
-            { name: "AUDIO (walkie-talkie)", path: "/audio" },
+            { name: "HOME (dashboard + walkie-talkie)", path: "/" },
+            { name: "METRICS (SAIS dashboard)", path: "/metrics" },
           ];
 
           type Line = { who: string; url: string; label: string };
@@ -158,7 +157,7 @@ function printSentinelLinksPlugin(): Plugin {
           if (!liveKitOk) {
             out.push("");
             out.push(
-              "  ! LiveKit not configured - /audio and Gemini walkie-talkie alerts will be local only.",
+              "  ! LiveKit not configured - /audio and dashboard visual alerts will be local only.",
             );
             out.push(
               "    Sign up free at https://cloud.livekit.io and put real values in the repo root .env:",
@@ -184,16 +183,11 @@ function printSentinelLinksPlugin(): Plugin {
           const geminiOk = !!geminiKey && !geminiPlaceholder;
           if (!geminiOk) {
             out.push("");
-            out.push(
-              "  ! Gemini not configured - /gemini-preview will show the camera, but analysis",
-            );
-            out.push("    needs GEMINI_API_KEY in the repo root .env.");
+            out.push("  ! Gemini not configured - the CAM-03 analyzer on the dashboard needs");
+            out.push("    GEMINI_API_KEY in the repo root .env.");
           } else {
             out.push("");
-            out.push(
-              "  Gemini configured for /gemini-preview: " +
-                (process.env.GEMINI_CAMERA_MODEL || "gemini-2.5-flash-lite"),
-            );
+            out.push("  Gemini configured for CAM-03 analyzer: gemini-2.5-flash-lite");
           }
 
           out.push("");

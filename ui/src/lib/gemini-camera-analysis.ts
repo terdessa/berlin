@@ -10,7 +10,7 @@ export type GeminiCameraInput = {
   imageFramesBase64?: string[];
   prompt: string;
   history?: GeminiCameraMessage[];
-  mode?: "question" | "commentary" | "loss-scan" | "object-watch" | "event-watch";
+  mode?: "question" | "commentary" | "loss-scan" | "object-watch" | "event-watch" | "palm-watch";
   audioBase64?: string;
   audioMimeType?: string;
 };
@@ -27,8 +27,7 @@ export type GeminiCameraResult =
       message: string;
     };
 
-const DEFAULT_MODEL = "gemini-2.5-flash-lite";
-const DEFAULT_FALLBACK_MODEL = "gemini-3.1-pro-preview";
+const GEMINI_MODEL = "gemini-2.5-flash-lite";
 const MAX_HISTORY_TURNS = 8;
 
 export const analyzeCameraFrame = createServerFn({ method: "POST" })
@@ -76,7 +75,8 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
         data.mode === "commentary" ||
         data.mode === "loss-scan" ||
         data.mode === "object-watch" ||
-        data.mode === "event-watch"
+        data.mode === "event-watch" ||
+        data.mode === "palm-watch"
           ? data.mode
           : "question",
       audioBase64,
@@ -85,8 +85,7 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<GeminiCameraResult> => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-    const model = process.env.GEMINI_CAMERA_MODEL || DEFAULT_MODEL;
-    const fallbackModel = process.env.GEMINI_CAMERA_FALLBACK_MODEL || DEFAULT_FALLBACK_MODEL;
+    const model = GEMINI_MODEL;
 
     if (!apiKey || apiKey.startsWith("replace-with") || apiKey === "AIzaSy...") {
       return {
@@ -105,13 +104,15 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
         ? "You are Sentinel's live retail camera analyst. Review the ordered frame sequence for observable loss-prevention concerns such as shelf-to-bag, shelf-to-pocket, concealment-like movement, repeated scanning of surroundings, or item handling that needs human review. Do not accuse anyone, identify people, infer intent, or mention protected traits. If nothing review-worthy is visible, say that clearly. If review is warranted, use cautious language like 'requires review' and cite the frame-to-frame observation."
         : data.mode === "event-watch"
           ? "You are Sentinel's CAM-03 live camera analyst. Analyze only the ordered CAM-03 frames provided. Use cautious, non-accusatory language. Reply exactly CLEAR if nothing review-worthy is visible. Reply exactly ALERT: followed by one concise observable summary if the frames show a person entering the monitored area, a reviewed item disappearing, concealment-like item movement, unusual handling, or another situation a human guard should review. Do not infer intent or identity."
-          : data.mode === "object-watch"
-            ? "You are a precise visual detector. Look only for whether the watched object is visible anywhere in the image. Reply exactly with ITEM_VISIBLE if the watched object is visible, otherwise reply exactly with ITEM_GONE."
-            : data.mode === "commentary"
-              ? "You are Sentinel's live visual analyst. Comment on the current camera frame in 2-4 concise sentences. Describe observable details only. Do not identify people, infer protected traits, or accuse anyone of wrongdoing. Mention uncertainty when relevant."
-              : hasAudio
-                ? "You are Sentinel's live camera-and-voice analyst. Use the current camera frame, recent chat context, and the attached microphone audio together. Treat the audio as the user's spoken request; briefly reflect the request only when useful, then answer it using observable visual details. Be concise, practical, and careful. Do not identify people, infer protected traits, or accuse anyone of wrongdoing."
-                : "You are Sentinel's live visual analyst. Answer the user's question using the current camera frame and recent chat context. Be concise, practical, and careful. Describe observable details only. Do not identify people, infer protected traits, or accuse anyone of wrongdoing.";
+          : data.mode === "palm-watch"
+            ? "You are a precise visual detector. The only thing you look for is an open human palm shown to the camera (a flat, open hand with fingers spread or extended, deliberately presented toward the lens). Ignore everything else: faces, motion, objects, background. Reply exactly PALM if any frame in the sequence clearly shows an open palm presented to the camera. Otherwise reply exactly NONE."
+            : data.mode === "object-watch"
+              ? "You are a precise visual detector. Look only for whether the watched object is visible anywhere in the image. Reply exactly with ITEM_VISIBLE if the watched object is visible, otherwise reply exactly with ITEM_GONE."
+              : data.mode === "commentary"
+                ? "You are Sentinel's live visual analyst. Comment on the current camera frame in 2-4 concise sentences. Describe observable details only. Do not identify people, infer protected traits, or accuse anyone of wrongdoing. Mention uncertainty when relevant."
+                : hasAudio
+                  ? "You are Sentinel's live camera-and-voice analyst. Use the current camera frame, recent chat context, and the attached microphone audio together. Treat the audio as the user's spoken request; briefly reflect the request only when useful, then answer it using observable visual details. Be concise, practical, and careful. Do not identify people, infer protected traits, or accuse anyone of wrongdoing."
+                  : "You are Sentinel's live visual analyst. Answer the user's question using the current camera frame and recent chat context. Be concise, practical, and careful. Describe observable details only. Do not identify people, infer protected traits, or accuse anyone of wrongdoing.";
     const userParts: GeminiPart[] = [
       {
         text:
@@ -119,11 +120,13 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
             ? `${data.prompt}\n\nThe following ${frameBase64s.length} images are ordered oldest to newest. Compare them as a short video-like sequence and return: status, confidence, key observation, and recommended next human-review action.`
             : data.mode === "event-watch"
               ? `${data.prompt}\n\nThe following ${frameBase64s.length} images are ordered oldest to newest from CAM-03. Reply exactly CLEAR or ALERT: <summary>.`
-              : data.mode === "object-watch"
-                ? data.prompt
-                : hasAudio
-                  ? `${data.prompt}\n\nThe attached audio is the user's spoken request. Analyze it together with the current camera frame.`
-                  : data.prompt,
+              : data.mode === "palm-watch"
+                ? `${data.prompt}\n\nThe following ${frameBase64s.length} images are ordered oldest to newest from CAM-03. Reply exactly PALM or NONE.`
+                : data.mode === "object-watch"
+                  ? data.prompt
+                  : hasAudio
+                    ? `${data.prompt}\n\nThe attached audio is the user's spoken request. Analyze it together with the current camera frame.`
+                    : data.prompt,
       },
     ];
     frameBase64s.forEach((frame, index) => {
@@ -158,7 +161,7 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
       },
     ];
 
-    const primary = await requestGemini({
+    const result = await requestGemini({
       apiKey,
       model,
       systemInstruction,
@@ -166,30 +169,8 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
       mode: data.mode,
     });
 
-    if (primary.ok) return primary;
-
-    const shouldFallback =
-      fallbackModel &&
-      fallbackModel !== model &&
-      (primary.status === 404 || primary.status === 429 || primary.message.includes("quota"));
-
-    if (shouldFallback) {
-      const fallback = await requestGemini({
-        apiKey,
-        model: fallbackModel,
-        systemInstruction,
-        contents,
-        mode: data.mode,
-      });
-      if (fallback.ok) return fallback;
-      return {
-        ok: false,
-        reason: "api-error",
-        message: `${model} failed: ${primary.message}. ${fallbackModel} also failed: ${fallback.message}`,
-      };
-    }
-
-    return { ok: false, reason: "api-error", message: primary.message };
+    if (result.ok) return result;
+    return { ok: false, reason: "api-error", message: result.message };
   });
 
 type GeminiPart =
@@ -209,7 +190,7 @@ type GeminiRequestInput = {
     role: string;
     parts: GeminiPart[];
   }>;
-  mode?: "question" | "commentary" | "loss-scan" | "object-watch" | "event-watch";
+  mode?: "question" | "commentary" | "loss-scan" | "object-watch" | "event-watch" | "palm-watch";
 };
 
 type GeminiRequestResult =
@@ -250,7 +231,7 @@ async function requestGemini({
           generationConfig: {
             temperature: mode === "commentary" ? 0.5 : 0.1,
             maxOutputTokens:
-              mode === "object-watch"
+              mode === "object-watch" || mode === "palm-watch"
                 ? 8
                 : mode === "event-watch"
                   ? 80

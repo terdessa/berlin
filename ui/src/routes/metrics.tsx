@@ -58,7 +58,7 @@ function MetricsPage() {
                 <ArrowLeft className="h-4 w-4" />
               </Link>
               <span className="mono rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-primary">
-                telli + ai-coustics submission
+                ai-coustics submission
               </span>
               <SourceBadge source={dashboard.source} />
             </div>

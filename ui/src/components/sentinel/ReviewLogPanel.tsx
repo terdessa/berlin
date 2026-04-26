@@ -133,9 +133,11 @@ function MessageBubble({ message }: { message: ConversationMessage }) {
     );
   }
 
-  const unclear = message.unclear || message.confidenceEnhanced < 0.6;
-  const rawPct = Math.round(message.confidenceRaw * 100);
-  const enhPct = Math.round(message.confidenceEnhanced * 100);
+  const hasDualTranscripts = !!(message.rawText || message.enhancedText);
+  const transcriptsDiffer = message.transcriptsDiffer ?? false;
+  const deltaMos = typeof message.nisqaDeltaMos === "number" ? message.nisqaDeltaMos : null;
+  const rawMos = typeof message.nisqaRawMos === "number" ? message.nisqaRawMos : null;
+  const enhMos = typeof message.nisqaEnhancedMos === "number" ? message.nisqaEnhancedMos : null;
 
   return (
     <div className="flex justify-end">
@@ -145,15 +147,8 @@ function MessageBubble({ message }: { message: ConversationMessage }) {
           <span className="mono text-[9px] uppercase tracking-wider text-alert">Guard</span>
           <Headphones className="h-3 w-3 text-alert" />
         </div>
-        <div
-          className={[
-            "rounded-md rounded-tr-sm px-2.5 py-1.5 text-[12px] leading-snug text-foreground",
-            unclear
-              ? "border border-dashed border-alert/50 bg-alert/5"
-              : "border border-alert/30 bg-alert/10",
-          ].join(" ")}
-        >
-          {message.rawText || message.enhancedText ? (
+        <div className="rounded-md rounded-tr-sm border border-alert/30 bg-alert/10 px-2.5 py-1.5 text-[12px] leading-snug text-foreground">
+          {hasDualTranscripts ? (
             <div className="space-y-1">
               <div>
                 <span className="mono text-[9px] uppercase tracking-wider text-muted-foreground">
@@ -171,27 +166,33 @@ function MessageBubble({ message }: { message: ConversationMessage }) {
           ) : (
             <div>{message.text}</div>
           )}
-          {unclear && (
-            <div className="mt-1 mono text-[10px] text-alert/80">
-              voice command unclear — clarification requested
-            </div>
-          )}
         </div>
-        <div className="mt-0.5 flex items-center justify-end gap-1">
-          <span className="mono rounded-full border border-border bg-background/40 px-1 py-px text-[9px] text-muted-foreground">
-            raw {rawPct}%
-          </span>
-          <span className="mono text-[9px] text-muted-foreground">→</span>
-          <span
-            className={[
-              "mono rounded-full border px-1 py-px text-[9px]",
-              unclear
-                ? "border-alert/40 bg-alert/10 text-alert"
-                : "border-primary/40 bg-primary/10 text-primary",
-            ].join(" ")}
-          >
-            enhanced {enhPct}%
-          </span>
+        <div className="mt-0.5 flex flex-wrap items-center justify-end gap-1">
+          {transcriptsDiffer && (
+            <span className="mono rounded-full border border-primary/40 bg-primary/10 px-1.5 py-px text-[9px] uppercase tracking-wider text-primary">
+              enhancement changed words
+            </span>
+          )}
+          {rawMos !== null && enhMos !== null && (
+            <span className="mono rounded-full border border-border bg-background/40 px-1.5 py-px text-[9px] text-muted-foreground">
+              MOS {rawMos.toFixed(1)} → {enhMos.toFixed(1)}
+            </span>
+          )}
+          {deltaMos !== null && (
+            <span
+              className={[
+                "mono rounded-full border px-1.5 py-px text-[9px] uppercase tracking-wider",
+                deltaMos > 0.1
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : deltaMos < -0.1
+                    ? "border-alert/40 bg-alert/10 text-alert"
+                    : "border-border bg-background/40 text-muted-foreground",
+              ].join(" ")}
+            >
+              Δ MOS {deltaMos >= 0 ? "+" : ""}
+              {deltaMos.toFixed(1)}
+            </span>
+          )}
         </div>
       </div>
     </div>
