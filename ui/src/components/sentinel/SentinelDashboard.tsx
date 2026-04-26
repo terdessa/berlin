@@ -38,17 +38,19 @@ function timestamp() {
   });
 }
 
+const IDLE_CHAT: ChatMessage[] = [
+  {
+    id: 0,
+    role: "sentinel",
+    at: "—",
+    text: "Sentinel conversation log is online. Voice exchanges over the walkie-talkie will appear here.",
+  },
+];
+
 export function SentinelDashboard() {
   const [selected, setSelected] = useState<string | null>(null);
   const [liveAlert, setLiveAlert] = useState<AlertEvent | null>(null);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      id: 0,
-      role: "sentinel",
-      at: "—",
-      text: "Sentinel conversation log is online. Voice exchanges over the walkie-talkie will appear here.",
-    },
-  ]);
+  const [localNotices, setLocalNotices] = useState<ChatMessage[]>([]);
   const [cam3Stream, setCam3Stream] = useState<MediaStream | null>(null);
   const [cam3Status, setCam3Status] = useState<"starting" | "ready" | "error">("starting");
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
@@ -61,13 +63,12 @@ export function SentinelDashboard() {
   const cam3CanvasRef = useRef<HTMLCanvasElement | null>(null);
   const cam3BusyRef = useRef(false);
   const lastCam3AlertAtRef = useRef(0);
-  const chatIdRef = useRef(1);
-  const lastConversationLenRef = useRef(0);
+  const noticeIdRef = useRef(-1);
 
   const sentinel = useSentinelRoom({ withMic: false });
 
-  const appendChat = useCallback((msg: Omit<ChatMessage, "id">) => {
-    setChatMessages((prev) => [...prev, { ...msg, id: chatIdRef.current++ }]);
+  const pushNotice = useCallback((msg: Omit<ChatMessage, "id">) => {
+    setLocalNotices((prev) => [...prev, { ...msg, id: noticeIdRef.current-- }]);
   }, []);
 
   const cameras = useMemo(() => {
@@ -120,7 +121,7 @@ export function SentinelDashboard() {
 
   const publishCam3Alert = useCallback(
     async (summary: string) => {
-      const eventId = `event-cam-03-hold-${CAM3_SESSION_ID}`;
+      const eventId = `event-cam-03-hold-${CAM3_SESSION_ID}-${Date.now()}`;
       const alertEvent: AlertEvent = {
         cameraId: "CAM-03",
         zone: "Moving camera",
@@ -134,11 +135,6 @@ export function SentinelDashboard() {
 
       setLiveAlert(alertEvent);
       setSelected("CAM-03");
-      appendChat({
-        role: "sentinel",
-        at: alertEvent.timestamp,
-        text: `CAM-03 visual alert: ${summary}`,
-      });
 
       const frameDataUrl = captureCam3SmallFrame();
       const published = await sentinel.publishVisualAlert({
@@ -152,14 +148,14 @@ export function SentinelDashboard() {
       });
 
       if (!published.ok) {
-        appendChat({
+        pushNotice({
           role: "sentinel",
           at: timestamp(),
           text: `Walkie-talkie alert failed: ${published.message}`,
         });
       }
     },
-    [appendChat, captureCam3SmallFrame, sentinel],
+    [captureCam3SmallFrame, pushNotice, sentinel],
   );
 
   const analyzeCam3 = useCallback(async () => {
@@ -183,7 +179,7 @@ export function SentinelDashboard() {
       }));
 
       if (!result.ok) {
-        appendChat({
+        pushNotice({
           role: "sentinel",
           at: timestamp(),
           text: `CAM-03 analysis unavailable: ${result.message}`,
@@ -200,7 +196,7 @@ export function SentinelDashboard() {
     } finally {
       cam3BusyRef.current = false;
     }
-  }, [appendChat, cam3Status, captureCam3Sequence, publishCam3Alert]);
+  }, [cam3Status, captureCam3Sequence, publishCam3Alert, pushNotice]);
 
   useEffect(() => {
     let cancelled = false;
@@ -301,21 +297,19 @@ export function SentinelDashboard() {
     if (!incoming) return;
     setLiveAlert(incoming);
     setSelected(incoming.cameraId);
+  }, [sentinel.latestAlert]);
 
-    const conv = incoming.conversation;
-    if (conv.length > lastConversationLenRef.current) {
-      const fresh = conv.slice(lastConversationLenRef.current);
-      const at = incoming.timestamp || timestamp();
-      for (const m of fresh) {
-        appendChat({
-          role: m.speaker === "guard" ? "operator" : "sentinel",
-          at,
-          text: m.text,
-        });
-      }
-      lastConversationLenRef.current = conv.length;
-    }
-  }, [sentinel.latestAlert, appendChat]);
+  const chatMessages = useMemo<ChatMessage[]>(() => {
+    const conv = liveAlert?.conversation ?? [];
+    if (conv.length === 0 && localNotices.length === 0) return IDLE_CHAT;
+    const turns: ChatMessage[] = conv.map((m, i) => ({
+      id: i,
+      role: m.speaker === "guard" ? "operator" : "sentinel",
+      at: m.timestamp ?? liveAlert?.timestamp ?? "—",
+      text: m.text ?? "",
+    }));
+    return [...turns, ...localNotices];
+  }, [liveAlert, localNotices]);
 
   const handleCameraClick = (cameraId: string) => {
     const apply = () => setSelected((prev) => (prev === cameraId ? null : cameraId));

@@ -895,33 +895,23 @@ def _start_self_dispatch_thread() -> None:
                 except Exception:
                     log.warning("self-dispatch: create_room failed (continuing)", exc_info=True)
                 existing = await client.agent_dispatch.list_dispatch(room_name=room)
-                # Stale dispatches from prior worker processes (or with a
-                # different/empty agent_name) won't route jobs to *this*
-                # worker. Drop them so the create below can target our name.
-                stale = [d for d in existing if d.agent_name != AGENT_NAME]
-                for d in stale:
+                # Drop ALL existing dispatches in this room — including ones
+                # with our agent_name. A reused dispatch from a prior process
+                # is bound to a now-dead worker and won't route jobs to us.
+                for d in existing:
                     try:
                         await client.agent_dispatch.delete_dispatch(d.id, room)
                         log.info(
-                            "self-dispatch: dropped stale dispatch id=%s agent_name=%r",
+                            "self-dispatch: dropped existing dispatch id=%s agent_name=%r",
                             d.id,
                             d.agent_name,
                         )
                     except Exception:
                         log.warning(
-                            "self-dispatch: failed to drop stale dispatch id=%s",
+                            "self-dispatch: failed to drop dispatch id=%s",
                             d.id,
                             exc_info=True,
                         )
-                already_mine = [d for d in existing if d.agent_name == AGENT_NAME]
-                if already_mine:
-                    log.info(
-                        "self-dispatch: %d active dispatch(es) for agent_name=%r already in room=%s; reusing",
-                        len(already_mine),
-                        AGENT_NAME,
-                        room,
-                    )
-                    return
                 dispatch = await client.agent_dispatch.create_dispatch(
                     lk_api.CreateAgentDispatchRequest(room=room, agent_name=AGENT_NAME)
                 )
