@@ -1,0 +1,10 @@
+.shiny-text {
+  display: inline-block;
+}
+
+.shiny-text.sentinel-title {
+  font-size: 1.1rem;
+  letter-spacing: 0.32em;
+  font-weight: 700;
+  text-transform: uppercase;
+}
