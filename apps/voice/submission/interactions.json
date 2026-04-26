@@ -12234,5 +12234,86 @@
       "expectedCommand": null
     },
     "humanCorrection": null
+  },
+  {
+    "id": "interaction-2026-04-26T08:19:14.286068Z-CAM-03",
+    "timestamp": "2026-04-26T08:19:14.286081Z",
+    "outcome": "error",
+    "visualEvent": {
+      "id": "event-cam-03-hold-ae4c8b79-0a9b-42be-93a4-07c78d565361-1777191554174",
+      "cameraId": "CAM-03",
+      "zone": "Moving camera",
+      "summary": "item appears taken from shelf",
+      "confidence": 0.82,
+      "frameUrl": null,
+      "clipUrl": null
+    },
+    "audio": {
+      "rawClipPath": "audio/raw/2026-04-26T08-19-28-617957Z.wav",
+      "enhancedClipPath": "audio/enhanced/2026-04-26T08-19-28-617957Z.wav",
+      "nisqa": {
+        "raw": {
+          "mos": 2.911,
+          "noisiness": 4.896,
+          "coloration": 2.948,
+          "discontinuity": 1.0,
+          "loudness": 1.404
+        },
+        "enhanced": {
+          "mos": 2.912,
+          "noisiness": 4.897,
+          "coloration": 2.949,
+          "discontinuity": 1.0,
+          "loudness": 1.404
+        },
+        "delta": {
+          "mos": 0.001
+        }
+      }
+    },
+    "conversation": [
+      {
+        "speaker": "assistant",
+        "text": "Alert. An item appears taken from shelf on CAM-03. Please review.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      },
+      {
+        "speaker": "guard",
+        "text": null,
+        "rawTranscript": "I described a person.",
+        "enhancedTranscript": "I described a person.",
+        "asrConfidence": 1.0
+      },
+      {
+        "speaker": "assistant",
+        "text": "A person in dark clothing is holding an item. They are near the checkout area.",
+        "rawTranscript": null,
+        "enhancedTranscript": null,
+        "asrConfidence": null
+      }
+    ],
+    "interpretation": {
+      "interpretedCommand": "unknown",
+      "commandConfidence": 0.0,
+      "candidates": [
+        {
+          "command": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "targetCameraId": null
+    },
+    "actionTaken": "asked_for_clarification",
+    "failure": {
+      "failureMode": "out_of_vocabulary",
+      "reason": "voice_command_unclear",
+      "explanation": "The guard's utterance (raw: 'I described a person.', enhanced: 'I described a person.') did not match any supported command. NISQA improvement: +0.0 MOS. No action taken — command is outside the supported set.",
+      "suggestedClarification": "Did you mean unknown at Moving camera?",
+      "acousticNote": "NISQA: raw 2.9 → enhanced 2.9 (+0.0 MOS).",
+      "expectedCommand": null
+    },
+    "humanCorrection": null
   }
 ]

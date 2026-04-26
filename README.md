@@ -40,7 +40,7 @@ Sentinel is a **human-review tool**: it surfaces review-worthy camera events and
 
    Wait for `self-dispatched agent into room=sentinel-live`.
 
-4. Open `https://<laptop>:<port>/` on the laptop and `https://<lan-ip>:<port>/voice` on the phone. Hold the mic button on the phone to talk; the agent's reply plays back on the phone speaker, and the dashboard's review log updates in real time.
+4. Open `https://<laptop>:<port>/` on the laptop and `https://<lan-ip>:<port>/voice` on the phone. Hold the mic button on the phone to talk; the agent's reply plays back on the phone speaker, and the dashboard's conversation log updates in real time.
 
 CAM-03 (the dashboard's live camera) is analyzed by Gemini with a 5-frame burst every 2 s. When it sees a person holding an object they just picked up, it fires one alert per page-load.
 

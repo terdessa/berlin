@@ -165,10 +165,10 @@ The dashboard UI lives at `ui/` in this repo:
 
 - **Cameras are video-only.** They do not capture audio. The guard's voice comes from the phone walkie-talkie page.
 - **Gemini analyzes only CAM-03.** Other dashboard cameras are local looping demo clips.
-- **Two-way voice channel.** Agent → guard (TTS to the phone speaker), guard → agent (speech from the phone mic with ai-coustics enhancement). The dashboard surfaces both directions in the review log.
+- **Two-way voice channel.** Agent → guard (TTS to the phone speaker), guard → agent (speech from the phone mic with ai-coustics enhancement). The dashboard surfaces both directions in the conversation log.
 - **Local camera analysis.** LiveKit is not used for video transport. The dashboard has eight camera tiles: CAM-01, CAM-02, CAM-04, CAM-05, CAM-06, CAM-07, and CAM-08 loop local demo clips from `ui/public/cams`; CAM-03 opens the local laptop/Continuity Camera and is the only feed sampled by Gemini. Structured visual alerts go into the voice room as data packets.
 - **5-frame motion bursts.** Each Gemini call is a sequence of five JPEG frames captured at 200 ms intervals (5 fps over ~1 s) instead of a single still. The detector mode is `object-hold`: Gemini replies `HOLD` when a person is visibly holding a picked-up object, otherwise `NONE`. A `HOLD` reply triggers one alert per page-load (refresh to re-arm).
-- **Phone walkie-talkie.** The `/voice` route publishes the guard microphone to `sentinel-live` as `sentinel-guard-mic` by default. The Python voice agent listens to that participant, runs ai-coustics + Gradium STT/TTS, calls Gemini for the spoken reply, and publishes Sentinel/Guard turns plus interaction records on the `sentinel.voice` LiveKit data topic. The dashboard consumes those packets through `use-sentinel-room.ts` and updates the review log in real time.
+- **Phone walkie-talkie.** The `/voice` route publishes the guard microphone to `sentinel-live` as `sentinel-guard-mic` by default. The Python voice agent listens to that participant, runs ai-coustics + Gradium STT/TTS, calls Gemini for the spoken reply, and publishes Sentinel/Guard turns plus interaction records on the `sentinel.voice` LiveKit data topic. The dashboard consumes those packets through `use-sentinel-room.ts` and updates the conversation log in real time.
 - **Dashboard is mic-less.** The dashboard at `/` joins LiveKit as identity `sentinel-dashboard` for data only — no `getUserMedia`, no remote-audio playback, no walkie-talkie button.
 
 ### Live Utility Pages
