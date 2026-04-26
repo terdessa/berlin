@@ -209,6 +209,8 @@ Optional bonus metrics:
 - DNSMOS using VERSA or DNSMOS tooling
 - NISQA MOS uplift for raw versus enhanced audio
 
+> **Honesty disclosure for judges.** The repo currently ships a *NISQA-like* deterministic MOS estimator (`apps/voice/src/nisqa.py`, derived from RMS / crest / zero-crossings) — not the published NISQA-v2 neural model. The fields and ranges match NISQA so the dashboard surface is identical, but if a judge asks "did you run NISQA?" the truthful answer is "no, we ship a NISQA-like estimator labelled `nisqa.delta.mos`; we kept the field names because they're the right interface, but we did not bundle the NISQA model weights into the demo." DNSMOS, VAD miss-rate, and LUFS from `dashboard.md` are not currently computed.
+
 Do not overcomplicate the dashboard. SAIS, dangerous error rate, and the raw/enhanced comparison should be the clearest signals.
 
 ## Dashboard Design

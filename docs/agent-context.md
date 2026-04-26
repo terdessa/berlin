@@ -65,7 +65,7 @@ A single interaction record stores:
 - assistant message to guard
 - raw guard audio
 - enhanced audio
-- NISQA v2 scores for raw and enhanced (MOS plus four sub-dimensions)
+- NISQA-like MOS estimator scores for raw and enhanced (MOS plus four sub-dimensions; heuristic, not the published NISQA-v2 model)
 - estimated SNR and noise tag
 - raw and enhanced transcript attempts
 - interpreted command, command candidates, and confidence
@@ -144,7 +144,7 @@ Core implementation stack:
 - Gradium: realtime STT/TTS voice runtime
 - Google DeepMind: video/scene understanding
 - Entire: human review and error-report workflow
-- NISQA v2 (`gabrielmittag/NISQA`): objective audio quality metric for raw vs enhanced
+- NISQA-like MOS estimator: deterministic heuristic over the captured WAVs (`apps/voice/src/nisqa.py`). Field-compatible with NISQA-v2 outputs but **not the published NISQA neural model** — see the honesty disclosure in `docs/sentinel-audio-intelligence-metric.md`.
 
 Side challenge focus:
 

@@ -150,7 +150,7 @@ Output:
 apps/voice/submission/audio_intelligence_results.json
 ```
 
-The benchmark compares `raw_noisy`, `aicoustics_only`, and `aicoustics_plus_sentinel` across WER, NISQA-like MOS, SAIS, retry rate, and unsafe action rate.
+The benchmark compares `raw_noisy`, `aicoustics_only`, and `aicoustics_plus_sentinel` across WER, a NISQA-like MOS estimator (heuristic, not the published NISQA-v2 model — see `src/nisqa.py`), SAIS, retry rate, and unsafe action rate.
 
 For the real recorded dataset, SAIS is the safety headline and **correct action rate (SAR)** is the operational stat to raise.
 
@@ -226,7 +226,7 @@ The evaluator keeps dangerous actions at zero by treating unsupported or too-amb
 | `src/logger.py` | Appends records to `submission/interactions.json` |
 | `src/interpret.py` | Command classifier + failure mode detection |
 | `src/audio_capture.py` | Captures raw/enhanced audio snapshots for corpus WAVs |
-| `src/nisqa.py` | NISQA scorer for raw vs enhanced audio |
+| `src/nisqa.py` | **NISQA-like** MOS estimator (deterministic heuristic from RMS / crest / zero-crossings — not the published NISQA-v2 neural model) for raw vs enhanced audio |
 | `src/dispatch_agent.py` | Manual dispatch helper |
 | `src/evaluate_audio_intelligence.py` | Scripted SAIS benchmark |
 | `src/evaluate_audio_dataset.py` | Real-audio dataset evaluator |

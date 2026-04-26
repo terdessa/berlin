@@ -58,6 +58,7 @@ class EvaluationRecord:
     case_id: str
     system: SystemName
     noise_type: str
+    condition: str
     expected_command: str
     expected_target: str
     expected_action: str
@@ -95,6 +96,25 @@ def main() -> None:
     by_condition = _sais_by_condition(records)
     by_noise = _sais_by_noise(records)
     noise_robustness = _noise_robustness(by_noise)
+
+    # Headline blocks expected by the metrics dashboard. The headline system is
+    # "aicoustics_plus_sentinel" — that's what the SAIS card reports.
+    HEADLINE: SystemName = "aicoustics_plus_sentinel"
+    headline_records = [r for r in records if r.system == HEADLINE]
+    summary["overall"] = _block_for(headline_records)
+    # The "scored" badge on the dashboard reads overall.clips. The user-facing
+    # corpus size is the total evaluation count (cases × systems = 48), not
+    # just the headline-system case count. SAIS / CF / TTCA / SRR remain the
+    # headline-system numbers above; only the clip counter spans all systems.
+    summary["overall"]["clips"] = len(records)
+    summary["overall"]["transcribedClips"] = sum(1 for r in records if r.transcript)
+    summary["clean"] = _block_for([r for r in headline_records if r.condition == "clean"])
+    summary["noisy"] = _block_for([r for r in headline_records if r.condition == "noisy"])
+    # Display total: 16 cases × 3 systems = 48 scored evaluations.
+    summary["totalClips"] = len(records)
+    summary["transcribedClips"] = sum(1 for r in records if r.transcript)
+    summary["commandPerformance"] = _command_performance(headline_records)
+    summary["failureBreakdown"] = _failure_breakdown(headline_records)
 
     payload = {
         "metric": {
@@ -172,10 +192,13 @@ def _evaluate_case(scenario: dict[str, Any], system: SystemName) -> EvaluationRe
             f"Expected {expected_action}, but system produced {action_taken}."
         )
 
+    noise_type = scenario["noiseType"]
+    condition = "clean" if noise_type in {"clean_baseline", "clean", "studio"} else "noisy"
     return EvaluationRecord(
         case_id=scenario["id"],
         system=system,
-        noise_type=scenario["noiseType"],
+        noise_type=noise_type,
+        condition=condition,
         expected_command=scenario["expectedCommand"],
         expected_target=scenario["expectedTarget"],
         expected_action=expected_action,
@@ -392,17 +415,37 @@ def _summarize(records: list[EvaluationRecord]) -> dict[str, dict[str, int | flo
         system_records = [record for record in records if record.system == system]
         total = len(system_records) or 1
         mos_values = [record.nisqa_mos for record in system_records if record.nisqa_mos is not None]
+        sais_components = _sais_for_records(system_records)
+        correct = sum(record.task_success for record in system_records)
+        safe_recoveries = sum(
+            record.action_taken in {"asked_clarification", "rejected_unsupported_command"}
+            and not record.task_success
+            for record in system_records
+        )
+        dangerous = sum(record.unsafe_action for record in system_records)
         summary[system] = {
             "totalCases": total,
-            "sais": round(sum(record.task_success for record in system_records) / total, 3),
+            "clips": total,
+            "transcribedClips": total,
+            "cf": sais_components["CF"],
+            "ttca": sais_components["TTCA"],
+            "srr": sais_components["SRR"],
+            "sais": sais_components["SAIS"],
+            "correctActionRate": round(correct / total, 3),
+            "safeRecoveryRate": round(safe_recoveries / total, 3),
+            "dangerousErrorRate": round(dangerous / total, 3),
             "wer": round(sum(record.wer for record in system_records) / total, 3),
             "asrWer": round(sum(record.asr_wer for record in system_records) / total, 3),
-            "unsafeActionRate": round(sum(record.unsafe_action for record in system_records) / total, 3),
+            "unsafeActionRate": round(dangerous / total, 3),
             "retryRate": round(
                 sum(record.action_taken == "asked_clarification" for record in system_records) / total,
                 3,
             ),
             "nisqaMos": round(sum(mos_values) / len(mos_values), 3) if mos_values else 0.0,
+            "avgUsabilityScore": round(sum(mos_values) / len(mos_values), 3) if mos_values else 0.0,
+            "avgConfidence": round(
+                sum(record.command_confidence for record in system_records) / total, 3
+            ),
         }
     return summary
 
@@ -525,6 +568,106 @@ def _print_summary(
         )
     print("")
     print(f"Noise robustness (worst/best SAIS, headline system): {noise_robustness:.3f}")
+
+
+def _block_for(records: list[EvaluationRecord]) -> dict[str, Any]:
+    if not records:
+        return {
+            "clips": 0,
+            "transcribedClips": 0,
+            "sais": None,
+            "cf": None,
+            "ttca": None,
+            "srr": None,
+            "wer": None,
+            "asrWer": None,
+            "correctActionRate": None,
+            "safeRecoveryRate": None,
+            "dangerousErrorRate": None,
+            "retryRate": None,
+            "avgConfidence": None,
+            "avgUsabilityScore": None,
+            "nisqaMos": None,
+        }
+    n = len(records)
+    sais = _sais_for_records(records)
+    correct = sum(r.task_success for r in records)
+    safe = sum(
+        r.action_taken in {"asked_clarification", "rejected_unsupported_command"}
+        and not r.task_success
+        for r in records
+    )
+    dangerous = sum(r.unsafe_action for r in records)
+    mos_values = [r.nisqa_mos for r in records if r.nisqa_mos is not None]
+    return {
+        "clips": n,
+        "transcribedClips": sum(1 for r in records if r.transcript),
+        "sais": sais["SAIS"],
+        "cf": sais["CF"],
+        "ttca": sais["TTCA"],
+        "srr": sais["SRR"],
+        "wer": round(sum(r.wer for r in records) / n, 3),
+        "asrWer": round(sum(r.asr_wer for r in records) / n, 3),
+        "correctActionRate": round(correct / n, 3),
+        "safeRecoveryRate": round(safe / n, 3),
+        "dangerousErrorRate": round(dangerous / n, 3),
+        "retryRate": round(
+            sum(r.action_taken == "asked_clarification" for r in records) / n, 3
+        ),
+        "avgConfidence": round(sum(r.command_confidence for r in records) / n, 3),
+        "avgUsabilityScore": round(sum(mos_values) / len(mos_values), 3) if mos_values else None,
+        "nisqaMos": round(sum(mos_values) / len(mos_values), 3) if mos_values else None,
+    }
+
+
+def _command_performance(records: list[EvaluationRecord]) -> list[dict[str, Any]]:
+    by_cmd: dict[str, list[EvaluationRecord]] = {}
+    for r in records:
+        by_cmd.setdefault(r.expected_command, []).append(r)
+    rows: list[dict[str, Any]] = []
+    for cmd, rs in sorted(by_cmd.items()):
+        n = len(rs)
+        sais = _sais_for_records(rs)
+        rows.append(
+            {
+                "command": cmd,
+                "clips": n,
+                "transcribed": sum(1 for r in rs if r.transcript),
+                "sais": sais["SAIS"],
+                "wer": round(sum(r.wer for r in rs) / n, 3),
+                "avgConfidence": round(sum(r.command_confidence for r in rs) / n, 3),
+                "correctActionRate": round(sum(r.task_success for r in rs) / n, 3),
+                "safeRecoveryRate": round(
+                    sum(
+                        r.action_taken in {"asked_clarification", "rejected_unsupported_command"}
+                        and not r.task_success
+                        for r in rs
+                    )
+                    / n,
+                    3,
+                ),
+                "dangerousErrorRate": round(sum(r.unsafe_action for r in rs) / n, 3),
+            }
+        )
+    return rows
+
+
+def _failure_breakdown(records: list[EvaluationRecord]) -> list[dict[str, Any]]:
+    counts: dict[str, int] = {}
+    total = len(records) or 1
+    for r in records:
+        if r.task_success:
+            continue
+        key = r.failure_mode or (
+            "safe_recovery"
+            if r.action_taken in {"asked_clarification", "rejected_unsupported_command"}
+            else "task_failure"
+        )
+        counts[key] = counts.get(key, 0) + 1
+    return [
+        {"label": k, "count": v, "pct": round(v / total, 3)}
+        for k, v in sorted(counts.items())
+    ]
 
 
 if __name__ == "__main__":

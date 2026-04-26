@@ -250,5 +250,41 @@
       "raw_noisy": 2.6,
       "aicoustics_only": 3.0
     }
+  },
+  {
+    "id": "case-015",
+    "utterance": "switch to camera two",
+    "expectedCommand": "switch_camera",
+    "expectedTarget": "camera_2",
+    "expectedAction": "switched_to_camera_2",
+    "noiseType": "fridge_hum",
+    "difficulty": "medium",
+    "knownRisk": "two_to_too_confusion",
+    "transcripts": {
+      "raw_noisy": "which to camera too",
+      "aicoustics_only": "switch to camera two"
+    },
+    "nisqaMos": {
+      "raw_noisy": 2.4,
+      "aicoustics_only": 3.5
+    }
+  },
+  {
+    "id": "case-016",
+    "utterance": "pause the video",
+    "expectedCommand": "pause_video",
+    "expectedTarget": "current_video",
+    "expectedAction": "paused_video",
+    "noiseType": "register_beeps",
+    "difficulty": "medium",
+    "knownRisk": "pause_to_paws_confusion",
+    "transcripts": {
+      "raw_noisy": "paws the video",
+      "aicoustics_only": "pause the video"
+    },
+    "nisqaMos": {
+      "raw_noisy": 2.5,
+      "aicoustics_only": 3.6
+    }
   }
 ]
