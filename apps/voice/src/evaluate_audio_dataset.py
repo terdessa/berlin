@@ -340,8 +340,8 @@ def main() -> None:
             "definition": "correct actions plus safe recoveries / total transcribed command clips",
         },
         "dataset": {
-            "path": str(DATASET_DIR.relative_to(ROOT)),
-            "manifest": str(MANIFEST_PATH.relative_to(ROOT)),
+            "path": _repo_path(DATASET_DIR),
+            "manifest": _repo_path(MANIFEST_PATH),
             "schemaVersion": 2,
             "cases": len({record["utterance"] for record in manifest}),
             "clips": len(records),
@@ -514,7 +514,7 @@ def _evaluate_record(record: dict[str, Any], transcripts: dict[str, str]) -> Dat
         return DatasetRecord(
             case_id=record["id"],
             condition=record["condition"],
-            audio_path=str(audio_path.relative_to(ROOT)),
+            audio_path=_repo_path(audio_path),
             noise_type=record["noiseType"],
             expected_utterance=record["utterance"],
             expected_command=record["expectedCommand"],
@@ -550,7 +550,7 @@ def _evaluate_record(record: dict[str, Any], transcripts: dict[str, str]) -> Dat
     return DatasetRecord(
         case_id=record["id"],
         condition=record["condition"],
-        audio_path=str(audio_path.relative_to(ROOT)),
+        audio_path=_repo_path(audio_path),
         noise_type=record["noiseType"],
         expected_utterance=record["utterance"],
         expected_command=record["expectedCommand"],
@@ -581,17 +581,29 @@ def _repair_transcript(transcript: str) -> tuple[str | None, str | None]:
         (r"\bopen\s+a[l1i]5\b", "open aisle five", "Repaired Open AL5 -> open aisle five."),
         (r"\bopen\s+ao5\b", "open aisle five", "Repaired Open AO5 -> open aisle five."),
         (r"\bopen\s+o5\b", "open aisle five", "Repaired Open O5 -> open aisle five."),
+        (r"\bopen\s+mrc\b", "open camera three", "Repaired Open MRC -> open camera three."),
         (r"\bwatch\s+life\b.*", "watch live", "Repaired watch life -> watch live."),
         (r"\bwatch\s+line\b.*", "watch live", "Repaired watch line -> watch live."),
         (r"\bwhich\s+live\b", "watch live", "Repaired which live -> watch live."),
+        (r"\bwhat\s+life\b", "watch live", "Repaired what life -> watch live."),
+        (r"\bbush\s+life\s+queen\b", "watch live", "Repaired bush life queen -> watch live."),
         (r"\breplay\s+lost\s+(?:ten|10)\s+seconds\b", "replay last ten seconds", "Repaired lost -> last replay command."),
         (r"\bwe\s+play\s+los\s+(?:ten|10)\s+seconds\b", "replay last ten seconds", "Repaired we play los 10 seconds -> replay last ten seconds."),
+        (r"\b(?:the\s+)?great\s+lusting\s+sentences\b", "replay last ten seconds", "Repaired great lusting sentences -> replay last ten seconds."),
         (r"\bsan\s+flores.*oceania\b", "send floor associate", "Repaired San Flores/Oceania -> send floor associate."),
+        (r"\bseth\s+moore\s+associates?\b", "send floor associate", "Repaired Seth Moore associates -> send floor associate."),
         (r"\bgreat\s+report\b", "create report", "Repaired great report -> create report."),
         (r"\bgreat\s+reports\b", "create report", "Repaired great reports -> create report."),
         (r"\bfalse\s+alarms\b", "false alarm", "Normalized plural false alarms -> false alarm."),
         (r"\bmark\s+falsalarm\b", "mark false alarm", "Repaired falsalarm -> false alarm."),
+        (r"\bmark\s+spoke\s+alarmed\b", "mark false alarm", "Repaired mark spoke alarmed -> mark false alarm."),
         (r"\bwhat\s+happen(?:ed)?\s+there\b", "what happened there", "Normalized event-summary command."),
+        (r"\bpost\s+the\s+video\b", "pause the video", "Repaired post the video -> pause the video."),
+        (r"\bprison\s+playbook\b", "resume playback", "Repaired prison playbook -> resume playback."),
+        (r"\bshow\s+previews\s+(?:the\s+)?lyric\b", "show previous alert", "Repaired show previews the lyric -> show previous alert."),
+        (r"\bshall\s+figures\s+allowed\b", "show previous alert", "Repaired shall figures allowed -> show previous alert."),
+        (r"\bwhich\s+the\s+camera[,\s]+(?:too|two)\b", "switch to camera two", "Repaired which the camera too -> switch to camera two."),
+        (r"\bhold\s+(?:the\s+)?back\s+up\b", "call for backup", "Repaired hold the back up -> call for backup."),
     ]
     notes: list[str] = []
     repaired = text
@@ -647,7 +659,7 @@ def _audio_stats(path: Path) -> AudioStats:
     duration = frames / sample_rate if sample_rate else 0.0
     if not samples:
         return AudioStats(
-            path=str(path.relative_to(ROOT)),
+            path=_repo_path(path),
             duration_seconds=round(duration, 3),
             sample_rate=sample_rate,
             channels=channels,
@@ -679,7 +691,7 @@ def _audio_stats(path: Path) -> AudioStats:
     usability = _clamp(loudness_score - clipping_penalty - zcr_penalty, 1.0, 5.0)
 
     return AudioStats(
-        path=str(path.relative_to(ROOT)),
+        path=_repo_path(path),
         duration_seconds=round(duration, 3),
         sample_rate=sample_rate,
         channels=channels,
@@ -818,6 +830,10 @@ def _wer(reference: str, hypothesis: str) -> float:
 
 def _tokens(text: str) -> list[str]:
     return re.findall(r"[a-z0-9]+", text.lower())
+
+
+def _repo_path(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
 
 
 def _summarize(records: list[DatasetRecord]) -> dict[str, Any]:

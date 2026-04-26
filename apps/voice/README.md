@@ -120,6 +120,10 @@ The benchmark compares `raw_noisy`, `aicoustics_only`, and
 `aicoustics_plus_sentinel` across WER, NISQA-like MOS, SAIS, retry rate, and
 unsafe action rate.
 
+For the real recorded dataset, SAIS is the safety headline and correct action
+rate is the operational stat to raise. In working notes this is also referred
+to as SAR: successful action routing.
+
 ## Real audio dataset benchmark
 
 Recorded clean/noisy command pairs live in:
@@ -163,6 +167,35 @@ Outputs:
 apps/voice/submission/audio_dataset_transcripts.json
 apps/voice/submission/audio_dataset_results.json
 ```
+
+Current real-audio benchmark shape:
+
+```
+16 clean clips
+32 noisy clips
+17 supported command cases
+```
+
+Current result:
+
+```
+Condition  Clips  ASR  WER     SAIS    Unsafe
+clean      16     16   0.068   1.000   0.000
+noisy      32     32   0.344   1.000   0.000
+```
+
+Current correct action / SAR:
+
+```
+overall 83.3%
+clean   100.0%
+noisy   75.0%
+```
+
+The evaluator keeps dangerous actions at zero by treating unsupported or too
+ambiguous transcripts as safe recoveries. To raise SAR, add conservative repair
+rules for repeated ASR confusions and collect clearer noisy takes for commands
+whose transcript no longer contains enough command evidence.
 
 ## Architecture
 
