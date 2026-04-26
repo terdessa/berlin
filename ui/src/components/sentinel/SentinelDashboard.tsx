@@ -1,26 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCcw } from "lucide-react";
+import { RefreshCcw, Video } from "lucide-react";
 import { CAMERA_CLIPS, CAMERA_WALL_ORDER, DASHBOARD_CAMERAS } from "@/lib/camera-config";
 import { analyzeCameraFrame } from "@/lib/gemini-camera-analysis";
-import type { AlertEvent, AlertStatus, Camera, Phase } from "@/lib/sentinel-data";
+import type { AlertEvent, Camera } from "@/lib/sentinel-data";
 import { useSentinelRoom } from "@/lib/use-sentinel-room";
-import { AlertVideoPanel } from "./AlertVideoPanel";
-import { AudioMetricPill } from "./AudioMetricBadge";
 import { CameraTile } from "./CameraTile";
-import { DashboardEvidencePanel } from "./DashboardEvidencePanel";
-import { PoweredByFooter } from "./PoweredByFooter";
-import { ReviewLogPanel } from "./ReviewLogPanel";
+import { ChatPanel, type ChatMessage } from "./ChatPanel";
+import { MetricsPanel } from "./MetricsPanel";
+import DotField from "@/components/DotField";
 
-type TickerEntry = { id: number; at: string; text: string };
 type Cam3SourceKind = "camera" | "display";
 
 const CAM3_ANALYSIS_PROMPT =
   "Watch CAM-03 for a person taking any object from a shelf, table, or display and holding it in their hand. The trigger is the moment a hand visibly grips an item that was just picked up. Ignore people walking by empty-handed, pointing, or only touching items without lifting them.";
 const CAM3_ANALYSIS_INTERVAL_MS = 2_000;
-// 5 fps × 1 s burst → Gemini sees actual motion, not a single still.
 const CAM3_FRAMES_PER_ANALYSIS = 5;
 const CAM3_FRAME_INTERVAL_MS = 200;
-// One alert per page-load. Refresh the dashboard to re-arm.
 const CAM3_SESSION_ID =
   typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
@@ -35,89 +30,53 @@ function cameraLabel(device: MediaDeviceInfo, index: number) {
   return device.label?.trim() || `Camera ${index + 1}`;
 }
 
+function timestamp() {
+  return new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+const IDLE_CHAT: ChatMessage[] = [
+  {
+    id: 0,
+    role: "sentinel",
+    at: "—",
+    text: "Sentinel conversation log is online. Voice exchanges over the walkie-talkie will appear here.",
+  },
+];
+
 export function SentinelDashboard() {
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [status, setStatus] = useState<AlertStatus>("Awaiting human review");
   const [selected, setSelected] = useState<string | null>(null);
-  const [latestEvent, setLatestEvent] = useState<TickerEntry | null>(null);
   const [liveAlert, setLiveAlert] = useState<AlertEvent | null>(null);
+  const [localNotices, setLocalNotices] = useState<ChatMessage[]>([]);
   const [cam3Stream, setCam3Stream] = useState<MediaStream | null>(null);
   const [cam3Status, setCam3Status] = useState<"starting" | "ready" | "error">("starting");
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
   const [cam3DeviceId, setCam3DeviceId] = useState<string | undefined>(undefined);
   const [cam3SourceKind, setCam3SourceKind] = useState<Cam3SourceKind>("camera");
-  const [cam3TrackLabel, setCam3TrackLabel] = useState<string | null>(null);
+  const [, setCam3TrackLabel] = useState<string | null>(null);
   const [cameraListVersion, setCameraListVersion] = useState(0);
 
-  const tickerIdRef = useRef(0);
   const cam3VideoRef = useRef<HTMLVideoElement | null>(null);
   const cam3CanvasRef = useRef<HTMLCanvasElement | null>(null);
   const cam3BusyRef = useRef(false);
   const lastCam3AlertAtRef = useRef(0);
+  const noticeIdRef = useRef(-1);
 
   const sentinel = useSentinelRoom({ withMic: false });
-  const alert: AlertEvent | null = liveAlert;
-  const displayedRevealUpTo = alert?.conversation.length ?? 0;
-  const isAlerting = phase !== "idle" && phase !== "resolved";
+
+  const pushNotice = useCallback((msg: Omit<ChatMessage, "id">) => {
+    setLocalNotices((prev) => [...prev, { ...msg, id: noticeIdRef.current-- }]);
+  }, []);
 
   const cameras = useMemo(() => {
-    const base =
-      !alert || DASHBOARD_CAMERAS.some((camera) => camera.id === alert.cameraId)
-        ? DASHBOARD_CAMERAS
-        : [
-            {
-              id: alert.cameraId,
-              zone: alert.zone,
-            } satisfies Camera,
-            ...DASHBOARD_CAMERAS.slice(1),
-          ];
-
-    return [...base].sort((a, b) => {
+    return [...DASHBOARD_CAMERAS].sort((a, b) => {
       const ai = CAMERA_WALL_ORDER.indexOf(a.id);
       const bi = CAMERA_WALL_ORDER.indexOf(b.id);
       return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
     });
-  }, [alert]);
-
-  const cameraById = useMemo(() => {
-    const map = new Map<string, Camera>();
-    for (const camera of cameras) map.set(camera.id, camera);
-    return map;
-  }, [cameras]);
-
-  const selectedCamera: Camera | null = selected
-    ? (cameraById.get(selected) ??
-      (alert?.cameraId === selected
-        ? {
-            id: alert.cameraId,
-            zone: alert.zone,
-          }
-        : null))
-    : null;
-
-  const activeDeviceLabel = useMemo(() => {
-    if (cam3Status === "error") return "camera blocked";
-    if (cam3Status === "starting") return "opening input";
-    if (cam3SourceKind === "display") return "screen or window";
-    if (cam3TrackLabel) return cam3TrackLabel;
-    const device = videoDevices.find((item) => item.deviceId === cam3DeviceId);
-    return device ? cameraLabel(device, videoDevices.indexOf(device)) : "system default";
-  }, [cam3DeviceId, cam3SourceKind, cam3Status, cam3TrackLabel, videoDevices]);
-
-  const cam3StatusLabel =
-    cam3Status === "ready"
-      ? "live analysis"
-      : cam3Status === "starting"
-        ? "connecting"
-        : "camera blocked";
-
-  const pushTicker = useCallback((text: string) => {
-    const at = new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-    setLatestEvent({ id: tickerIdRef.current++, at, text });
   }, []);
 
   const captureCam3SmallFrame = useCallback(() => {
@@ -128,73 +87,23 @@ export function SentinelDashboard() {
     const height = Math.round((width / video.videoWidth) * video.videoHeight);
     canvas.width = width;
     canvas.height = height;
-    const context = canvas.getContext("2d");
-    if (!context) return null;
-    context.drawImage(video, 0, 0, width, height);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(video, 0, 0, width, height);
     return canvas.toDataURL("image/jpeg", 0.55);
   }, []);
-
-  const publishCam3Alert = useCallback(
-    async (summary: string) => {
-      // Stable per-page-load id — the agent's spoken_visual_event_ids set
-      // dedupes this so the alert speaks once per session no matter how many
-      // HOLD frames Gemini emits. Refresh the dashboard to re-arm.
-      const eventId = `event-cam-03-hold-${CAM3_SESSION_ID}`;
-      const alertEvent: AlertEvent = {
-        cameraId: "CAM-03",
-        zone: "Moving camera",
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        }),
-        sceneSummary: summary,
-        visualConfidence: 0.82,
-        assistantMessage: `Moving camera requires review. ${summary}`,
-        conversation: [],
-        actionTaken: "Awaiting human review",
-      };
-
-      setLiveAlert(alertEvent);
-      setSelected("CAM-03");
-      setStatus("Awaiting human review");
-      setPhase("flagged");
-      pushTicker(`CAM-03 · visual alert · ${summary}`);
-
-      const frameDataUrl = captureCam3SmallFrame();
-
-      const published = await sentinel.publishVisualAlert({
-        eventId,
-        cameraId: "CAM-03",
-        zone: "Moving camera",
-        summary,
-        confidence: alertEvent.visualConfidence,
-        frameBase64: frameDataUrl ?? undefined,
-        frameMimeType: "image/jpeg",
-      });
-
-      if (!published.ok) {
-        pushTicker(`CAM-03 · walkie-talkie alert failed · ${published.message}`);
-      }
-    },
-    [captureCam3SmallFrame, pushTicker, sentinel],
-  );
 
   const captureCam3Frame = useCallback(() => {
     const video = cam3VideoRef.current;
     const canvas = cam3CanvasRef.current;
     if (!video || !canvas || video.videoWidth === 0 || video.videoHeight === 0) return null;
-
-    // 5-frame bursts: shrink each frame so the total JSON payload stays under
-    // the dev server's ~80 KB body parse ceiling. ~320 wide × q 0.4 ≈ 8–12 KB
-    // each → 5 frames ≈ 40–60 KB.
     const width = Math.min(320, video.videoWidth);
     const height = Math.round((width / video.videoWidth) * video.videoHeight);
     canvas.width = width;
     canvas.height = height;
-    const context = canvas.getContext("2d");
-    if (!context) return null;
-    context.drawImage(video, 0, 0, width, height);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(video, 0, 0, width, height);
     return canvas.toDataURL("image/jpeg", 0.4);
   }, []);
 
@@ -209,6 +118,45 @@ export function SentinelDashboard() {
     }
     return frames;
   }, [captureCam3Frame]);
+
+  const publishCam3Alert = useCallback(
+    async (summary: string) => {
+      const eventId = `event-cam-03-hold-${CAM3_SESSION_ID}-${Date.now()}`;
+      const alertEvent: AlertEvent = {
+        cameraId: "CAM-03",
+        zone: "Moving camera",
+        timestamp: timestamp(),
+        sceneSummary: summary,
+        visualConfidence: 0.82,
+        assistantMessage: `Moving camera requires review. ${summary}`,
+        conversation: [],
+        actionTaken: "Awaiting human review",
+      };
+
+      setLiveAlert(alertEvent);
+      setSelected("CAM-03");
+
+      const frameDataUrl = captureCam3SmallFrame();
+      const published = await sentinel.publishVisualAlert({
+        eventId,
+        cameraId: "CAM-03",
+        zone: "Moving camera",
+        summary,
+        confidence: alertEvent.visualConfidence,
+        frameBase64: frameDataUrl ?? undefined,
+        frameMimeType: "image/jpeg",
+      });
+
+      if (!published.ok) {
+        pushNotice({
+          role: "sentinel",
+          at: timestamp(),
+          text: `Walkie-talkie alert failed: ${published.message}`,
+        });
+      }
+    },
+    [captureCam3SmallFrame, pushNotice, sentinel],
+  );
 
   const analyzeCam3 = useCallback(async () => {
     if (cam3BusyRef.current || cam3Status !== "ready") return;
@@ -231,24 +179,24 @@ export function SentinelDashboard() {
       }));
 
       if (!result.ok) {
-        pushTicker(`CAM-03 · analysis unavailable · ${result.message}`);
+        pushNotice({
+          role: "sentinel",
+          at: timestamp(),
+          text: `CAM-03 analysis unavailable: ${result.message}`,
+        });
         return;
       }
 
       if (!/^\s*HOLD\b/i.test(result.text)) return;
 
-      // One alert per page-load. Refresh to re-arm.
       if (lastCam3AlertAtRef.current > 0) return;
       lastCam3AlertAtRef.current = Date.now();
 
-      // Placeholder framing: the visible trigger is still a palm gesture, but
-      // the alert is presented to the guard as a shelf-pickup event so the
-      // demo flow reads as "item taken → walkie-talkie alert → human review".
       await publishCam3Alert("item appears taken from shelf");
     } finally {
       cam3BusyRef.current = false;
     }
-  }, [cam3Status, captureCam3Sequence, publishCam3Alert, pushTicker]);
+  }, [cam3Status, captureCam3Sequence, publishCam3Alert, pushNotice]);
 
   useEffect(() => {
     let cancelled = false;
@@ -258,9 +206,7 @@ export function SentinelDashboard() {
     const openStream =
       cam3SourceKind === "display"
         ? navigator.mediaDevices.getDisplayMedia({
-            video: {
-              frameRate: { ideal: 24, max: 30 },
-            },
+            video: { frameRate: { ideal: 24, max: 30 } },
             audio: false,
           })
         : navigator.mediaDevices.getUserMedia({
@@ -347,64 +293,76 @@ export function SentinelDashboard() {
   }, [analyzeCam3, cam3Status]);
 
   useEffect(() => {
-    if (!sentinel.latestAlert) return;
-    setLiveAlert(sentinel.latestAlert);
-    setSelected(sentinel.latestAlert.cameraId);
-    setStatus(sentinel.latestAlert.actionTaken);
-    setPhase(resolveLivePhase(sentinel.latestAlert));
-    pushTicker(sentinel.latestTicker ?? "live voice · interaction received");
-  }, [sentinel.latestAlert, sentinel.latestTicker, pushTicker]);
+    const incoming = sentinel.latestAlert;
+    if (!incoming) return;
+    setLiveAlert(incoming);
+    setSelected(incoming.cameraId);
+  }, [sentinel.latestAlert]);
+
+  const chatMessages = useMemo<ChatMessage[]>(() => {
+    const conv = liveAlert?.conversation ?? [];
+    if (conv.length === 0 && localNotices.length === 0) return IDLE_CHAT;
+    const turns: ChatMessage[] = conv.map((m, i) => ({
+      id: i,
+      role: m.speaker === "guard" ? "operator" : "sentinel",
+      at: m.timestamp ?? liveAlert?.timestamp ?? "—",
+      text: m.text ?? "",
+    }));
+    return [...turns, ...localNotices];
+  }, [liveAlert, localNotices]);
 
   const handleCameraClick = (cameraId: string) => {
-    setSelected(cameraId);
-    pushTicker(`feed · ${cameraId} · selected`);
+    const apply = () => setSelected((prev) => (prev === cameraId ? null : cameraId));
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+    if (typeof doc.startViewTransition === "function") {
+      doc.startViewTransition(apply);
+    } else {
+      apply();
+    }
   };
 
-  const renderCameraTile = (camera: Camera) => (
-    <CameraTile
-      key={camera.id}
-      camera={camera}
-      isAlert={alert?.cameraId === camera.id}
-      isSelected={selected === camera.id}
-      stream={camera.id === "CAM-03" ? cam3Stream : null}
-      videoSrc={CAMERA_CLIPS[camera.id]}
-      className={
-        camera.id === "CAM-03" ? "lg:col-span-2 lg:row-span-2 lg:aspect-auto lg:h-full" : undefined
-      }
-      onClick={() => handleCameraClick(camera.id)}
-    />
+  const selectedCamera = useMemo(
+    () => (selected ? (cameras.find((c) => c.id === selected) ?? null) : null),
+    [cameras, selected],
   );
 
+  const vtName = (id: string) => `cam-${id.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
+
+  const renderCameraTile = (camera: Camera, opts?: { large?: boolean }) => {
+    const isSelected = selected === camera.id;
+    const isAlert = liveAlert?.cameraId === camera.id;
+    return (
+      <CameraTile
+        key={camera.id}
+        camera={camera}
+        isAlert={isAlert}
+        isSelected={isSelected}
+        compact={false}
+        stream={camera.id === "CAM-03" ? cam3Stream : null}
+        videoSrc={CAMERA_CLIPS[camera.id]}
+        className={opts?.large ? "h-full w-full" : undefined}
+        style={{ viewTransitionName: vtName(camera.id) }}
+        onClick={() => handleCameraClick(camera.id)}
+      />
+    );
+  };
+
   return (
-    <main className="flex h-screen w-full flex-col overflow-hidden bg-background px-3 py-2 text-foreground">
-      <header className="flex h-11 flex-shrink-0 items-center justify-between gap-3 border-b border-border/70 pb-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <div
-            aria-live="polite"
-            className={[
-              "inline-flex shrink-0 items-center gap-2 rounded-md border px-2.5 py-1 text-xs backdrop-blur-sm transition-colors",
-              isAlerting
-                ? "border-alert/50 bg-alert/10 text-alert"
-                : "border-border bg-panel/70 text-foreground/90",
-            ].join(" ")}
-          >
-            <span
-              className={[
-                "h-2 w-2 rounded-full",
-                isAlerting ? "bg-alert animate-alert-pulse" : "bg-ok animate-soft-pulse",
-              ].join(" ")}
-            />
-            <span className="mono uppercase tracking-[0.18em] text-[10px]">
-              {isAlerting && alert ? `flagged ${alert.cameraId} · review` : "sentinel ops"}
-            </span>
-          </div>
-          <AudioMetricPill />
-        </div>
+    <main
+      id="main"
+      className="relative flex h-screen w-full flex-col overflow-hidden bg-background px-4 py-3 text-foreground"
+    >
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
+        <DotField />
+      </div>
+      <header className="relative z-10 grid h-12 flex-shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3">
+        <div />
+
+        <span className="mono text-[1.4rem] font-bold uppercase leading-none tracking-[0.32em] text-foreground">
+          SENTINEL
+        </span>
 
         <div className="flex min-w-0 items-center justify-end gap-2">
-          <span className="mono hidden truncate text-[10px] uppercase tracking-[0.16em] text-muted-foreground md:inline">
-            CAM-03 · {cam3StatusLabel} · {activeDeviceLabel}
-          </span>
           <div className="flex min-w-0 items-center gap-1.5">
             <select
               value={
@@ -426,7 +384,7 @@ export function SentinelDashboard() {
                   value.startsWith("device:") ? value.replace(/^device:/, "") : undefined,
                 );
               }}
-              className="mono h-8 max-w-[280px] rounded-md border border-border bg-panel/80 px-2 text-[10px] uppercase tracking-[0.12em] text-muted-foreground outline-none transition focus:border-primary/60"
+              className="mono h-9 min-h-9 max-w-[260px] cursor-pointer rounded-md border border-border bg-panel/80 px-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors duration-200 hover:border-primary/40"
               aria-label="CAM-03 camera input"
               title="CAM-03 camera input"
             >
@@ -440,8 +398,21 @@ export function SentinelDashboard() {
             </select>
             <button
               type="button"
-              onClick={() => setCameraListVersion((value) => value + 1)}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-panel/80 text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
+              onClick={async () => {
+                try {
+                  const tempStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: false,
+                  });
+                  tempStream.getTracks().forEach((track) => track.stop());
+                  const devices = await listVideoInputs();
+                  setVideoDevices(devices);
+                } catch {
+                  // ignore — user denied or no device available
+                }
+                setCameraListVersion((value) => value + 1);
+              }}
+              className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border bg-panel/80 text-muted-foreground transition-colors duration-200 hover:border-primary/50 hover:text-foreground"
               aria-label="Refresh camera inputs"
               title="Refresh camera inputs"
             >
@@ -451,64 +422,76 @@ export function SentinelDashboard() {
         </div>
       </header>
 
-      <section className="mt-2 grid min-h-0 flex-1 grid-cols-1 gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.34fr)] 2xl:grid-cols-[minmax(0,1fr)_minmax(390px,0.32fr)]">
-        <div className="flex min-h-0 flex-col gap-2">
-          <div className="flex flex-shrink-0 items-center justify-between gap-3 rounded-md border border-border/70 bg-panel/70 px-3 py-1.5">
-            <div>
-              <div className="mono text-[10px] uppercase tracking-[0.2em] text-primary">
+      <section className="relative z-10 mt-3 grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden xl:grid-cols-[auto_minmax(360px,1fr)_260px] 2xl:grid-cols-[auto_minmax(400px,1fr)_300px]">
+        <div
+          className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border/60 bg-panel/30"
+          style={{ ["--col-w" as string]: "calc((100dvh - 180px) * 8 / 9 + 12px)" }}
+        >
+          <header className="flex items-center justify-between gap-2 border-b border-border/60 bg-panel-elevated/35 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Video className="h-4 w-4 text-primary" />
+              <div className="mono text-[14px] uppercase tracking-[0.2em] text-primary">
                 camera wall
               </div>
-              <div className="mt-0.5 text-[11px] text-muted-foreground">
-                8 feeds · CAM-03 enlarged · Gemini analysis active
-              </div>
             </div>
-            <div className="mono text-right text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-              <div suppressHydrationWarning>
-                {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </div>
-              <div className="mt-0.5 text-primary">recording</div>
-            </div>
-          </div>
+            <span className="mono inline-flex items-center gap-1 rounded-full border border-border bg-background/40 px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-ok animate-soft-pulse" />
+              {cameras.length} feeds
+            </span>
+          </header>
 
-          <div
-            aria-label="Camera grid"
-            className="grid min-h-0 flex-[5.5] auto-rows-fr grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-4"
-          >
-            {cameras.map(renderCameraTile)}
-          </div>
+          <div className="flex min-h-0 flex-col items-start gap-3 overflow-hidden p-3">
+            {selectedCamera ? (
+              <div
+                className="flex aspect-video items-stretch overflow-hidden"
+                style={{ width: "var(--col-w)" }}
+              >
+                {renderCameraTile(selectedCamera, { large: true })}
+              </div>
+            ) : (
+              <div
+                className="mono flex aspect-video items-center justify-center overflow-hidden rounded-md border border-dashed border-border/50 bg-panel/30 px-6 text-[13px] uppercase tracking-[0.2em] text-muted-foreground/70"
+                style={{ width: "var(--col-w)" }}
+              >
+                Select camera to preview
+              </div>
+            )}
 
-          <div className="grid min-h-[138px] flex-[1.15] grid-cols-1 gap-2 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
-            <div className="min-h-0">
-              <AlertVideoPanel alert={alert} selectedCamera={selectedCamera} />
-            </div>
-            <div className="min-h-0">
-              <DashboardEvidencePanel />
+            <div
+              aria-label="Camera grid"
+              className="grid grid-cols-3 grid-rows-3 gap-3 overflow-hidden"
+              style={{
+                width: "var(--col-w)",
+                height: "calc((var(--col-w) - 24px) * 9 / 16 + 24px)",
+              }}
+            >
+              {cameras.map((camera) => {
+                if (selected === camera.id) {
+                  const num = camera.id.match(/\d+/)?.[0] ?? camera.id;
+                  return (
+                    <div
+                      key={camera.id}
+                      aria-label={`${camera.id} previewing`}
+                      className="mono flex aspect-video w-full items-center justify-center rounded-md border border-dashed border-border/50 bg-panel/30 text-2xl tracking-[0.2em] text-muted-foreground/60"
+                    >
+                      {num}
+                    </div>
+                  );
+                }
+                return renderCameraTile(camera);
+              })}
             </div>
           </div>
         </div>
 
-        <div className="min-h-0">
-          <ReviewLogPanel
-            alert={alert}
-            phase={phase}
-            revealUpTo={displayedRevealUpTo}
-            status={status}
-            selectedCameraId={selected}
-          />
+        <div className="flex min-h-0 min-w-0 flex-col overflow-hidden">
+          <ChatPanel messages={chatMessages} />
+        </div>
+
+        <div className="flex min-h-0 min-w-0 flex-col overflow-hidden">
+          <MetricsPanel />
         </div>
       </section>
-
-      <footer className="mt-2 flex h-7 flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-1.5">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          {latestEvent && (
-            <span className="mono truncate text-[10px] text-muted-foreground/80">
-              <span className="text-muted-foreground/60">{latestEvent.at}</span> ·{" "}
-              {latestEvent.text}
-            </span>
-          )}
-        </div>
-        <PoweredByFooter />
-      </footer>
 
       <video
         ref={cam3VideoRef}
@@ -521,10 +504,4 @@ export function SentinelDashboard() {
       <canvas ref={cam3CanvasRef} className="hidden" />
     </main>
   );
-}
-
-function resolveLivePhase(alert: AlertEvent): Phase {
-  if (alert.actionTaken !== "Awaiting human review") return "resolved";
-  if (alert.conversation.some((message) => message.speaker === "guard")) return "interpreted";
-  return "flagged";
 }

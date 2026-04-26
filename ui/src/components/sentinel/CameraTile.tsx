@@ -5,9 +5,11 @@ type Props = {
   camera: Camera;
   isAlert?: boolean;
   isSelected?: boolean;
+  compact?: boolean;
   stream?: MediaStream | null;
   videoSrc?: string;
   className?: string;
+  style?: React.CSSProperties;
   onClick?: () => void;
 };
 
@@ -15,9 +17,11 @@ export function CameraTile({
   camera,
   isAlert,
   isSelected,
+  compact,
   stream,
   videoSrc,
   className,
+  style,
   onClick,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -37,8 +41,10 @@ export function CameraTile({
     <button
       type="button"
       onClick={onClick}
+      style={style}
       className={[
-        "group relative flex aspect-video w-full cursor-pointer flex-col overflow-hidden rounded-md border bg-panel text-left transition-colors",
+        "group relative flex aspect-video cursor-pointer flex-col overflow-hidden rounded-md border bg-panel text-left transition-colors",
+        compact ? "h-full w-auto max-w-full justify-self-center" : "w-full",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         isAlert
           ? "border-alert animate-alert-pulse"
