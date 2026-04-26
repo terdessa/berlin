@@ -12,6 +12,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@ai-coustics/aic-sdk-wasm": "^0.14.1",
     "@cloudflare/vite-plugin": "^1.25.5",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-query": "^5.83.0",

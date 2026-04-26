@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as MetricsRouteImport } from './routes/metrics'
+import { Route as EnhanceRouteImport } from './routes/enhance'
 import { Route as IndexRouteImport } from './routes/index'
 
 const MetricsRoute = MetricsRouteImport.update({
   id: '/metrics',
   path: '/metrics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnhanceRoute = EnhanceRouteImport.update({
+  id: '/enhance',
+  path: '/enhance',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,27 +31,31 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/enhance': typeof EnhanceRoute
   '/metrics': typeof MetricsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/enhance': typeof EnhanceRoute
   '/metrics': typeof MetricsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/enhance': typeof EnhanceRoute
   '/metrics': typeof MetricsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/metrics'
+  fullPaths: '/' | '/enhance' | '/metrics'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/metrics'
-  id: '__root__' | '/' | '/metrics'
+  to: '/' | '/enhance' | '/metrics'
+  id: '__root__' | '/' | '/enhance' | '/metrics'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EnhanceRoute: typeof EnhanceRoute
   MetricsRoute: typeof MetricsRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/metrics'
       fullPath: '/metrics'
       preLoaderRoute: typeof MetricsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/enhance': {
+      id: '/enhance'
+      path: '/enhance'
+      fullPath: '/enhance'
+      preLoaderRoute: typeof EnhanceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EnhanceRoute: EnhanceRoute,
   MetricsRoute: MetricsRoute,
 }
 export const routeTree = rootRouteImport
