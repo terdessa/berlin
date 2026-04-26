@@ -198,7 +198,7 @@ Use these five metrics in the dashboard:
 | Metric | Formula | Purpose |
 | --- | --- | --- |
 | SAIS | `(correct actions + safe recoveries) / total commands` | Main decision-quality score |
-| Correct Action Rate | `correct actions / total commands` | Measures direct success |
+| Correct Action Rate / SAR | `correct actions / total commands` | Measures direct successful action routing |
 | Safe Recovery Rate | `safe recoveries / total commands` | Measures useful caution |
 | Dangerous Error Rate | `dangerous errors / total commands` | Measures unsafe failures |
 | WER | `word errors / total words` | Measures transcript accuracy |
@@ -462,17 +462,29 @@ The main dashboard links to this page.
 
 ## Current Benchmark State
 
-The real recorded dataset currently contains 8 clean clips and 8 noisy clips.
+The real recorded dataset currently contains 16 clean clips and 32 noisy clips across 17 supported command cases.
 
 Current real-audio result:
 
 ```text
 Condition  Clips  ASR  WER     SAIS    Unsafe
-clean      8      8    0.000   1.000   0.000
-noisy      8      8    0.062   1.000   0.000
+clean      16     16   0.068   1.000   0.000
+noisy      32     32   0.344   1.000   0.000
 ```
 
-One noisy clip transcribed `create report` as `Great report`; Sentinel repaired it to `create report`, so the agent still produced the correct action. This is the first concrete evidence for the decision-layer value: imperfect transcript, correct operational outcome.
+Current action-routing result:
+
+```text
+Overall correct action / SAR: 83.3%
+Clean correct action / SAR:   100.0%
+Noisy correct action / SAR:   75.0%
+Safe recovery rate:           16.7%
+Dangerous error rate:         0.0%
+```
+
+The expanded noisy set creates many severe ASR errors. Sentinel now repairs recurring domain-specific mishears such as `Great reports` -> `create report`, `Post the video` -> `pause the video`, `Prison Playbook` -> `resume playback`, `Open MRC` -> `open camera three`, and `What life` -> `watch live`. Clips that are still too far from a supported command are rejected as safe recoveries, preserving zero dangerous actions.
+
+The stat to raise next is not SAIS; SAIS is already perfect because unsafe actions are avoided. The stat to raise is correct action / SAR, especially on noisy clips, while keeping dangerous error rate at zero.
 
 The scripted benchmark still matters because it includes safe-recovery cases that the current real audio set does not yet contain:
 
@@ -482,7 +494,7 @@ aicoustics_only           SAIS 0.714   WER 0.149   unsafe 0.143
 aicoustics_plus_sentinel  SAIS 0.857   WER 0.125   unsafe 0.000
 ```
 
-Next benchmark improvement: add real mismatch clips where the active incident is aisle five but the heard/ASR command targets aisle four. These should produce `safe_recovery`, not `dangerous_error`.
+Next benchmark improvement: add real mismatch clips where the active incident is aisle five but the heard/ASR command targets aisle four. These should produce `safe_recovery`, not `dangerous_error`. Also add new takes for the remaining weak noisy commands instead of overfitting the repair layer to transcripts that no longer contain usable command evidence.
 
 ## Research Alignment
 
