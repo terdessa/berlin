@@ -163,19 +163,20 @@ The dashboard UI lives at `ui/` in this repo:
 
 ### UI Architecture Decisions
 
-- **Cameras are video-only.** They do not capture audio. The guard's voice comes from a separate earpiece/mic device that connects to the backend independently.
+- **Cameras are video-only.** They do not capture audio. The guard's voice comes from the phone walkie-talkie page.
 - **Gemini analyzes only CAM-03.** Other dashboard cameras are local looping demo clips.
-- **Two-way voice channel.** Agent → guard (TTS to earpiece), guard → agent (speech with ai-coustics enhancement). Both directions are surfaced in the UI.
-- **Local camera analysis.** LiveKit is no longer used for video transport. The dashboard has eight camera tiles: CAM-01, CAM-02, CAM-04, CAM-05, CAM-06, CAM-07, and CAM-08 loop local demo clips from `ui/public/cams`; CAM-03 opens the local MacBook/Continuity Camera and is the only feed sampled by Gemini. Structured visual alerts go into the voice room as data packets.
-- **Live voice bridge.** The `/audio` route publishes the guard microphone to `sentinel-live` as `sentinel-guard-mic` by default. The Python voice agent listens to that participant, runs ai-coustics + Gradium STT/TTS, and publishes Sentinel/Guard turns plus interaction records on the `sentinel.voice` LiveKit data topic. The dashboard consumes those packets through `useSentinelVoiceEvents` and updates the review log in real time.
+- **Two-way voice channel.** Agent → guard (TTS to the phone speaker), guard → agent (speech from the phone mic with ai-coustics enhancement). The dashboard surfaces both directions in the review log.
+- **Local camera analysis.** LiveKit is not used for video transport. The dashboard has eight camera tiles: CAM-01, CAM-02, CAM-04, CAM-05, CAM-06, CAM-07, and CAM-08 loop local demo clips from `ui/public/cams`; CAM-03 opens the local laptop/Continuity Camera and is the only feed sampled by Gemini. Structured visual alerts go into the voice room as data packets.
+- **5-frame motion bursts.** Each Gemini call is a sequence of five JPEG frames captured at 200 ms intervals (5 fps over ~1 s) instead of a single still. The detector mode is `object-hold`: Gemini replies `HOLD` when a person is visibly holding a picked-up object, otherwise `NONE`. A `HOLD` reply triggers one alert per page-load (refresh to re-arm).
+- **Phone walkie-talkie.** The `/voice` route publishes the guard microphone to `sentinel-live` as `sentinel-guard-mic` by default. The Python voice agent listens to that participant, runs ai-coustics + Gradium STT/TTS, calls Gemini for the spoken reply, and publishes Sentinel/Guard turns plus interaction records on the `sentinel.voice` LiveKit data topic. The dashboard consumes those packets through `use-sentinel-room.ts` and updates the review log in real time.
+- **Dashboard is mic-less.** The dashboard at `/` joins LiveKit as identity `sentinel-dashboard` for data only — no `getUserMedia`, no remote-audio playback, no walkie-talkie button.
 
 ### Live Utility Pages
 
-One direct-link-only route (not referenced from the dashboard) exists for hardware testing:
+- **`/voice`** — phone walkie-talkie. Press-and-hold mic button, plays the agent's TTS through the phone speaker. Joins LiveKit as `sentinel-guard-mic`. The dev server prints a LAN URL at startup that you open on the phone (accept the self-signed cert once).
+- **`/metrics`** — submission metrics dashboard for SAIS, WER, safe recovery, and dangerous-error evidence.
 
-- **`/audio`** — opens the device microphone, publishes to `sentinel-live` as `sentinel-guard-mic` by default, plays Sentinel/agent replies from the same room, and uses a press-and-hold talk button for the guard reply. Use `?identity=...` only when `LIVEKIT_MIC_IDENTITY` on the Python agent is set to the same value.
-
-The dev server prints LAN + localhost URLs for `/`, `/audio`, and `/metrics` at startup.
+The dev server prints LAN + localhost URLs for `/`, `/voice`, and `/metrics` at startup.
 
 ### UI Layout
 
@@ -193,10 +194,12 @@ The dev server prints LAN + localhost URLs for `/`, `/audio`, and `/metrics` at 
 
 ## Current Implementation
 
-- ai-coustics credentials: in hand ✅
+- ai-coustics credentials: configured in LiveKit Cloud project (no local env var) ✅
 - LiveKit cloud: connected ✅ (`wss://berlin-vc00ggsm.livekit.cloud`)
-- Gradium STT/TTS: wired as the voice runtime
-- `interactions.json` corpus: written per session by `apps/voice/src/logger.py`
-- Dashboard camera grid: local/Gemini analysis placeholders ✅ — no LiveKit video transport
-- Dashboard live voice log: working ✅ — `apps/voice` emits `sentinel.voice` data packets and the dashboard subscribes via `useSentinelVoiceEvents`
-- Visual alerts from CAM-03: wired ✅ — the dashboard publishes `sentinel.visual-alert`; the voice agent speaks the alert through the LiveKit walkie-talkie path
+- Gradium STT/TTS: wired as the voice runtime ✅
+- Gemini 2.5 Flash Lite: powers both the CAM-03 `object-hold` detector and the agent's spoken replies ✅
+- `interactions.json` corpus: written per session by `apps/voice/src/logger.py` ✅
+- Dashboard camera grid: local clips + Gemini analysis on CAM-03 ✅ — no LiveKit video transport
+- Dashboard live voice log: working ✅ — `apps/voice` emits `sentinel.voice` data packets and the dashboard subscribes via `use-sentinel-room.ts`
+- Phone walkie-talkie at `/voice`: working ✅ — publishes the phone mic to `sentinel-live`; agent's TTS plays back on the phone speaker
+- Visual alerts from CAM-03: wired ✅ — the dashboard publishes `sentinel.visual-alert`; the voice agent speaks the alert into the room (heard on the phone) and Gemini answers follow-up questions using the cached frame

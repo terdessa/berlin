@@ -5,18 +5,16 @@ import type { AlertEvent, ConversationMessage } from "@/lib/sentinel-data";
 
 // Single dashboard ↔ Sentinel agent LiveKit connection.
 //
-// Owns:
-//   • mic publish (push-to-talk gated)
-//   • remote audio playback (the agent's TTS)
-//   • data subscribe (sentinel.voice — guard/assistant turns + interaction records)
-//   • data publish (sentinel.visual-alert — palm-watch / item-taken events)
-//
-// Designed so SentinelDashboard.tsx never has to touch livekit-client directly.
+// Two modes:
+//   • withMic: false  — dashboard. Subscribes to sentinel.voice data, publishes
+//                       sentinel.visual-alert. No mic, no remote-audio playback.
+//   • withMic: true   — phone /voice walkie-talkie. Publishes the device mic
+//                       (push-to-talk gated) and plays the agent's TTS.
 
 const ROOM_NAME = "sentinel-live";
-
-// Stable identity for the dashboard. The Python voice agent listens for the
-// guard mic on this identity (LIVEKIT_MIC_IDENTITY in apps/voice/src/agent.py).
+const DASHBOARD_IDENTITY = "sentinel-dashboard";
+// Stable identity for the phone walkie-talkie. The Python voice agent listens
+// for the guard mic on this identity (LIVEKIT_MIC_IDENTITY in apps/voice/src/agent.py).
 const GUARD_IDENTITY = "sentinel-guard-mic";
 
 type ConnState = "idle" | "media-error" | "connecting" | "connected" | "error";
@@ -96,6 +94,11 @@ type InteractionRecord = {
   failure?: { reason: string; failureMode: string; explanation: string } | null;
 };
 
+export type SentinelRoomOptions = {
+  /** When true, request mic + publish guard track + play agent TTS. */
+  withMic?: boolean;
+};
+
 export type SentinelRoom = {
   status: Status;
   micOn: boolean;
@@ -110,7 +113,9 @@ export type SentinelRoom = {
   ) => Promise<{ ok: true } | { ok: false; message: string }>;
 };
 
-export function useSentinelRoom(): SentinelRoom {
+export function useSentinelRoom(options?: SentinelRoomOptions): SentinelRoom {
+  const withMic = options?.withMic ?? false;
+
   const [status, setStatus] = useState<Status>({ state: "idle" });
   const [micOn, setMicOn] = useState(false);
   const [needsPlaybackUnlock, setNeedsPlaybackUnlock] = useState(false);
@@ -120,9 +125,7 @@ export function useSentinelRoom(): SentinelRoom {
   const roomRef = useRef<Room | null>(null);
   const localTrackRef = useRef<LocalAudioTrack | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
-  // Hidden audio element pool for remote (agent TTS) tracks.
   const remoteAudioElsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
-  // Conversation rebuild state (see makeLiveAlert / recordToAlert below).
   const conversationRef = useRef<ConversationMessage[]>([]);
   const visualRef = useRef<VisualEventPayload | null>(null);
   const visualEventIdRef = useRef<string | null>(null);
@@ -132,39 +135,39 @@ export function useSentinelRoom(): SentinelRoom {
     let cleanup = () => {};
 
     (async () => {
-      // 1. Mic permission. Caller (PTT button) won't actually unmute the
-      //    LiveKit track until they press, but we still need an open
-      //    MediaStream to hand to LocalAudioTrack on connect.
-      let stream: MediaStream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          },
-          video: false,
-        });
-      } catch (err) {
-        if (cancelled) return;
-        const message = err instanceof Error ? err.message : String(err);
-        setStatus({ state: "media-error", message });
-        return;
+      let stream: MediaStream | null = null;
+      if (withMic) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
+            video: false,
+          });
+        } catch (err) {
+          if (cancelled) return;
+          const message = err instanceof Error ? err.message : String(err);
+          setStatus({ state: "media-error", message });
+          return;
+        }
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        localStreamRef.current = stream;
+        for (const track of stream.getAudioTracks()) track.enabled = false;
       }
-      if (cancelled) {
-        stream.getTracks().forEach((t) => t.stop());
-        return;
-      }
-      localStreamRef.current = stream;
-      for (const track of stream.getAudioTracks()) track.enabled = false;
 
       setStatus({ state: "connecting" });
 
+      const identity = withMic ? GUARD_IDENTITY : DASHBOARD_IDENTITY;
       const tokenResult = await issueLivekitToken({
-        data: { room: ROOM_NAME, identity: GUARD_IDENTITY },
+        data: { room: ROOM_NAME, identity },
       });
       if (cancelled) {
-        stream.getTracks().forEach((t) => t.stop());
+        stream?.getTracks().forEach((t) => t.stop());
         return;
       }
       if (!tokenResult.ok) {
@@ -174,7 +177,7 @@ export function useSentinelRoom(): SentinelRoom {
 
       const livekit = await import("livekit-client");
       if (cancelled) {
-        stream.getTracks().forEach((t) => t.stop());
+        stream?.getTracks().forEach((t) => t.stop());
         return;
       }
 
@@ -184,11 +187,12 @@ export function useSentinelRoom(): SentinelRoom {
       lkRoom
         .on(livekit.RoomEvent.TrackSubscribed, (track, _pub, participant) => {
           if (track.kind !== livekit.Track.Kind.Audio) return;
+          // Dashboard mode: don't play agent TTS — that goes to the phone.
+          if (!withMic) return;
           const sid = track.sid ?? `${participant.sid}-${track.source}`;
           const el = document.createElement("audio");
           el.autoplay = true;
           el.playsInline = true;
-          // Hide; we don't need a UI for remote audio.
           el.style.display = "none";
           document.body.appendChild(el);
           (track as RemoteAudioTrack).attach(el);
@@ -213,6 +217,7 @@ export function useSentinelRoom(): SentinelRoom {
           }
         })
         .on(livekit.RoomEvent.AudioPlaybackStatusChanged, () => {
+          if (!withMic) return;
           setNeedsPlaybackUnlock(!lkRoom.canPlaybackAudio);
         })
         .on(livekit.RoomEvent.Disconnected, () => {
@@ -224,23 +229,25 @@ export function useSentinelRoom(): SentinelRoom {
 
       try {
         await lkRoom.connect(tokenResult.url, tokenResult.token);
-        const micTrack = stream.getAudioTracks()[0];
-        micTrack.enabled = false;
-        const localAudio = new livekit.LocalAudioTrack(micTrack);
-        localTrackRef.current = localAudio;
-        await lkRoom.localParticipant.publishTrack(localAudio, {
-          source: livekit.Track.Source.Microphone,
-          name: "microphone",
-        });
-        await localAudio.mute();
+        if (withMic && stream) {
+          const micTrack = stream.getAudioTracks()[0];
+          micTrack.enabled = false;
+          const localAudio = new livekit.LocalAudioTrack(micTrack);
+          localTrackRef.current = localAudio;
+          await lkRoom.localParticipant.publishTrack(localAudio, {
+            source: livekit.Track.Source.Microphone,
+            name: "microphone",
+          });
+          await localAudio.mute();
+        }
 
         if (cancelled) {
           await lkRoom.disconnect();
-          stream.getTracks().forEach((t) => t.stop());
+          stream?.getTracks().forEach((t) => t.stop());
           return;
         }
         setStatus({ state: "connected" });
-        setNeedsPlaybackUnlock(!lkRoom.canPlaybackAudio);
+        if (withMic) setNeedsPlaybackUnlock(!lkRoom.canPlaybackAudio);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         setStatus({ state: "error", message });
@@ -264,7 +271,7 @@ export function useSentinelRoom(): SentinelRoom {
         }
         for (const el of remoteAudioElsRef.current.values()) el.remove();
         remoteAudioElsRef.current.clear();
-        stream.getTracks().forEach((t) => t.stop());
+        stream?.getTracks().forEach((t) => t.stop());
       };
     })().catch((err) => {
       console.error("[sentinel] room setup failed", err);
@@ -279,9 +286,8 @@ export function useSentinelRoom(): SentinelRoom {
       cleanup();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [withMic]);
 
-  // Sentinel data-packet handler.
   const handleData = useCallback((bytes: Uint8Array, topic?: string) => {
     if (topic !== "sentinel.voice" && topic !== "sentinel.visual-alert") return;
     let envelope: VoiceEnvelope;
@@ -371,18 +377,19 @@ export function useSentinelRoom(): SentinelRoom {
   }, []);
 
   const startTalking = useCallback(() => {
+    if (!withMic) return;
     if (status.state !== "connected") return;
     const lkTrack = localTrackRef.current;
     const stream = localStreamRef.current;
     if (!lkTrack || !stream) return;
-    // Unlock playback while we're at it — same gesture covers both.
     void roomRef.current?.startAudio().catch(() => {});
     for (const t of stream.getAudioTracks()) t.enabled = true;
     void lkTrack.unmute().catch(() => {});
     setMicOn(true);
-  }, [status.state]);
+  }, [status.state, withMic]);
 
   const stopTalking = useCallback(() => {
+    if (!withMic) return;
     const lkTrack = localTrackRef.current;
     const stream = localStreamRef.current;
     if (lkTrack) void lkTrack.mute().catch(() => {});
@@ -390,7 +397,7 @@ export function useSentinelRoom(): SentinelRoom {
       for (const t of stream.getAudioTracks()) t.enabled = false;
     }
     setMicOn(false);
-  }, []);
+  }, [withMic]);
 
   const unlockPlayback = useCallback(async () => {
     try {
@@ -542,5 +549,4 @@ function nowStamp() {
   });
 }
 
-// Export for hover/debug; not used elsewhere yet.
 export type { ConnState };

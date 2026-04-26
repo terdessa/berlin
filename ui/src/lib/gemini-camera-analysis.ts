@@ -10,7 +10,14 @@ export type GeminiCameraInput = {
   imageFramesBase64?: string[];
   prompt: string;
   history?: GeminiCameraMessage[];
-  mode?: "question" | "commentary" | "loss-scan" | "object-watch" | "event-watch" | "palm-watch";
+  mode?:
+    | "question"
+    | "commentary"
+    | "loss-scan"
+    | "object-watch"
+    | "event-watch"
+    | "palm-watch"
+    | "object-hold";
   audioBase64?: string;
   audioMimeType?: string;
 };
@@ -76,7 +83,8 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
         data.mode === "loss-scan" ||
         data.mode === "object-watch" ||
         data.mode === "event-watch" ||
-        data.mode === "palm-watch"
+        data.mode === "palm-watch" ||
+        data.mode === "object-hold"
           ? data.mode
           : "question",
       audioBase64,
@@ -104,15 +112,17 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
         ? "You are Sentinel's live retail camera analyst. Review the ordered frame sequence for observable loss-prevention concerns such as shelf-to-bag, shelf-to-pocket, concealment-like movement, repeated scanning of surroundings, or item handling that needs human review. Do not accuse anyone, identify people, infer intent, or mention protected traits. If nothing review-worthy is visible, say that clearly. If review is warranted, use cautious language like 'requires review' and cite the frame-to-frame observation."
         : data.mode === "event-watch"
           ? "You are Sentinel's CAM-03 live camera analyst. Analyze only the ordered CAM-03 frames provided. Use cautious, non-accusatory language. Reply exactly CLEAR if nothing review-worthy is visible. Reply exactly ALERT: followed by one concise observable summary if the frames show a person entering the monitored area, a reviewed item disappearing, concealment-like item movement, unusual handling, or another situation a human guard should review. Do not infer intent or identity."
-          : data.mode === "palm-watch"
-            ? "You are a precise visual detector. The only thing you look for is an open human palm shown to the camera (a flat, open hand with fingers spread or extended, deliberately presented toward the lens). Ignore everything else: faces, motion, objects, background. Reply exactly PALM if any frame in the sequence clearly shows an open palm presented to the camera. Otherwise reply exactly NONE."
-            : data.mode === "object-watch"
-              ? "You are a precise visual detector. Look only for whether the watched object is visible anywhere in the image. Reply exactly with ITEM_VISIBLE if the watched object is visible, otherwise reply exactly with ITEM_GONE."
-              : data.mode === "commentary"
-                ? "You are Sentinel's live visual analyst. Comment on the current camera frame in 2-4 concise sentences. Describe observable details only. Do not identify people, infer protected traits, or accuse anyone of wrongdoing. Mention uncertainty when relevant."
-                : hasAudio
-                  ? "You are Sentinel's live camera-and-voice analyst. Use the current camera frame, recent chat context, and the attached microphone audio together. Treat the audio as the user's spoken request; briefly reflect the request only when useful, then answer it using observable visual details. Be concise, practical, and careful. Do not identify people, infer protected traits, or accuse anyone of wrongdoing."
-                  : "You are Sentinel's live visual analyst. Answer the user's question using the current camera frame and recent chat context. Be concise, practical, and careful. Describe observable details only. Do not identify people, infer protected traits, or accuse anyone of wrongdoing.";
+          : data.mode === "object-hold"
+            ? "You are a precise visual detector for retail loss-prevention review. Look only for whether any person in the frame is holding any physical object in their hand that they have just picked up (e.g. an item from a shelf, table, display, or counter). The trigger is a hand visibly gripping a discrete item. Ignore: empty hands, pointing, people only touching items without lifting them, phones held passively at rest, and people walking by empty-handed. Reply exactly HOLD if a person is clearly holding a picked-up object in hand. Otherwise reply exactly NONE."
+            : data.mode === "palm-watch"
+              ? "You are a precise visual detector. The only thing you look for is an open human palm shown to the camera (a flat, open hand with fingers spread or extended, deliberately presented toward the lens). Ignore everything else: faces, motion, objects, background. Reply exactly PALM if any frame in the sequence clearly shows an open palm presented to the camera. Otherwise reply exactly NONE."
+              : data.mode === "object-watch"
+                ? "You are a precise visual detector. Look only for whether the watched object is visible anywhere in the image. Reply exactly with ITEM_VISIBLE if the watched object is visible, otherwise reply exactly with ITEM_GONE."
+                : data.mode === "commentary"
+                  ? "You are Sentinel's live visual analyst. Comment on the current camera frame in 2-4 concise sentences. Describe observable details only. Do not identify people, infer protected traits, or accuse anyone of wrongdoing. Mention uncertainty when relevant."
+                  : hasAudio
+                    ? "You are Sentinel's live camera-and-voice analyst. Use the current camera frame, recent chat context, and the attached microphone audio together. Treat the audio as the user's spoken request; briefly reflect the request only when useful, then answer it using observable visual details. Be concise, practical, and careful. Do not identify people, infer protected traits, or accuse anyone of wrongdoing."
+                    : "You are Sentinel's live visual analyst. Answer the user's question using the current camera frame and recent chat context. Be concise, practical, and careful. Describe observable details only. Do not identify people, infer protected traits, or accuse anyone of wrongdoing.";
     const userParts: GeminiPart[] = [
       {
         text:
@@ -120,13 +130,15 @@ export const analyzeCameraFrame = createServerFn({ method: "POST" })
             ? `${data.prompt}\n\nThe following ${frameBase64s.length} images are ordered oldest to newest. Compare them as a short video-like sequence and return: status, confidence, key observation, and recommended next human-review action.`
             : data.mode === "event-watch"
               ? `${data.prompt}\n\nThe following ${frameBase64s.length} images are ordered oldest to newest from CAM-03. Reply exactly CLEAR or ALERT: <summary>.`
-              : data.mode === "palm-watch"
-                ? `${data.prompt}\n\nThe following ${frameBase64s.length} images are ordered oldest to newest from CAM-03. Reply exactly PALM or NONE.`
-                : data.mode === "object-watch"
-                  ? data.prompt
-                  : hasAudio
-                    ? `${data.prompt}\n\nThe attached audio is the user's spoken request. Analyze it together with the current camera frame.`
-                    : data.prompt,
+              : data.mode === "object-hold"
+                ? `${data.prompt}\n\nThe following ${frameBase64s.length} images are ordered oldest to newest from CAM-03. Reply exactly HOLD or NONE.`
+                : data.mode === "palm-watch"
+                  ? `${data.prompt}\n\nThe following ${frameBase64s.length} images are ordered oldest to newest from CAM-03. Reply exactly PALM or NONE.`
+                  : data.mode === "object-watch"
+                    ? data.prompt
+                    : hasAudio
+                      ? `${data.prompt}\n\nThe attached audio is the user's spoken request. Analyze it together with the current camera frame.`
+                      : data.prompt,
       },
     ];
     frameBase64s.forEach((frame, index) => {
@@ -190,7 +202,14 @@ type GeminiRequestInput = {
     role: string;
     parts: GeminiPart[];
   }>;
-  mode?: "question" | "commentary" | "loss-scan" | "object-watch" | "event-watch" | "palm-watch";
+  mode?:
+    | "question"
+    | "commentary"
+    | "loss-scan"
+    | "object-watch"
+    | "event-watch"
+    | "palm-watch"
+    | "object-hold";
 };
 
 type GeminiRequestResult =
@@ -231,7 +250,7 @@ async function requestGemini({
           generationConfig: {
             temperature: mode === "commentary" ? 0.5 : 0.1,
             maxOutputTokens:
-              mode === "object-watch" || mode === "palm-watch"
+              mode === "object-watch" || mode === "palm-watch" || mode === "object-hold"
                 ? 8
                 : mode === "event-watch"
                   ? 80

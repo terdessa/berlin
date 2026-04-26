@@ -44,7 +44,7 @@ Dashboard update
 
 1. A camera event appears on the dashboard.
 2. Sentinel speaks a concise alert to the guard.
-3. The guard responds through the `/audio` mic connection.
+3. The guard responds through the `/voice` mic connection.
 4. LiveKit routes the mic stream to the Python voice agent.
 5. ai-coustics enhances the audio before transcription.
 6. STT produces a transcript and confidence signal.

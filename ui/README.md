@@ -2,19 +2,19 @@
 
 Front-end for **Sentinel**, a voice-first retail security copilot.
 
-Built with Vite + React + TypeScript + Tailwind + TanStack Start (SSR). Originally scaffolded in Lovable.
+Built with Vite + React + TypeScript + Tailwind + TanStack Start (SSR).
 
 > Sentinel is a _human-review_ tool. It surfaces review-worthy camera events; it does not accuse, identify, or enforce. Keep all UI language non-accusatory.
 
-## What lives here
+## Routes
 
-| Route      | Description                                                                                                                                                                              |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`        | Security ops dashboard. Eight camera tiles: CAM-01, 02, 04, 05, 06, 07, and 08 loop local demo clips; CAM-03 is the live MacBook/Continuity Camera analyzed by Gemini.                   |
-| `/audio`   | Direct-link walkie-talkie page. Publishes the guard microphone to LiveKit as `sentinel-guard-mic` while the talk button is held; Sentinel voice replies play back through the same room. |
-| `/metrics` | Submission metrics dashboard for SAIS, WER, safe recovery, and dangerous-error evidence.                                                                                                 |
+| Route | Device | Description |
+| --- | --- | --- |
+| `/` | Laptop | Security ops dashboard. Eight camera tiles: CAM-01, 02, 04, 05, 06, 07, 08 loop local demo clips; CAM-03 is the live laptop camera analyzed by Gemini. Review log on the right shows the live conversation between guard and agent. **No microphone here.** |
+| `/voice` | Phone | Press-and-hold walkie-talkie. Joins LiveKit as `sentinel-guard-mic`, publishes the phone mic to the voice agent, plays the agent's TTS reply back through the phone speaker. |
+| `/metrics` | Laptop | Submission metrics dashboard for SAIS, WER, safe recovery, and dangerous-error evidence. |
 
-The dashboard and utility pages all share the same Vite dev server (single process, single port).
+All routes share the same Vite dev server (single process, single port).
 
 ## Prerequisites
 
@@ -30,7 +30,7 @@ bun install
 bun run dev
 ```
 
-The server starts on **HTTPS** with a self-signed certificate (required so phones on the LAN can use `getUserMedia`). At startup it prints access URLs for `/`, `/audio`, and `/metrics` for both localhost and your LAN IP. Phones need to accept the self-signed cert warning once.
+The server starts on **HTTPS** with a self-signed certificate (required so phones on the LAN can use `getUserMedia`). At startup it prints both the localhost URL (for the dashboard) and the LAN URL (for the phone `/voice` page). Phones need to accept the self-signed cert warning once.
 
 Other scripts:
 
@@ -51,9 +51,9 @@ cp ../.env.example ../.env
 
 Fill in the root `.env`, then run the UI from `ui/`. The Vite dev server loads the parent `.env` automatically, so `ui/.env` is not needed.
 
-## LiveKit setup (for walkie-talkie voice/data only)
+## LiveKit
 
-Add your credentials from [cloud.livekit.io](https://cloud.livekit.io) (free tier, no card required):
+Add credentials from [cloud.livekit.io](https://cloud.livekit.io):
 
 ```
 LIVEKIT_URL=wss://your-project.livekit.cloud
@@ -61,9 +61,11 @@ LIVEKIT_API_KEY=APIxxxxxxxxxxxx
 LIVEKIT_API_SECRET=your-secret
 ```
 
-Without credentials the dashboard and `/audio` still open locally, but walkie-talkie voice/data packets cannot leave the browser.
+Without credentials the dashboard and `/voice` still open locally, but voice/data packets cannot leave the browser.
 
-## Gemini setup (for the dashboard CAM-03 analyzer)
+The dashboard joins LiveKit as identity `sentinel-dashboard` (data only — no mic, no remote-audio playback). The phone `/voice` page joins as `sentinel-guard-mic`, publishes its mic, and plays back the agent's TTS.
+
+## Gemini
 
 Add a server-side Gemini key to the root `.env`:
 
@@ -71,36 +73,37 @@ Add a server-side Gemini key to the root `.env`:
 GEMINI_API_KEY=your-gemini-api-key
 ```
 
-The dashboard CAM-03 analyzer keeps the key on the server via `src/lib/gemini-camera-analysis.ts`. The model is pinned to Gemini 2.5 Flash Lite for fast frame-based visual checks at multiple frames per second. The dashboard analyzes only CAM-03, using short ordered frame bursts from the live MacBook camera; if it sees a review-worthy change, it publishes a `sentinel.visual-alert` data packet into the LiveKit voice room.
+The dashboard CAM-03 analyzer keeps the key on the server via `src/lib/gemini-camera-analysis.ts`. The model is pinned to **Gemini 2.5 Flash Lite**. Each analysis call sends an ordered burst of 5 JPEG frames captured at 200 ms intervals (5 fps over ~1 s), giving Gemini real motion to analyse instead of a single still.
+
+The detector mode is `object-hold`: Gemini replies `HOLD` when a person is visibly holding a picked-up object, otherwise `NONE`. A `HOLD` reply triggers one `sentinel.visual-alert` data packet per page-load — refresh to re-arm.
 
 ## Camera analysis
 
-LiveKit is no longer used for video. Demo clips live in `public/cams/` for CAM-01, CAM-02, CAM-04, CAM-05, CAM-06, CAM-07, and CAM-08. CAM-03 opens the local browser camera on the dashboard and is the only feed sent to Gemini. Use an iPhone connected to the Mac as Continuity Camera if you want that camera source to appear as the Mac camera input.
+LiveKit is not used for video. Demo clips live in `public/cams/` for CAM-01, CAM-02, CAM-04, CAM-05, CAM-06, CAM-07, and CAM-08. CAM-03 opens the local browser camera on the dashboard and is the only feed sent to Gemini. On macOS, an iPhone connected as Continuity Camera shows up as a regular camera input.
 
 ## Live voice log
 
-The dashboard joins `sentinel-live` as a subscriber for voice-agent data packets on topic `sentinel.voice` and dashboard visual alerts on `sentinel.visual-alert`. The Python agent in `../apps/voice` listens to the `/audio` participant, transcribes guard speech, interprets commands, speaks visual alerts from the dashboard's CAM-03 analyzer, and publishes `assistant_turn`, `guard_turn`, and `interaction_record` packets. Those packets update the review log in real time.
-
-To test the voice path, run the Python voice worker and dispatch it into `sentinel-live`, then open `/audio` and hold the talk button while speaking. Use `/audio?identity=...` only if the agent's `LIVEKIT_MIC_IDENTITY` is set to the same value.
+The dashboard subscribes to the `sentinel.voice` LiveKit data topic. The Python agent in `../apps/voice` listens to the `sentinel-guard-mic` participant (the phone), transcribes guard speech, interprets commands, speaks visual alerts when CAM-03 fires, and publishes `assistant_turn`, `guard_turn`, and `interaction_record` packets. Those packets update the dashboard's review log in real time. Guard transcripts appear immediately on the dashboard while raw-vs-enhanced dual-pass STT runs in the background for the corpus.
 
 ## Project layout
 
 ```
 src/
   routes/
-    index.tsx              # Dashboard (/)
-    audio.tsx              # Walkie-talkie mic publisher (/audio)
-    metrics.tsx            # SAIS metrics dashboard (/metrics)
-  components/sentinel/     # Dashboard UI components
+    index.tsx                    # Dashboard /
+    voice.tsx                    # Phone walkie-talkie /voice
+    metrics.tsx                  # SAIS metrics dashboard /metrics
+  components/sentinel/           # Dashboard UI components
   lib/
-    camera-config.ts       # Dashboard camera names, ordering, and demo clip paths
-    livekit-token.ts       # TanStack Start server fn — mints LiveKit JWTs
-    gemini-camera-analysis.ts # TanStack Start server fn — Gemini frame analysis
-    publish-visual-alert.ts # Publishes CAM-03 visual alerts into LiveKit data
-    use-sentinel-voice-events.ts # Hook — subscribes to voice-agent data packets
-    live-page-skeleton.tsx # SSR-safe skeleton for the /audio page
-vite.config.ts             # HTTPS cert, root env loading, startup URL banner
-wrangler.jsonc             # Cloudflare Workers deploy config
+    camera-config.ts             # Dashboard camera names, ordering, demo clip paths
+    livekit-token.ts             # TanStack Start server fn — mints LiveKit JWTs
+    gemini-camera-analysis.ts    # TanStack Start server fn — Gemini frame analysis
+    use-sentinel-room.ts         # Hook — single LiveKit connection (withMic option)
+    sentinel-data.ts             # Shared types
+    audio-metrics-data.ts        # Static metrics for /metrics
+    audio-metrics-generated.json # Generated metrics input
+vite.config.ts                   # HTTPS cert, root env loading, startup URL banner
+wrangler.jsonc                   # Cloudflare Workers deploy config
 ```
 
 ## Push changes
@@ -113,7 +116,7 @@ git commit -m "describe the change"
 git push -u origin your-feature
 ```
 
-Then open a PR against `main` on GitHub. Push directly to `main` only for trivial fixes.
+Then open a PR against `main` on GitHub.
 
 ## Deploy (Cloudflare)
 
@@ -121,12 +124,11 @@ Then open a PR against `main` on GitHub. Push directly to `main` only for trivia
 bunx wrangler deploy
 ```
 
-You'll need to be logged in (`bunx wrangler login`) and have access to the target Cloudflare account. The LiveKit server functions run via the Workers Node.js compatibility layer.
+You'll need to be logged in (`bunx wrangler login`) and have access to the target Cloudflare account. The LiveKit and Gemini server functions run via the Workers Node.js compatibility layer.
 
 ## Related
-
-Planning, demo flow, and safety guardrails live in the parent workspace:
 
 - `../docs/agent-context.md` — product context
 - `../docs/demo-plan.md` — demo flow
 - `../docs/sentinel-audio-intelligence-metric.md` — SAIS and audio evidence
+- `../apps/voice/README.md` — Python voice agent

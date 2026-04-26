@@ -6,21 +6,21 @@ Prove Sentinel is a real-time voice interface that works in noisy retail environ
 
 ## Demo Flow
 
-1. Show a supermarket dashboard with many camera feeds.
-2. One analyzed feed shows a staged review-worthy event, such as shelf-to-pocket movement.
-3. Sentinel flags the camera.
-4. Sentinel speaks an earpiece alert:
-   - "Aisle 5 requires review. Item appears to move from shelf to pocket."
-5. Guard responds over noisy store audio:
-   - "Open aisle five."
-6. ai-coustics enhances the audio (live NISQA score visible: raw vs enhanced).
-7. Voice layer interprets the command.
-8. Sentinel opens the relevant evidence video.
-9. Guard asks for context, gets a non-accusatory summary, then issues:
+1. Show the dashboard at `/` on a laptop — eight camera feeds, with CAM-03 wired to the laptop webcam and analysed live by Gemini in 5-frame bursts.
+2. Open `/voice` on a phone and accept the cert. Press the big mic button to confirm the walkie-talkie is online.
+3. Pick up an object in front of CAM-03. Gemini's `object-hold` detector returns `HOLD` and the dashboard publishes a single visual alert (one alert per dashboard page-load).
+4. Sentinel speaks the alert through the phone:
+   - "Alert. An item appears taken from shelf on CAM-03."
+5. Guard responds over the phone mic:
+   - "What do you see?"
+6. ai-coustics enhances the audio inside LiveKit Cloud (raw vs enhanced NISQA visible in the corpus).
+7. Voice layer transcribes (Gradium) and Gemini replies using the cached CAM-03 frame:
+   - "A person in a dark hoodie picked up a small box from the left shelf and is holding it in their right hand."
+8. Guard issues an action command:
    - "Send floor associate and create report."
-10. Sentinel acts and writes the interaction record.
-11. A deliberately ambiguous follow-up command produces an error record with classification, explanation, and a suggested clarification — instead of a risky action.
-12. Run the rest of the scripted scenario set so the corpus has varied data, then show the resulting `apps/voice/submission/interactions.json` and the per-scenario NISQA / recognition table.
+9. Sentinel acts and writes the interaction record.
+10. A deliberately ambiguous follow-up command produces an error record with classification, explanation, and a suggested clarification — instead of a risky action.
+11. Run the rest of the scripted scenario set so the corpus has varied data, then show the resulting `apps/voice/submission/interactions.json` and the per-scenario NISQA / recognition table.
 
 ## Scenario Set (Drives The Corpus)
 
@@ -84,4 +84,4 @@ This is what we hand to the ai-coustics team after the demo.
 
 ## Demo Rule
 
-Keep language non-accusatory. The system flags review-worthy observable behavior; it does not decide that theft happened.
+Keep language non-accusatory. The system flags review-worthy observable behavior; it does not decide that theft happened. The agent describes what's in the camera frame directly and only escalates to "human review recommended" when the guard asks something the camera can't answer.

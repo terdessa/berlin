@@ -119,20 +119,26 @@ You speak through the guard's earpiece on a walkie-talkie channel.
 
 Rules:
 - Be brief and clear. The guard is in a noisy store; replies are spoken aloud.
-  One or two short sentences, max ~30 words. No lists, no markdown, no apologies,
-  no preamble such as "Sure" or "Let me explain".
+  Two or three short sentences, max ~45 words. No lists, no markdown, no
+  apologies, no preamble such as "Sure" or "Let me explain".
 - Never say "thief", "criminal", "stealing", or make identity claims.
-- Use language like "requires review", "item appears to move", "human review
-  recommended". Describe only observable behavior.
-- The current ALERT FIRED line in the user message is the trigger that just
-  happened (typically: an item appears to have been taken from the shelf on
-  the indicated camera). When the guard asks "what happened", "what is going
-  on", "describe the scene", "what do you see", or any equivalent, you MUST:
-    1. State what triggered the alert in plain language (e.g. an item appears
-       taken from the shelf on CAM-03).
-    2. Add one short observation from the attached camera frame if a frame is
-       provided (a person, item, posture, or area). If the frame is unclear or
-       missing, say so honestly instead of inventing details.
+- Describe only observable behavior. Avoid inferring intent.
+- Do NOT say "human review recommended", "requires review", or similar
+  hand-off phrases by default. Only say a human review is needed when the
+  guard asks something you genuinely cannot answer from the camera frame —
+  for example a security policy question, an identity question, or a
+  decision that requires human judgement. In that single case, say so
+  briefly and stop.
+- The ALERT FIRED line in the user message is context for you only; it has
+  already been spoken to the guard once when the trigger fired. Do NOT restate
+  it. When the guard asks "what happened", "what is going on", "describe the
+  scene", "what do you see", or similar, answer using the attached camera
+  frame. Lead with the most important thing (the person and what they are
+  holding or doing), then add one short useful detail — appearance cue you
+  can observe without identifying anyone (clothing colour, position in
+  frame, the object held, body posture, or where they appear to be heading).
+  Keep it concrete and natural, not a checklist. If the frame is unclear or
+  missing, say so honestly in one sentence instead of inventing details.
 - For action commands (open camera, switch camera, watch live, replay last 10
   seconds, pause video, resume playback, zoom in, follow that person, show
   previous alert, flag suspicious, call backup, send floor associate, mark
@@ -382,7 +388,7 @@ async def entrypoint(ctx: JobContext):
     # buffer each final and flush them as a single utterance after a short
     # window of silence (no client framing protocol required — the press
     # itself just gates whether audio reaches STT).
-    SILENCE_FLUSH_S = float(os.getenv("SENTINEL_UTTERANCE_SILENCE_MS", "900")) / 1000.0
+    SILENCE_FLUSH_S = float(os.getenv("SENTINEL_UTTERANCE_SILENCE_MS", "350")) / 1000.0
     utterance_buffer: list[tuple[str, str, float]] = []  # (raw, enhanced, conf)
     utterance_flush_task: asyncio.Task | None = None
 
@@ -426,17 +432,42 @@ async def entrypoint(ctx: JobContext):
         raw_wav_path, _ = audio_paths
         raw_transcript_task = asyncio.create_task(_transcribe_raw_wav(raw_wav_path))
 
-        # Wait briefly for raw STT — it's a small clip; bounded to avoid
-        # stalling the demo if Gradium is slow.
+        delta_mos = round(audio_measurement.nisqa.delta.mos, 2)
+
+        # Publish the guard turn to the dashboard IMMEDIATELY with the enhanced
+        # transcript (used as the raw placeholder). Waiting for dual-pass raw
+        # STT before showing anything on the dashboard added 1–4 s of perceived
+        # latency between the guard releasing the talk button and seeing their
+        # words appear. Raw STT completes in the background and the corpus
+        # record below uses the real raw transcript.
+        session.add_guard_turn(merged_enhanced, merged_enhanced, merged_conf)
+        publish_event(
+            "guard_turn",
+            {
+                "rawTranscript": merged_enhanced,
+                "enhancedTranscript": merged_enhanced,
+                "asrConfidence": merged_conf,
+                "nisqaDeltaMos": delta_mos,
+                "nisqaRawMos": round(audio_measurement.nisqa.raw.mos, 2),
+                "nisqaEnhancedMos": round(audio_measurement.nisqa.enhanced.mos, 2),
+                "transcriptsDiffer": False,
+            },
+        )
+
+        # Kick off Gemini reply in parallel with raw STT — they don't depend
+        # on each other, and the reply latency dominates. Tight timeout on raw
+        # STT (1 s) keeps the corpus accurate without stalling the pipeline.
+        handle_task = asyncio.create_task(
+            _handle_guard_speech(merged_enhanced, merged_enhanced, merged_conf)
+        )
         try:
-            merged_raw = await asyncio.wait_for(raw_transcript_task, timeout=4.0)
+            merged_raw = await asyncio.wait_for(raw_transcript_task, timeout=1.0)
         except asyncio.TimeoutError:
             log.warning("dual-pass: raw STT timed out; falling back to enhanced text")
             merged_raw = merged_enhanced
         if not merged_raw:
             merged_raw = merged_enhanced
 
-        delta_mos = round(audio_measurement.nisqa.delta.mos, 2)
         log.info(
             "utterance: flush — enhanced=%r raw=%r ΔMOS=%+.2f",
             merged_enhanced,
@@ -444,21 +475,12 @@ async def entrypoint(ctx: JobContext):
             delta_mos,
         )
 
-        session.add_guard_turn(merged_raw, merged_enhanced, merged_conf)
-        publish_event(
-            "guard_turn",
-            {
-                "rawTranscript": merged_raw,
-                "enhancedTranscript": merged_enhanced,
-                "asrConfidence": merged_conf,
-                "nisqaDeltaMos": delta_mos,
-                "nisqaRawMos": round(audio_measurement.nisqa.raw.mos, 2),
-                "nisqaEnhancedMos": round(audio_measurement.nisqa.enhanced.mos, 2),
-                "transcriptsDiffer": merged_raw.lower().strip()
-                != merged_enhanced.lower().strip(),
-            },
-        )
-        await _handle_guard_speech(merged_raw, merged_enhanced, merged_conf)
+        # Patch the conversation turn that we already published so the corpus
+        # record carries the correct raw vs enhanced split.
+        if session.conversation and session.conversation[-1].speaker == "guard":
+            session.conversation[-1].raw_transcript = merged_raw
+
+        await handle_task
 
     def _reschedule_flush() -> None:
         nonlocal utterance_flush_task
@@ -468,10 +490,10 @@ async def entrypoint(ctx: JobContext):
 
     spoken_visual_event_ids: set[str] = set()
     last_spoken_at_per_camera: dict[str, float] = {}
-    # Wall-clock seconds the same camera must wait between spoken alerts.
-    # Backstops the dashboard's 30 s cooldown when a different eventId still
-    # gets through (e.g. a second dashboard tab, a re-publish, or a clock skew).
-    CAMERA_ALERT_COOLDOWN_S = 15.0
+    # Backstop only — the dashboard now sends a stable eventId per page-load
+    # so the per-id dedupe above is the primary gate. Set high enough that a
+    # second dashboard tab or a re-publish won't accidentally re-trigger.
+    CAMERA_ALERT_COOLDOWN_S = 3600.0
 
     def handle_visual_alert(payload: dict):
         visual_event = _visual_event_from_payload(payload)
@@ -863,6 +885,15 @@ def _start_self_dispatch_thread() -> None:
         async def _dispatch() -> None:
             client = lk_api.LiveKitAPI(url, key, secret)
             try:
+                # Ensure the room exists — list_dispatch / create_dispatch both
+                # 404 if no participant has joined yet. CreateRoom is idempotent.
+                try:
+                    await client.room.create_room(
+                        lk_api.CreateRoomRequest(name=room, empty_timeout=24 * 60 * 60)
+                    )
+                    log.info("self-dispatch: ensured room exists name=%s", room)
+                except Exception:
+                    log.warning("self-dispatch: create_room failed (continuing)", exc_info=True)
                 existing = await client.agent_dispatch.list_dispatch(room_name=room)
                 # Stale dispatches from prior worker processes (or with a
                 # different/empty agent_name) won't route jobs to *this*
@@ -938,8 +969,10 @@ def _build_agent_session() -> AgentSession:
     # `vad_threshold` keeps "what do you see on the screen?" as one final
     # utterance instead of splitting at the natural in-sentence pause that
     # `vad_threshold=0.6, vad_bucket=1` was finalizing on.
+    vad_threshold = float(os.getenv("SENTINEL_VAD_THRESHOLD", "0.6"))
+    vad_bucket = int(os.getenv("SENTINEL_VAD_BUCKET", "1"))
     return AgentSession(
-        stt=lk_gradium.STT(vad_threshold=0.85, vad_bucket=2),
+        stt=lk_gradium.STT(vad_threshold=vad_threshold, vad_bucket=vad_bucket),
         tts=lk_gradium.TTS(),
     )
 
