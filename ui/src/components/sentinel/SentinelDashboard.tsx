@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCcw } from "lucide-react";
+import { RefreshCcw, Video } from "lucide-react";
 import { CAMERA_CLIPS, CAMERA_WALL_ORDER, DASHBOARD_CAMERAS } from "@/lib/camera-config";
 import type { Camera } from "@/lib/sentinel-data";
-import { AudioMetricPill } from "./AudioMetricBadge";
 import { CameraTile } from "./CameraTile";
 import { ChatPanel } from "./ChatPanel";
+import { MetricsPanel } from "./MetricsPanel";
+import DotField from "@/components/DotField";
 
 // NOTE: the voice/LiveKit/Gemini backend has been removed pending a clean
 // rewrite. This dashboard is intentionally UI-only — cameras render, the
@@ -34,8 +35,6 @@ export function SentinelDashboard() {
   const [cameraListVersion, setCameraListVersion] = useState(0);
 
   const cam3VideoRef = useRef<HTMLVideoElement | null>(null);
-
-  const isAlerting = false;
 
   const cameras = useMemo(() => {
     return [...DASHBOARD_CAMERAS].sort((a, b) => {
@@ -172,30 +171,17 @@ export function SentinelDashboard() {
   return (
     <main
       id="main"
-      className="flex h-screen w-full flex-col overflow-hidden bg-background px-4 py-3 text-foreground"
+      className="relative flex h-screen w-full flex-col overflow-hidden bg-background px-4 py-3 text-foreground"
     >
-      <header className="flex h-11 flex-shrink-0 items-center justify-between gap-3 border-b border-border/70 pb-2.5">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <div
-            aria-live="polite"
-            className={[
-              "inline-flex h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-xs backdrop-blur-sm transition-colors duration-200",
-              isAlerting
-                ? "border-alert/50 bg-alert/10 text-alert"
-                : "border-border bg-panel/70 text-foreground/90",
-            ].join(" ")}
-          >
-            <span
-              className={[
-                "h-2 w-2 rounded-full",
-                isAlerting ? "bg-alert animate-alert-pulse" : "bg-ok animate-soft-pulse",
-              ].join(" ")}
-            />
-            <span className="mono text-[10px] uppercase tracking-[0.18em]">sentinel ops</span>
-          </div>
-          <span className="hidden h-4 w-px bg-border md:block" />
-          <AudioMetricPill />
-        </div>
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
+        <DotField />
+      </div>
+      <header className="relative z-10 grid h-12 flex-shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3">
+        <div />
+
+        <span className="mono text-[1.4rem] font-bold uppercase leading-none tracking-[0.32em] text-foreground">
+          SENTINEL
+        </span>
 
         <div className="flex min-w-0 items-center justify-end gap-2">
           <div className="flex min-w-0 items-center gap-1.5">
@@ -219,7 +205,7 @@ export function SentinelDashboard() {
                   value.startsWith("device:") ? value.replace(/^device:/, "") : undefined,
                 );
               }}
-              className="mono h-9 min-h-9 max-w-[260px] cursor-pointer rounded-md border border-border bg-panel/80 px-2 text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors duration-200 hover:border-primary/40"
+              className="mono h-9 min-h-9 max-w-[260px] cursor-pointer rounded-md border border-border bg-panel/80 px-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors duration-200 hover:border-primary/40"
               aria-label="CAM-03 camera input"
               title="CAM-03 camera input"
             >
@@ -233,10 +219,23 @@ export function SentinelDashboard() {
             </select>
             <button
               type="button"
-              onClick={() => setCameraListVersion((value) => value + 1)}
+              onClick={async () => {
+                try {
+                  const tempStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: false,
+                  });
+                  tempStream.getTracks().forEach((track) => track.stop());
+                  const devices = await listVideoInputs();
+                  setVideoDevices(devices);
+                } catch {
+                  // ignore — user denied or no device available
+                }
+                setCameraListVersion((value) => value + 1);
+              }}
               className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border bg-panel/80 text-muted-foreground transition-colors duration-200 hover:border-primary/50 hover:text-foreground"
-              aria-label="Refresh camera inputs"
-              title="Refresh camera inputs"
+              aria-label="Refresh camera inputs (grants permission so iPhone / Continuity Camera shows up)"
+              title="Refresh camera inputs (grants permission so iPhone / Continuity Camera shows up)"
             >
               <RefreshCcw className="h-3.5 w-3.5" />
             </button>
@@ -244,55 +243,74 @@ export function SentinelDashboard() {
         </div>
       </header>
 
-      <section className="mt-3 grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px]">
+      <section className="relative z-10 mt-3 grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden xl:grid-cols-[auto_minmax(360px,1fr)_260px] 2xl:grid-cols-[auto_minmax(400px,1fr)_300px]">
         <div
-          className="flex min-h-0 min-w-0 flex-col items-start gap-3 overflow-hidden"
-          style={{ ["--col-w" as string]: "calc((100dvh - 125px) * 16 / 27)" }}
+          className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border/60 bg-panel/30"
+          style={{ ["--col-w" as string]: "calc((100dvh - 180px) * 8 / 9 + 12px)" }}
         >
-          {selectedCamera ? (
-            <div
-              className="flex aspect-video items-stretch overflow-hidden"
-              style={{ width: "var(--col-w)" }}
-            >
-              {renderCameraTile(selectedCamera, { large: true })}
+          <header className="flex items-center justify-between gap-2 border-b border-border/60 bg-panel-elevated/35 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Video className="h-4 w-4 text-primary" />
+              <div className="mono text-[14px] uppercase tracking-[0.2em] text-primary">
+                camera wall
+              </div>
             </div>
-          ) : (
-            <div
-              className="mono flex aspect-video items-center justify-center overflow-hidden rounded-md border border-dashed border-border/50 bg-panel/20 px-6 text-xs uppercase tracking-[0.24em] text-muted-foreground/70"
-              style={{ width: "var(--col-w)" }}
-            >
-              Select camera to preview
-            </div>
-          )}
+            <span className="mono inline-flex items-center gap-1 rounded-full border border-border bg-background/40 px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-ok animate-soft-pulse" />
+              {cameras.length} feeds
+            </span>
+          </header>
 
-          <div
-            aria-label="Camera grid"
-            className="grid grid-cols-2 grid-rows-4 gap-3 overflow-hidden"
-            style={{
-              width: "var(--col-w)",
-              height: "calc((var(--col-w) - 12px) * 9 / 8 + 36px)",
-            }}
-          >
-            {cameras.map((camera) => {
-              if (selected === camera.id) {
-                const num = camera.id.match(/\d+/)?.[0] ?? camera.id;
-                return (
-                  <div
-                    key={camera.id}
-                    aria-label={`${camera.id} previewing`}
-                    className="mono flex aspect-video w-full items-center justify-center rounded-md border border-dashed border-border/50 bg-panel/30 text-2xl tracking-[0.2em] text-muted-foreground/60"
-                  >
-                    {num}
-                  </div>
-                );
-              }
-              return renderCameraTile(camera);
-            })}
+          <div className="flex min-h-0 flex-col items-start gap-3 overflow-hidden p-3">
+            {selectedCamera ? (
+              <div
+                className="flex aspect-video items-stretch overflow-hidden"
+                style={{ width: "var(--col-w)" }}
+              >
+                {renderCameraTile(selectedCamera, { large: true })}
+              </div>
+            ) : (
+              <div
+                className="mono flex aspect-video items-center justify-center overflow-hidden rounded-md border border-dashed border-border/50 bg-panel/30 px-6 text-[13px] uppercase tracking-[0.2em] text-muted-foreground/70"
+                style={{ width: "var(--col-w)" }}
+              >
+                Select camera to preview
+              </div>
+            )}
+
+            <div
+              aria-label="Camera grid"
+              className="grid grid-cols-3 grid-rows-3 gap-3 overflow-hidden"
+              style={{
+                width: "var(--col-w)",
+                height: "calc((var(--col-w) - 24px) * 9 / 16 + 24px)",
+              }}
+            >
+              {cameras.map((camera) => {
+                if (selected === camera.id) {
+                  const num = camera.id.match(/\d+/)?.[0] ?? camera.id;
+                  return (
+                    <div
+                      key={camera.id}
+                      aria-label={`${camera.id} previewing`}
+                      className="mono flex aspect-video w-full items-center justify-center rounded-md border border-dashed border-border/50 bg-panel/30 text-2xl tracking-[0.2em] text-muted-foreground/60"
+                    >
+                      {num}
+                    </div>
+                  );
+                }
+                return renderCameraTile(camera);
+              })}
+            </div>
           </div>
         </div>
 
         <div className="flex min-h-0 min-w-0 flex-col overflow-hidden">
           <ChatPanel />
+        </div>
+
+        <div className="flex min-h-0 min-w-0 flex-col overflow-hidden">
+          <MetricsPanel />
         </div>
       </section>
 

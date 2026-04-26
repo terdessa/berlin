@@ -3,7 +3,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   Activity,
   AlertTriangle,
-  ArrowLeft,
+  X,
   CheckCircle2,
   ChevronDown,
   Database,
@@ -44,6 +44,7 @@ import {
   type BenchRun,
   type ClipMetric,
 } from "@/lib/audio-bench";
+import DotField from "@/components/DotField";
 
 export const Route = createFileRoute("/metrics")({
   component: MetricsPage,
@@ -150,7 +151,15 @@ function MetricsPage() {
       className="relative min-h-screen overflow-x-clip bg-background px-4 py-5 text-foreground sm:px-6"
     >
       <PageGlow />
-      <div className="relative mx-auto flex max-w-7xl flex-col gap-5">
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
+        <DotField />
+      </div>
+      <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-5">
+        <div className="flex h-12 items-center justify-center">
+          <span className="mono text-[1.4rem] font-bold uppercase leading-none tracking-[0.32em] text-foreground">
+            SENTINEL
+          </span>
+        </div>
         <RunControlBar
           state={runState}
           liveRun={liveRun}
@@ -160,33 +169,24 @@ function MetricsPage() {
           onDownload={handleDownload}
         />
 
+        <Link
+          to="/"
+          className="fixed left-3 top-3 z-50 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border bg-background/70 text-muted-foreground backdrop-blur-md transition-colors duration-200 hover:border-primary/50 hover:text-foreground"
+          aria-label="Close metrics"
+          title="Close"
+        >
+          <X className="h-4 w-4" />
+        </Link>
+
         <header className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <Link
-                to="/"
-                className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border bg-background/60 text-muted-foreground transition-colors duration-200 hover:border-primary/50 hover:text-foreground"
-                aria-label="Back to dashboard"
-                title="Back to dashboard"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-              <span className="mono rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-primary">
-                ai-coustics submission
-              </span>
-              <SourceBadge source={dashboard.source} />
-            </div>
-            <h1 className="mt-3 max-w-4xl text-[2rem] font-semibold leading-[1.15] tracking-tight text-foreground">
+            <h1 className="max-w-4xl text-[2rem] font-semibold leading-[1.15] tracking-tight text-foreground">
               Sentinel Audio Intelligence Bench
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
               48 retail guard commands. ai-coustics enhancement measured live in-browser, joined to
               the offline SAIS benchmark.
             </p>
-          </div>
-
-          <div className="lg:min-w-[260px]">
-            <SubmissionStatus model={model} />
           </div>
         </header>
 
@@ -294,7 +294,7 @@ function RunControlBar({
   return (
     <section
       className={[
-        "sticky top-2 z-30 rounded-xl px-4 py-3 backdrop-blur transition-shadow duration-300",
+        "relative z-30 rounded-xl px-4 py-3 backdrop-blur transition-shadow duration-300",
         "border bg-panel/95 supports-[backdrop-filter]:bg-panel/75",
         running
           ? "border-primary/60 shadow-[0_0_0_1px_color-mix(in_oklab,var(--primary)_25%,transparent),0_18px_60px_-30px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
@@ -435,20 +435,7 @@ function LivePipelinePanel({
   totalLatencyMs: number | null;
 }) {
   if (!aggregate || aggregate.clips === 0) {
-    return (
-      <section className="rounded-lg border border-dashed border-border bg-panel/40 px-5 py-5">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <h2 className="mono text-[11px] uppercase tracking-[0.2em] text-foreground">
-            audio pipeline · live
-          </h2>
-        </div>
-        <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-          Press <strong className="text-foreground">Run all 48 clips</strong> to measure MOS proxy,
-          input level, VAD miss-rate, and latency in-browser.
-        </p>
-      </section>
-    );
+    return null;
   }
 
   const liveRunning = state.status === "running";
@@ -793,17 +780,6 @@ function buildSubmissionModel(dashboard: AudioMetricsDashboard) {
         ? Math.max(0, raw.dangerousErrorRate - final.dangerousErrorRate)
         : null,
   };
-}
-
-function SourceBadge({ source }: { source: string }) {
-  return (
-    <span
-      className="mono rounded-full border border-border bg-panel/70 px-2.5 py-1 text-[9px] uppercase tracking-[0.14em] text-muted-foreground"
-      title={source}
-    >
-      bundled JSON
-    </span>
-  );
 }
 
 function SubmissionStatus({ model }: { model: ReturnType<typeof buildSubmissionModel> }) {
