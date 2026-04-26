@@ -4,6 +4,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@utility cursor-sentinel-play {
+  cursor: url("/cursors/sentinel-play.svg") 14 14, pointer;
+}
+
+@utility cursor-sentinel-listen {
+  cursor: url("/cursors/sentinel-listen.svg") 14 14, pointer;
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -43,6 +51,65 @@
   --animate-slide-in-right: slide-in-right 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   --animate-fade-in: fade-in 0.3s ease-out;
   --animate-wave: wave 1.4s ease-in-out infinite;
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-rise: rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@utility tier-hero {
+  position: relative;
+  border: 1px solid color-mix(in oklab, var(--primary) 35%, var(--border));
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 60%),
+    color-mix(in oklab, var(--panel) 92%, transparent);
+  box-shadow:
+    0 1px 0 0 color-mix(in oklab, var(--primary) 18%, transparent) inset,
+    0 12px 40px -24px color-mix(in oklab, var(--primary) 60%, transparent);
+}
+
+@utility tier-primary {
+  border: 1px solid var(--border);
+  background-color: color-mix(in oklab, var(--panel) 88%, transparent);
+}
+
+@utility tier-secondary {
+  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  background-color: color-mix(in oklab, var(--panel) 50%, transparent);
+}
+
+@utility shimmer-strip {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      color-mix(in oklab, var(--primary) 28%, transparent) 50%,
+      transparent 70%
+    );
+    animation: var(--animate-shimmer);
+    transform: translateX(-100%);
+  }
 }
 
 @keyframes soft-pulse {
@@ -142,5 +209,45 @@
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.02em;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--primary) 80%, white);
+    outline-offset: 2px;
+    border-radius: inherit;
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--border) 70%, transparent);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--primary) 50%, var(--border));
+    background-clip: padding-box;
+  }
+
+  ::view-transition-group(*) {
+    animation-duration: 360ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 360ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }

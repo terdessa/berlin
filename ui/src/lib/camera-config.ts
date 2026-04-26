@@ -17,14 +17,14 @@ export const DASHBOARD_CAMERAS: Camera[] = [
   { id: "CAM-04", zone: "Coding area" },
   { id: "CAM-05", zone: "Elevator" },
   { id: "CAM-06", zone: "Fun zone" },
-  { id: "CAM-07", zone: "Stage" },
-  { id: "CAM-08", zone: "Kitchen" },
+  { id: "CAM-07", zone: "Kitchen" },
+  { id: "CAM-08", zone: "Stage" },
 ];
 
 export const CAMERA_WALL_ORDER = [
-  "CAM-03",
   "CAM-01",
   "CAM-02",
+  "CAM-03",
   "CAM-04",
   "CAM-05",
   "CAM-06",
