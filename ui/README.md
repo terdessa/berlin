@@ -20,7 +20,7 @@ All routes share the same Vite dev server (single process, single port).
 
 - [Bun](https://bun.sh) (`curl -fsSL https://bun.sh/install | bash`)
 - Git
-- Node 18+ works as a fallback if you prefer `npm`
+- Node 21.3+ (the `dev` script uses `--disable-warning=UnsupportedWarning` to silence a noisy HTTP/2 message from the LiveKit/Twirp stack); Node 24 LTS is what's tested
 
 ## Run locally
 
@@ -83,7 +83,7 @@ LiveKit is not used for video. Demo clips live in `public/cams/` for CAM-01, CAM
 
 ## Live voice log
 
-The dashboard subscribes to the `sentinel.voice` LiveKit data topic. The Python agent in `../apps/voice` listens to the `sentinel-guard-mic` participant (the phone), transcribes guard speech, interprets commands, speaks visual alerts when CAM-03 fires, and publishes `assistant_turn`, `guard_turn`, and `interaction_record` packets. Those packets update the dashboard's review log in real time. Guard transcripts appear immediately on the dashboard while raw-vs-enhanced dual-pass STT runs in the background for the corpus.
+The dashboard subscribes to the `sentinel.voice` LiveKit data topic. The Python agent in `../apps/voice` listens to the `sentinel-guard-mic` participant (the phone), transcribes guard speech, interprets commands, speaks visual alerts when CAM-03 fires, and publishes `assistant_turn`, `guard_turn`, and `interaction_record` packets. Those packets update the dashboard's conversation log in real time. Guard transcripts appear immediately on the dashboard while raw-vs-enhanced dual-pass STT runs in the background for the corpus.
 
 ## Project layout
 

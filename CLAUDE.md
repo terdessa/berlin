@@ -24,7 +24,7 @@ One-line pitch:
 
 ## Current Architecture
 
-- Dashboard route: `/` — laptop. Owns the camera grid and the review log. **No microphone, no walkie-talkie button.** Subscribes to `sentinel.voice` data packets and publishes `sentinel.visual-alert`. Joins LiveKit as identity `sentinel-dashboard`.
+- Dashboard route: `/` — laptop. Owns the camera grid and the conversation log (live-bound to `sentinel.latestAlert.conversation`). **No microphone, no walkie-talkie button.** Subscribes to `sentinel.voice` data packets and publishes `sentinel.visual-alert`. Joins LiveKit as identity `sentinel-dashboard`.
 - Walkie-talkie route: `/voice` — phone. Press-and-hold mic button, plays the agent's TTS through the phone speaker. Joins LiveKit as identity `sentinel-guard-mic`.
 - Metrics route: `/metrics`
 - LiveKit is **voice/data only**. Do not reintroduce LiveKit video streaming.
@@ -32,7 +32,7 @@ One-line pitch:
 - CAM-03 opens the selected local browser camera (laptop webcam or Continuity Camera).
 - Gemini analyzes **only CAM-03** from the dashboard. Each analysis call sends an ordered burst of 5 JPEG frames captured at 200 ms intervals. The detector mode is `object-hold`: it returns `HOLD` when a person is visibly holding a picked-up object, otherwise `NONE`.
 - A `HOLD` reply triggers a single `sentinel.visual-alert` data packet per page-load (refresh the dashboard to re-arm).
-- The Python voice agent publishes `sentinel.voice` packets for dashboard review-log updates.
+- The Python voice agent publishes `sentinel.voice` packets (`guard_turn`, `assistant_turn`, `visual_event`, `interaction_record`) that the dashboard renders directly into the conversation log.
 - One LiveKit connection per page tab — `ui/src/lib/use-sentinel-room.ts` is the single hook for both modes via the `withMic` option (false on dashboard, true on `/voice`).
 
 ## Environment
@@ -88,9 +88,11 @@ source .venv/bin/activate    # or .venv\Scripts\activate on Windows
 python -m src.agent dev
 ```
 
-The worker self-dispatches into `sentinel-live` on startup with `agent_name="sentinel"`, ensuring the room exists first via `RoomService.create_room`. Use
-`python -m src.dispatch_agent --status` to inspect the room, or
-`python -m src.dispatch_agent --reset` to clear stale dispatches.
+The worker self-dispatches into `sentinel-live` on startup with `agent_name="sentinel"`. It first ensures the room exists via `RoomService.create_room`, then **drops every existing dispatch in the room** before creating a fresh one. This is intentional: a "reused" dispatch from a prior worker process is bound to a now-dead worker and will silently swallow jobs, breaking TTS and STT routing. The blanket-delete keeps single-worker demo runs reliable across restarts.
+
+Use `python -m src.dispatch_agent --status` to inspect dispatches and participants, or `python -m src.dispatch_agent --reset` to clear them out manually.
+
+⚠️ Single-worker assumption: do not run two `python -m src.agent dev` processes against the same room — the second startup will tear down the first one's dispatch.
 
 The default room is `sentinel-live`; the phone `/voice` page publishes the guard mic on identity `sentinel-guard-mic` (override with `LIVEKIT_MIC_IDENTITY`).
 
@@ -124,7 +126,8 @@ No facial recognition, identity tracking, automated accusation, detention, punis
 - `ui/src/routes/index.tsx` — dashboard `/`
 - `ui/src/routes/voice.tsx` — phone walkie-talkie `/voice`
 - `ui/src/routes/metrics.tsx` — submission metrics `/metrics`
-- `ui/src/components/sentinel/` — dashboard UI components
+- `ui/src/components/sentinel/` — dashboard UI components (camera grid, `ChatPanel`, `MetricsPanel`)
+- `ui/src/components/sentinel/ChatPanel.tsx` — conversation log; rendered from `liveAlert.conversation`
 - `ui/src/lib/camera-config.ts` — camera labels, order, clip paths
 - `ui/src/lib/gemini-camera-analysis.ts` — Gemini server function (modes incl. `object-hold`)
 - `ui/src/lib/livekit-token.ts` — LiveKit token server function

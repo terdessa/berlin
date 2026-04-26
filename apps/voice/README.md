@@ -47,7 +47,15 @@ source .venv/bin/activate
 python -m src.agent dev
 ```
 
-This starts a LiveKit worker registered with `agent_name="sentinel"`. On startup the worker creates the room (`sentinel-live`) if it doesn't exist, then self-dispatches into it — no second terminal needed. You should see `self-dispatched agent into room=sentinel-live` in the log.
+This starts a LiveKit worker registered with `agent_name="sentinel"`. On startup the worker:
+
+1. Creates the room (`sentinel-live`) if it doesn't exist.
+2. **Drops every existing dispatch in that room.** A "reused" dispatch from a prior worker process is bound to a now-dead worker and silently swallows jobs — leaving you with a registered worker that never receives audio. Wiping dispatches and creating a fresh one keeps restarts reliable.
+3. Self-dispatches one fresh dispatch — no second terminal needed.
+
+You should see `dropped existing dispatch id=…` (zero or more lines) followed by `self-dispatched agent into room=sentinel-live` in the log. If you instead see `… already in room=…; reusing`, you're on an old build — pull and try again.
+
+⚠️ The blanket-delete on startup means **only one `python -m src.agent dev` process should target a given room at a time**. Starting a second one will tear down the first one's dispatch.
 
 ## Manual dispatch (if needed)
 
@@ -142,7 +150,7 @@ Output:
 apps/voice/submission/audio_intelligence_results.json
 ```
 
-The benchmark compares `raw_noisy`, `aicoustics_only`, and `aicoustics_plus_sentinel` across WER, NISQA-like MOS, SAIS, retry rate, and unsafe action rate.
+The benchmark compares `raw_noisy`, `aicoustics_only`, and `aicoustics_plus_sentinel` across WER, a NISQA-like MOS estimator (heuristic, not the published NISQA-v2 model — see `src/nisqa.py`), SAIS, retry rate, and unsafe action rate.
 
 For the real recorded dataset, SAIS is the safety headline and **correct action rate (SAR)** is the operational stat to raise.
 
@@ -218,7 +226,7 @@ The evaluator keeps dangerous actions at zero by treating unsupported or too-amb
 | `src/logger.py` | Appends records to `submission/interactions.json` |
 | `src/interpret.py` | Command classifier + failure mode detection |
 | `src/audio_capture.py` | Captures raw/enhanced audio snapshots for corpus WAVs |
-| `src/nisqa.py` | NISQA scorer for raw vs enhanced audio |
+| `src/nisqa.py` | **NISQA-like** MOS estimator (deterministic heuristic from RMS / crest / zero-crossings — not the published NISQA-v2 neural model) for raw vs enhanced audio |
 | `src/dispatch_agent.py` | Manual dispatch helper |
 | `src/evaluate_audio_intelligence.py` | Scripted SAIS benchmark |
 | `src/evaluate_audio_dataset.py` | Real-audio dataset evaluator |
