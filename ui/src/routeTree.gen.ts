@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VoiceRouteImport } from './routes/voice'
 import { Route as MetricsRouteImport } from './routes/metrics'
-import { Route as EnhanceRouteImport } from './routes/enhance'
 import { Route as IndexRouteImport } from './routes/index'
 
 const VoiceRoute = VoiceRouteImport.update({
@@ -24,11 +23,6 @@ const MetricsRoute = MetricsRouteImport.update({
   path: '/metrics',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EnhanceRoute = EnhanceRouteImport.update({
-  id: '/enhance',
-  path: '/enhance',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -37,34 +31,30 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/enhance': typeof EnhanceRoute
   '/metrics': typeof MetricsRoute
   '/voice': typeof VoiceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/enhance': typeof EnhanceRoute
   '/metrics': typeof MetricsRoute
   '/voice': typeof VoiceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/enhance': typeof EnhanceRoute
   '/metrics': typeof MetricsRoute
   '/voice': typeof VoiceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/enhance' | '/metrics' | '/voice'
+  fullPaths: '/' | '/metrics' | '/voice'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/enhance' | '/metrics' | '/voice'
-  id: '__root__' | '/' | '/enhance' | '/metrics' | '/voice'
+  to: '/' | '/metrics' | '/voice'
+  id: '__root__' | '/' | '/metrics' | '/voice'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  EnhanceRoute: typeof EnhanceRoute
   MetricsRoute: typeof MetricsRoute
   VoiceRoute: typeof VoiceRoute
 }
@@ -85,13 +75,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MetricsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/enhance': {
-      id: '/enhance'
-      path: '/enhance'
-      fullPath: '/enhance'
-      preLoaderRoute: typeof EnhanceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -104,7 +87,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  EnhanceRoute: EnhanceRoute,
   MetricsRoute: MetricsRoute,
   VoiceRoute: VoiceRoute,
 }
